@@ -1,7 +1,7 @@
 from VPSBuyer import VPSBuyer
 import os
 import shutil
-from subprocess import call
+from subprocess import call, check_output
 
 class LocalhostBuyer(VPSBuyer):
 
@@ -55,6 +55,13 @@ class LocalServer(object):
         """
         self.machinedir = machinedir
 
+        (self.ip,
+         self.port,
+         self.password,
+         self.private_key,
+         check_output(['vagrant', 'up'], cwd=machinedir)
+
+
     def destroy(self):
         """
         Halt the server and remove server files 
@@ -65,8 +72,6 @@ class LocalServer(object):
 
         # Destroy machine
         call(['vagrant', 'destroy', '-f'], cwd=self.machinedir)
-
-        call(['vagrant', 'status'], cwd=self.machinedir)
 
         # Remove machine directory
         shutil.rmtree(self.machinedir)
