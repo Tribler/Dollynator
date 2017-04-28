@@ -2,7 +2,7 @@ from random import randint
 from selenium import webdriver
 from selenium.webdriver.support.select import Select
 
-from Util import Util
+from Generator import Generator
 
 
 class VPSBuyer(object):
@@ -20,7 +20,7 @@ class VPSBuyer(object):
     def __init__(self, email='', password='', ssh_username='root', ssh_password=''):
         self.driver = None
         self.price = None
-        self.generator = Util()
+        self.generator = Generator()
         if email == "":
             self.email = self.generator.get_email()
         else:

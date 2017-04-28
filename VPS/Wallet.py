@@ -4,7 +4,7 @@ Created on Apr 26, 2016
 @author: niels
 """
 from subprocess import PIPE, STDOUT
-from Util import Util
+from Generator import Generator
 import subprocess
 import re
 import os

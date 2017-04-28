@@ -4,7 +4,7 @@ import string
 import names
 
 
-class Util:
+class Generator:
 
     def __init__(self):
         pass

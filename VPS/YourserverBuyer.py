@@ -1,4 +1,4 @@
-from Util import Util
+from Generator import Generator
 from VPSBuyer import VPSBuyer
 from Wallet import Wallet
 from tempmail import TempMail
@@ -21,7 +21,7 @@ class YourserverBuyer(VPSBuyer):
         if email == "":
             email = self.tm.get_email_address()
         super(YourserverBuyer, self).__init__(email, password, "root",
-                                              Util().get_random_numerical_string(30))
+                                              Generator().get_random_numerical_string(30))
 
     def buy(self):
         """
