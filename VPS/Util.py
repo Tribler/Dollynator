@@ -1,6 +1,7 @@
 from random import randrange
 import random
 import string
+import names
 
 
 class Util:
@@ -37,15 +38,15 @@ class Util:
         if hasattr(self, 'firstName'):
             return self.firstName
 
-        self.firstName = self.get_random_alphabetical_string(randrange(3, 10))
+        self.firstName = names.get_first_name()
         return self.firstName
 
-    def get_surname(self):
+    def get_last_name(self):
         """returns a bogus surname."""
         if hasattr(self, 'surname'):
             return self.surname
 
-        self.surname = self.get_random_alphabetical_string(randrange(3, 10))
+        self.surname = names.get_last_name()
         return self.surname
 
     def get_city(self):

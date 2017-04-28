@@ -17,7 +17,7 @@ class BlackhostBuyer(VPSBuyer):
         self.driver.implicitly_wait(5)
         self.driver.find_element_by_css_selector(".bh_btn.bh_green").click()
         self._fill_in_element('firstname', self.generator.get_first_name())
-        self._fill_in_element('lastname', self.generator.get_surname())
+        self._fill_in_element('lastname', self.generator.get_last_name())
         self._fill_in_element('email', self.generator.get_email())
         self._fill_in_element('password', self.generator.get_password())
         self._fill_in_element('password2', self.generator.get_password())

@@ -98,7 +98,7 @@ class YourserverBuyer(VPSBuyer):
         """Fills the form with values."""
         print(self.generator.get_first_name())
         self._fill_in_element('firstname', self.generator.get_first_name())
-        self._fill_in_element('lastname', self.generator.get_surname())
+        self._fill_in_element('lastname', self.generator.get_last_name())
         self._fill_in_element('email', self.email)
 
     def _pay(self):
