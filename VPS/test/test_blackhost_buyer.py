@@ -1,10 +1,11 @@
 import unittest
 
+from BlackhostBuyer import BlackhostBuyer
 from MockBuyer import MockBuyer
 
 
-class TestMockServer(unittest.TestCase):
-    server = MockBuyer()
+class TestBlackhostBuyer(unittest.TestCase):
+    server = BlackhostBuyer()
     server.buy()
 
 
