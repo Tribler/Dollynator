@@ -5,6 +5,9 @@ import string
 
 class Util:
 
+    def __init__(self):
+        pass
+
     def get_phone_num(self):
         """
         returns a 10 sized phone number
