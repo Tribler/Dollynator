@@ -10,7 +10,7 @@ class LocalhostBuyer(VPSBuyer):
         Instantiate a new local server by copying the Vagrantfile to a newly created subdirectory
         and starting the server with vagrant.
         """
-        self.projectdir = '../../'
+        self.projectdir = '../'
         self.basedir = os.path.dirname(self.projectdir + '.machines/')
         self.machineprefix = 'machine'
 
@@ -56,11 +56,27 @@ class LocalServer(object):
         self.machinedir = machinedir
 
         (self.ip,
+         self.user,
          self.port,
-         self.password,
-         self.private_key,
-         check_output(['vagrant', 'up'], cwd=machinedir)
+         self.private_key) = self._parse_output(check_output(['vagrant', 'ssh-config'], cwd=machinedir))
+        print(self.ip)
+        print(self.user)
+        print(self.port)
+        print(self.private_key)
 
+    def _parse_output(self, output):
+        """
+        Parse SSH details
+        :return: ip, port and private key location
+        """
+        lines = output.decode('utf-8').split('\n')
+        details = dict()
+        for line in lines:
+            kv = line.split()
+            if len(kv) > 1:
+                details[kv[0].strip()] = kv[1].strip()
+
+        return (details['HostName'], details['User'], details['Port'], details['IdentityFile'])
 
     def destroy(self):
         """
