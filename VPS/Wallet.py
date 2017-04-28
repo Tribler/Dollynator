@@ -26,7 +26,7 @@ class Wallet(object):
 
         print(pattern.search(output))
 
-        if (pattern.search(output)):
+        if pattern.search(output):
             # if a wallet exists, initialize that one
             print('using already existing wallet')
         else:

@@ -37,11 +37,11 @@ class YourserverBuyer(VPSBuyer):
 
     def place_order(self):
         """Places an order on Yourserver for a new VPS."""
-        self.spawn_browser()
+        self._spawn_browser()
         self.driver.get("https://www.yourserver.se/cart.php?a=confproduct&i=0")
         self.driver.find_element_by_css_selector('.ordernow').click()
         self.driver.implicitly_wait(5)
-        self.choose_select_element("configoption[2]", "Ubuntu 14.04")
+        self._choose_select_element("configoption[2]", "Ubuntu 14.04")
 
         self.driver.find_element_by_css_selector('.checkout').click()
         self.driver.implicitly_wait(10)
@@ -84,7 +84,7 @@ class YourserverBuyer(VPSBuyer):
         self.driver.get(verify_url)
 
         time.sleep(10)
-        self.close_browser()
+        self._close_browser()
         return True
 
     # except Exception as e:
@@ -97,9 +97,9 @@ class YourserverBuyer(VPSBuyer):
     def _fill_in_form(self):
         """Fills the form with values."""
         print(self.generator.get_first_name())
-        self.fill_in_element('firstname', self.generator.get_first_name())
-        self.fill_in_element('lastname', self.generator.get_surname())
-        self.fill_in_element('email', self.email)
+        self._fill_in_element('firstname', self.generator.get_first_name())
+        self._fill_in_element('lastname', self.generator.get_surname())
+        self._fill_in_element('email', self.email)
 
     def _pay(self):
         self.driver.implicitly_wait(5)
@@ -109,7 +109,6 @@ class YourserverBuyer(VPSBuyer):
             ".manual-box__address__wrapper__value").text
         print("amount: " + bitcoin_amount)
         print("to wallet: " + to_wallet)
-        return False
         wallet = Wallet()
         return wallet.payToAutomatically(to_wallet, bitcoin_amount)
 
@@ -121,7 +120,7 @@ class YourserverBuyer(VPSBuyer):
         if ssh_password != '':
             self.SSHPassword = ssh_password
         try:
-            self.spawn_browser()
+            self._spawn_browser()
             self.driver.get("https://www.yourserver.se/portal/clientarea.php")
             self._login()
             self.driver.get("https://www.yourserver.se/portal/clientarea.php?action=emails")
@@ -131,19 +130,19 @@ class YourserverBuyer(VPSBuyer):
             self.driver.get(email_url)
 
             self._extract_information()
-            self.close_browser()
+            self._close_browser()
         except Exception as e:
             print("Could not complete the transaction because an error occurred:")
             print(e)
             # raise # Raise the exception that brought you here
-            self.close_browser()
+            self._close_browser()
             return False
         return True
 
     def _login(self):
         """login on the website of Yourserver."""
-        self.fill_in_element('username', self.email)
-        self.fill_in_element('password', self.password)
+        self._fill_in_element('username', self.email)
+        self._fill_in_element('password', self.password)
         self.driver.find_elements_by_name('rememberme').pop().click()
         self.driver.find_element_by_id('login').click()
 
