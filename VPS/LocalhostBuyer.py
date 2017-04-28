@@ -59,10 +59,6 @@ class LocalServer(object):
          self.user,
          self.port,
          self.private_key) = self._parse_output(check_output(['vagrant', 'ssh-config'], cwd=machinedir))
-        print(self.ip)
-        print(self.user)
-        print(self.port)
-        print(self.private_key)
 
     def _parse_output(self, output):
         """

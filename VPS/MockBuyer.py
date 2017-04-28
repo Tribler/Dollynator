@@ -6,6 +6,6 @@ class MockBuyer(VPSBuyer):
         super(MockBuyer, self).__init__()
 
     def buy(self):
-        self._spawn_browser();
+        self._spawn_browser()
         self.driver.get("https://duckduckgo.com")
         self._close_browser()
