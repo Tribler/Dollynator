@@ -14,7 +14,6 @@ class BlackhostBuyer(VPSBuyer):
         self._fill_in_element('ns2prefix', self.generator.get_first_name())
         self._fill_in_element('rootpw', self.generator.get_password())
         self.driver.find_element_by_css_selector(".bh_btn.bh_red").click()
-        self.driver.implicitly_wait(5)
         self.driver.find_element_by_css_selector(".bh_btn.bh_green").click()
         self._fill_in_element('firstname', self.generator.get_first_name())
         self._fill_in_element('lastname', self.generator.get_last_name())
