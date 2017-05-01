@@ -4,8 +4,11 @@ from TwitterAccountCreator import TwitterAccountCreator
 
 
 class TestTwitterAccountCreator(unittest.TestCase):
-    server = TwitterAccountCreator()
-    server.create()
+    twitter = TwitterAccountCreator()
+    username = 'ginasmythpleb@heijligers.me'
+    password = 'UFrhhuebduH7#'
+    twitter.login(username, password)
+    # twitter.create()
 
 
 if __name__ == '__main__':
