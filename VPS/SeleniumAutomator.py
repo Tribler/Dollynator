@@ -26,21 +26,21 @@ class SeleniumAutomator(object):
         element.click()
         element.send_keys(value)
 
-    def _click_random_select_element(self, field_id):
+    def _click_random_select_element(self, css_selector):
         """
         Chooses one of the elements in a select list randomly, except for the first element.
         """
-        el = self.driver.find_element_by_id(field_id)
+        el = self.driver.find_element_by_css_selector(css_selector)
         options = el.find_elements_by_tag_name('option')
         num = randint(1, len(options) - 1)
         option = options[num]
         option.click()
 
-    def _click_select_element(self, field_id, value):
+    def _click_select_element(self, css_selector, value):
         """
         Chooses one the element in a select list that has value 'value', or return false
         """
-        el = self.driver.find_element_by_id(field_id)
+        el = self.driver.find_element_by_css_selector(css_selector)
         options = el.find_elements_by_tag_name('option')
         for option in options:
             if option.get_attribute('value') == value:
