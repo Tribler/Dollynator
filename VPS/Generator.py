@@ -68,7 +68,7 @@ class Generator:
         """ generates a password, do store it yourself."""
         if hasattr(self, 'password'):
             return self.password
-        self.password = self.get_random_string(randrange(15, 30))
+        self.password = 'U' + self.get_random_alphabetical_string(randrange(10, 20)) + '7#'
         return self.password
 
     @staticmethod
