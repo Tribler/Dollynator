@@ -97,9 +97,9 @@ class YourserverBuyer(VPSBuyer):
     def _fill_in_form(self):
         """Fills the form with values."""
         print(self.generator.get_first_name())
-        self._fill_in_element('firstname', self.generator.get_first_name())
-        self._fill_in_element('lastname', self.generator.get_last_name())
-        self._fill_in_element('email', self.email)
+        self._fill_in_element('[name="firstname"]', self.generator.get_first_name())
+        self._fill_in_element('[name="lastname"]', self.generator.get_last_name())
+        self._fill_in_element('[name="email"]', self.email)
 
     def _pay(self):
         self.driver.implicitly_wait(5)
@@ -141,8 +141,8 @@ class YourserverBuyer(VPSBuyer):
 
     def _login(self):
         """login on the website of Yourserver."""
-        self._fill_in_element('username', self.email)
-        self._fill_in_element('password', self.password)
+        self._fill_in_element('[name="username"]', self.email)
+        self._fill_in_element('[name="password"]', self.password)
         self.driver.find_elements_by_name('rememberme').pop().click()
         self.driver.find_element_by_id('login').click()
 
