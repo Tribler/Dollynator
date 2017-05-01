@@ -48,11 +48,11 @@ class SeleniumAutomator(object):
                 return True
         return False
 
-    def _choose_select_element(self, field_name, field_text):
+    def _choose_select_element(self, css_selector, field_text):
         """
         Chooses one of the elements in a select list, by its visible text
         """
-        select = Select(self.driver.find_element_by_name(field_name))
+        select = Select(self.driver.find_element_by_css_selector(css_selector))
         # select.deselect_all()
         select.select_by_visible_text(field_text)
 
