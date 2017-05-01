@@ -17,17 +17,14 @@ class SeleniumAutomator(object):
         #     command_executor='http://127.0.0.1:4444/wd/hub',
         #     desired_capabilities=DesiredCapabilities.FIREFOX)
 
-    def _fill_in_element(self, fieldname, value):
+    def _fill_in_element(self, css_selector, value):
         """
         Automatically fills ina form element by executing a piece of javascript that sets the value attribute of the 
         form element
         """
-        # driver.find_element_by_css_selector("input[name='" + fieldname + "']").send_keys(value)
-
-        # ^ send_keys has some issues, using javascript to set an attribute instead:
-        self.driver.find_element_by_name(fieldname)  # Selenium waits until this element exists
-        self.driver.execute_script(
-            'document.getElementsByName(arguments[0])[0].setAttribute("value", arguments[1])', fieldname, value)
+        element = self.driver.find_element_by_css_selector(css_selector)
+        element.click()
+        element.send_keys(value)
 
     def _click_random_select_element(self, field_id):
         """
