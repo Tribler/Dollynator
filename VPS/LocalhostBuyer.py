@@ -184,7 +184,7 @@ if __name__ == '__main__':
 
     # Normally run tests here
     # So it does not start deleting before finished starting
-    time.sleep(60)
+    time.sleep(120)
 
     # remove all instances made by the hoster after done testing
     provider.destroy_all()
