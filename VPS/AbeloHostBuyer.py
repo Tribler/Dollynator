@@ -31,7 +31,7 @@ class AbeloHostBuyer(VPSBuyer):
         self._click_random_select_element("#stateselect")
         self._fill_in_element("#postcode", self.generator.get_zipcode())
         self._click_random_select_element("#country")
-        self._fill_in_element("#phonenumber", self.generator.get_random_numerical_string(10))
+        self._fill_in_element("#phonenumber", self.generator.get_phone_num())
         self._fill_in_element("#securityqans", self.generator.get_random_alphabetical_string(10))
         self.driver.find_element_by_css_selector("div.signupfields.padded > label:nth-of-type(4)").click()
         self.driver.find_element_by_css_selector("#mainfrm > div:nth-of-type(11) > label.checkbox-inline").click()
