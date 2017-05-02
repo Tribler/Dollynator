@@ -109,7 +109,7 @@ class AsyncRequestHandler(Thread):
         with open(self.localserver.private_key, 'r') as f:
             private_key = f.read()
 
-        self.client.sendall('{0}\n{1}\n{2}\n{3}'.format(self.localserver.ip, self.localserver.user, self.localserver.port, private_key))
+        self.client.sendall('{0}\n{1}\n{2}\n{3}'.format(self.localserver.ip, self.localserver.user, self.localserver.port, private_key).encode())
         self.client.close()
 
 
@@ -147,7 +147,7 @@ class LocalServer(object):
             if len(kv) > 1:
                 details[kv[0].strip()] = kv[1].strip()
 
-        return (details['HostName'], details['User'], details['Port'], details['IdentityFile'][1:-1])
+        return (details['HostName'], details['User'], details['Port'], details['IdentityFile'].replace('"',''))
 
     def start(self):
         '''
