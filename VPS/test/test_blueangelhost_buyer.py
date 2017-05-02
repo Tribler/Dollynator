@@ -1,7 +1,6 @@
 import unittest
 
 from BlueAngelHostBuyer import BlueAngelHostBuyer
-from MockBuyer import MockBuyer
 
 
 class TestBlueAngelHostBuyer(unittest.TestCase):
