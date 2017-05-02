@@ -8,7 +8,6 @@ from Generator import Generator
 
 class SeleniumAutomator(object):
     def __init__(self):
-        self.driver = None
         self.generator = Generator()
 
     def spawn_browser(self):
