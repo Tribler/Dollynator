@@ -5,7 +5,7 @@ from AbeloHostBuyer import AbeloHostBuyer
 
 class TestAbeloHostBuyer(unittest.TestCase):
     server = AbeloHostBuyer()
-    server.buy()
+    server.register()
 
 
 if __name__ == '__main__':

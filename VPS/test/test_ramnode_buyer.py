@@ -5,7 +5,7 @@ from RamNodeBuyer import RamNodeBuyer
 
 class TestRamNodeBuyer(unittest.TestCase):
     server = RamNodeBuyer()
-    server.buy()
+    server.register()
 
 
 if __name__ == '__main__':

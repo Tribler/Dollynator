@@ -5,7 +5,7 @@ class HideMyHostBuyer(VPSBuyer):
     def __init__(self):
         super(HideMyHostBuyer, self).__init__()
 
-    def buy(self):
+    def register(self):
         self.spawn_browser()
         self.driver.get("http://www.hidemyhost.com/vps-hosting.php")
         self.driver.find_element_by_css_selector(

@@ -5,7 +5,7 @@ from HideMyHostBuyer import HideMyHostBuyer
 
 class TestHideMyHostBuyer(unittest.TestCase):
     server = HideMyHostBuyer()
-    server.buy()
+    server.register()
 
 
 if __name__ == '__main__':

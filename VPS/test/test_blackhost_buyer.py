@@ -5,7 +5,7 @@ from BlackhostBuyer import BlackhostBuyer
 
 class TestBlackhostBuyer(unittest.TestCase):
     server = BlackhostBuyer()
-    server.buy()
+    server.register()
 
 
 if __name__ == '__main__':

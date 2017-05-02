@@ -32,7 +32,7 @@ class VPSBuyer(SeleniumAutomator):
             self.SSHPassword = self.generator.get_random_alphabetical_string(32)
         self.IP = ""
 
-    def buy(self):
+    def register(self):
         raise NotImplementedError
 
     def get_ssh_username(self):

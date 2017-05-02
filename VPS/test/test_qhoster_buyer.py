@@ -5,7 +5,7 @@ from QHosterBuyer import QHosterBuyer
 
 class TestQHosterBuyer(unittest.TestCase):
     server = QHosterBuyer()
-    server.buy()
+    server.register()
 
 
 if __name__ == '__main__':

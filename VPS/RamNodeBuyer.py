@@ -6,7 +6,7 @@ class RamNodeBuyer(VPSBuyer):
     def __init__(self):
         super(RamNodeBuyer, self).__init__()
 
-    def buy(self):
+    def register(self):
         self.spawn_browser()
         self.driver.get("https://ramnode.com/vps.php")
         self.driver.find_element_by_css_selector('#vzdiv > table:nth-of-type(1) > tbody > tr:nth-of-type(1) > td:nth-of-type(9) > a:nth-of-type(5)').click()

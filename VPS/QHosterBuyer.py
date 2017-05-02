@@ -6,7 +6,7 @@ class QHosterBuyer(VPSBuyer):
     def __init__(self):
         super(QHosterBuyer, self).__init__()
 
-    def buy(self):
+    def register(self):
         self.spawn_browser()
         self.driver.get("https://www.qhoster.com/linux-vps.html")
         self.driver.find_element_by_css_selector('section.subplanbox > div:nth-of-type(1) > aside:nth-of-type(1) > div.orangebtn > a').click()

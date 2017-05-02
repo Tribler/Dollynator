@@ -5,7 +5,7 @@ from MockBuyer import MockBuyer
 
 class TestMockBuyer(unittest.TestCase):
     server = MockBuyer()
-    server.buy()
+    server.register()
 
 
 if __name__ == '__main__':

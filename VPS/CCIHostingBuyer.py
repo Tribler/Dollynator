@@ -6,7 +6,7 @@ class CCIHostingBuyer(VPSBuyer):
     def __init__(self):
         super(CCIHostingBuyer, self).__init__()
 
-    def buy(self):
+    def register(self):
         self.spawn_browser()
         self.driver.get("http://www.ccihosting.com/vps.php")
         self.driver.find_element_by_css_selector('#main > div:nth-of-type(3) > div:nth-of-type(1) > div:nth-of-type(3) > a.redbuttonfull').click()

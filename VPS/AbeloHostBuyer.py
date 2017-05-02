@@ -7,7 +7,7 @@ class AbeloHostBuyer(VPSBuyer):
     def __init__(self):
         super(AbeloHostBuyer, self).__init__()
 
-    def buy(self):
+    def register(self):
         self.spawn_browser()
         self.driver.get("https://abelohost.com/offshore-vps/")
         self.driver.find_element_by_css_selector("#cookie_action_close_header").click()

@@ -5,7 +5,7 @@ from BlueAngelHostBuyer import BlueAngelHostBuyer
 
 class TestBlueAngelHostBuyer(unittest.TestCase):
     server = BlueAngelHostBuyer()
-    server.buy()
+    server.register()
 
 
 if __name__ == '__main__':

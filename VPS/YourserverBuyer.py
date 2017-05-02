@@ -23,7 +23,7 @@ class YourserverBuyer(VPSBuyer):
         super(YourserverBuyer, self).__init__(email, password, "root",
                                               Generator().get_random_numerical_string(30))
 
-    def buy(self):
+    def register(self):
         """
         Walks through the entire process of buying a VPS from Yourserver.
         Returns True if it succeeded, returns False otherwise.

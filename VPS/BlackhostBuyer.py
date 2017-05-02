@@ -5,7 +5,7 @@ class BlackhostBuyer(VPSBuyer):
     def __init__(self):
         super(BlackhostBuyer, self).__init__()
 
-    def buy(self):
+    def register(self):
         self.spawn_browser()
         self.driver.get("https://black.host/unmetered-vps-hosting")
         self.driver.find_element_by_css_selector(".servers ul.red li .info .noline a").click()

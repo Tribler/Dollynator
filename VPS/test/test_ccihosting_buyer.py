@@ -5,7 +5,7 @@ from CCIHostingBuyer import CCIHostingBuyer
 
 class TestCCIHostingBuyer(unittest.TestCase):
     server = CCIHostingBuyer()
-    server.buy()
+    server.register()
 
 
 if __name__ == '__main__':

@@ -6,7 +6,7 @@ class BlueAngelHostBuyer(VPSBuyer):
     def __init__(self):
         super(BlueAngelHostBuyer, self).__init__()
 
-    def buy(self):
+    def register(self):
         self.spawn_browser()
         self.driver.get("https://www.blueangelhost.com/kvm-vps/")
         self.driver.find_element_by_css_selector('#annual_price > div:nth-of-type(1) > div.plan_table > a.btn').click()

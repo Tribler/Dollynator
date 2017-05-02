@@ -5,7 +5,7 @@ class CrowncloudBuyer(VPSBuyer):
     def __init__(self):
         super(CrowncloudBuyer, self).__init__()
 
-    def buy(self):
+    def register(self):
         self.spawn_browser()
         self.driver.get("https://crowncloud.net/")
         self.driver.find_element_by_css_selector("#navbar > ul:nth-of-type(1) > li:nth-of-type(2) > a").click()
