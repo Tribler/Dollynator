@@ -1,7 +1,6 @@
 import unittest
 
 from BlackhostBuyer import BlackhostBuyer
-from MockBuyer import MockBuyer
 
 
 class TestBlackhostBuyer(unittest.TestCase):

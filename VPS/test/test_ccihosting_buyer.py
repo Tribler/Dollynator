@@ -1,7 +1,6 @@
 import unittest
 
 from CCIHostingBuyer import CCIHostingBuyer
-from MockBuyer import MockBuyer
 
 
 class TestCCIHostingBuyer(unittest.TestCase):

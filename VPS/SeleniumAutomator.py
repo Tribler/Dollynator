@@ -1,4 +1,5 @@
 from random import randint
+
 from selenium import webdriver
 from selenium.webdriver.support.select import Select
 
@@ -7,17 +8,13 @@ from Generator import Generator
 
 class SeleniumAutomator(object):
     def __init__(self):
-        pass
         self.generator = Generator()
 
-    def _spawn_browser(self):
-        """Spawns the browser to use when internetting."""
+    def spawn_browser(self):
+        """Spawns the browser"""
         self.driver = webdriver.Chrome()
-        # self.driver = webdriver.Remote(
-        #     command_executor='http://127.0.0.1:4444/wd/hub',
-        #     desired_capabilities=DesiredCapabilities.FIREFOX)
 
-    def _fill_in_element(self, css_selector, value):
+    def fill_in_element(self, css_selector, value):
         """
         Automatically fills ina form element by executing a piece of javascript that sets the value attribute of the 
         form element
@@ -26,7 +23,7 @@ class SeleniumAutomator(object):
         element.click()
         element.send_keys(value)
 
-    def _click_random_select_element(self, css_selector):
+    def click_random_select_element(self, css_selector):
         """
         Chooses one of the elements in a select list randomly, except for the first element.
         """
@@ -36,7 +33,7 @@ class SeleniumAutomator(object):
         option = options[num]
         option.click()
 
-    def _click_select_element(self, css_selector, value):
+    def click_select_element(self, css_selector, value):
         """
         Chooses one the element in a select list that has value 'value', or return false
         """
@@ -48,7 +45,7 @@ class SeleniumAutomator(object):
                 return True
         return False
 
-    def _choose_select_element(self, css_selector, field_text):
+    def choose_select_element(self, css_selector, field_text):
         """
         Chooses one of the elements in a select list, by its visible text
         """
@@ -56,6 +53,6 @@ class SeleniumAutomator(object):
         # select.deselect_all()
         select.select_by_visible_text(field_text)
 
-    def _close_browser(self):
+    def close_browser(self):
         """Closes the current browser instance of Selenium."""
         self.driver.quit()

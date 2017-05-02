@@ -9,22 +9,22 @@ class TwitterAccountCreator(SeleniumAutomator):
 
     def login(self, username, password):
         print("Logging in as " + username + ":" + password);
-        self._spawn_browser()
+        self.spawn_browser()
         self.driver.get("https://twitter.com/")
-        self._fill_in_element('#signin-email', username)
-        self._fill_in_element('#signin-password', password)
+        self.fill_in_element('#signin-email', username)
+        self.fill_in_element('#signin-password', password)
         self.driver.find_element_by_css_selector("button.submit.btn.primary-btn.flex-table-btn.js-submit").click()
 
     def create(self):
-        self._spawn_browser()
+        self.spawn_browser()
         self.driver.get("https://twitter.com/")
         time.sleep(1)
-        self._fill_in_element('[name="user[name]"]', self.generator.get_first_name() + " " + self.generator.get_last_name())
+        self.fill_in_element('[name="user[name]"]', self.generator.get_first_name() + " " + self.generator.get_last_name())
         time.sleep(1)
-        self._fill_in_element('[name="user[email]"]',
-                              self.generator.get_first_name() + self.generator.get_last_name() + "Pleb@heijligers.me")
+        self.fill_in_element('[name="user[email]"]',
+                             self.generator.get_first_name() + self.generator.get_last_name() + "Pleb@heijligers.me")
         time.sleep(1)
-        self._fill_in_element('[name="user[user_password]"]', self.generator.get_password())
+        self.fill_in_element('[name="user[user_password]"]', self.generator.get_password())
         time.sleep(1)
         print(self.generator.get_first_name(), self.generator.get_last_name(), self.generator.get_password())
         self.driver.find_element_by_css_selector(".btn.signup-btn.u-floatRight").click()
