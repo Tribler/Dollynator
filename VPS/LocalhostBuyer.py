@@ -6,16 +6,6 @@ import socket
 from threading import Thread
 import time
 
-"""
-
-Split into two functional parts:
-1. VPSHOST (localmachine) that returns VM info upon request on port 80 and starts a vm
-2. LocalhostBuyer that requests the VMinfo by get request on port 80 and does something with that info.
-
-Code below currently is part of 2, but should be moved to 1.
-
-"""
-
 class LocalHoster(object):
 
     def __init__(self, port = 80, maxservers = 1):
@@ -109,7 +99,7 @@ class AsyncRequestHandler(Thread):
         with open(self.localserver.private_key, 'r') as f:
             private_key = f.read()
 
-        self.client.sendall('{0}\n{1}\n{2}\n{3}'.format(self.localserver.ip, self.localserver.user, self.localserver.port, private_key))
+        self.client.sendall('{0}\n{1}\n{2}\n{3}'.format(self.localserver.ip, self.localserver.user, self.localserver.port, private_key).encode())
         self.client.close()
 
 
@@ -147,7 +137,7 @@ class LocalServer(object):
             if len(kv) > 1:
                 details[kv[0].strip()] = kv[1].strip()
 
-        return (details['HostName'], details['User'], details['Port'], details['IdentityFile'][1:-1])
+        return (details['HostName'], details['User'], details['Port'], details['IdentityFile'].replace('"',''))
 
     def start(self):
         '''
