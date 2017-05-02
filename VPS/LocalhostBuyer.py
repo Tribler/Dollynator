@@ -2,13 +2,25 @@ from VPSBuyer import VPSBuyer
 import os
 import shutil
 from subprocess import call, check_output
+import socket
+from threading import Thread
+import time
 
-class LocalhostBuyer(VPSBuyer):
+"""
 
-    def __init__(self):
+Split into two functional parts:
+1. VPSHOST (localmachine) that returns VM info upon request on port 80 and starts a vm
+2. LocalhostBuyer that requests the VMinfo by get request on port 80 and does something with that info.
+
+Code below currently is part of 2, but should be moved to 1.
+
+"""
+
+class LocalHoster(object):
+
+    def __init__(self, port = 80, maxservers = 1):
         """
-        Instantiate a new local server by copying the Vagrantfile to a newly created subdirectory
-        and starting the server with vagrant.
+        LocalHoster is a hosting provider for localhost servers.
         """
         self.projectdir = '../'
         self.basedir = os.path.dirname(self.projectdir + '.machines/')
@@ -20,7 +32,15 @@ class LocalhostBuyer(VPSBuyer):
 
         self.counter = 0
 
-    def place_order(self):
+        self.servers = []
+        self.port = port
+
+        self.stopped = False
+
+        self.maxservers = maxservers
+
+
+    def create_server(self):
         """
         Create a localserver directory and start the server. 
         :return: Server object containing details for access
@@ -39,10 +59,65 @@ class LocalhostBuyer(VPSBuyer):
         # Copy vagrantfile
         shutil.copy(self.projectdir + 'Vagrantfile', machinedir)
 
-        # Start server
-        returncode = call(['vagrant', 'up'], cwd=machinedir)
+        server = LocalServer(machinedir)
+        self.servers.append(server)
 
-        return LocalServer(machinedir)
+        return server
+
+    def destroy_all(self):
+        '''
+        Destroy all created servers.
+        '''
+        for server in self.servers:
+            server.destroy()
+
+    class LocalHosterHandler:
+        def handle(self):
+            pass
+
+    def start(self):
+        '''
+        Start the localhosting provider, keep making hosts until maxservers is reached
+        '''
+        # make socket
+        serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        serversocket.bind(('127.0.0.1', self.port))
+        serversocket.listen(5)
+
+        # listen to socket and return new socket if request is made.
+        while len(self.servers) < self.maxservers:
+            # accept connection
+            (client, address) = serversocket.accept()
+
+            localserver = self.create_server()
+
+            # asynchroniously start server and reply to request
+            handler = AsyncRequestHandler(client, localserver)
+            handler.start()
+
+        serversocket.close()
+
+class AsyncRequestHandler(Thread):
+    def __init__(self, client, localserver):
+        self.client = client
+        self.localserver = localserver
+        super(AsyncRequestHandler, self).__init__()
+
+    def run(self):
+        self.localserver.start()
+
+        with open(self.localserver.private_key, 'r') as f:
+            private_key = f.read()
+
+        self.client.sendall('{0}\n{1}\n{2}\n{3}'.format(self.localserver.ip, self.localserver.user, self.localserver.port, private_key))
+        self.client.close()
+
+
+class LocalhostBuyer(VPSBuyer):
+    def place_order(self):
+        # request server from localhoster
+        pass
+
 
 class LocalServer(object):
     """
@@ -58,7 +133,7 @@ class LocalServer(object):
         (self.ip,
          self.user,
          self.port,
-         self.private_key) = self._parse_output(check_output(['vagrant', 'ssh-config'], cwd=machinedir))
+         self.private_key) = (None, None, None, None)
 
     def _parse_output(self, output):
         """
@@ -72,7 +147,17 @@ class LocalServer(object):
             if len(kv) > 1:
                 details[kv[0].strip()] = kv[1].strip()
 
-        return (details['HostName'], details['User'], details['Port'], details['IdentityFile'])
+        return (details['HostName'], details['User'], details['Port'], details['IdentityFile'][1:-1])
+
+    def start(self):
+        '''
+        Start server
+        '''
+        returncode = call(['vagrant', 'up'], cwd=self.machinedir)
+        (self.ip,
+         self.user,
+         self.port,
+         self.private_key) = self._parse_output(check_output(['vagrant', 'ssh-config'], cwd=self.machinedir))
 
     def destroy(self):
         """
@@ -89,8 +174,23 @@ class LocalServer(object):
         shutil.rmtree(self.machinedir)
 
 if __name__ == '__main__':
-    provider = LocalhostBuyer()
-    server = provider.place_order()
+    # Example for running localhostingprovider
 
-    server.destroy()
+    # Make a localhoster
+    provider = LocalHoster(port=6140, maxservers=1)
+
+    # Start hoster, it will run until all maxservers var is reached
+    provider.start()
+
+    # Normally run tests here
+    # So it does not start deleting before finished starting
+    time.sleep(60)
+
+    # remove all instances made by the hoster after done testing
+    provider.destroy_all()
+
+
+
+
+
 
