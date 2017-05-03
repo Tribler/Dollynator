@@ -1,0 +1,6 @@
+[submodule "dispersy"]
+	path = dispersy
+	url = https://github.com/tribler/dispersy
+[submodule "Tribler"]
+	path = Tribler
+	url = https://github.com/Tribler/tribler.git
