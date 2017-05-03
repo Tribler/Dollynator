@@ -6,11 +6,41 @@ import socket
 from threading import Thread
 import time
 
-class LocalHoster(object):
+IP = '127.0.0.1'
+PORT = 6140
 
-    def __init__(self, port = 80, maxservers = 1):
+class LocalhostBuyer(VPSBuyer):
+    def register(self):
+        return True
+
+    def place_order(self):
+        # request server from localhoster
+        connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        connection.connect((IP, PORT))
+
+        details = connection.receive().decode('utf-8').split('\n')
+        ip = details[0]
+        user = details[1]
+        port = details[2]
+        private_key = '\n'.join(details[3:])
+
+        print(ip)
+        print(user)
+        print(port)
+        print(private_key)
+
+        connection.close()
+
+
+class LocalHoster(object):
+    '''
+    LocalHoster opens a socket and provides fresh VM details to a maximum of maxservers.
+    '''
+
+    def __init__(self, port = PORT, maxservers = 1, provider = 'virtualbox'):
         """
-        LocalHoster is a hosting provider for localhost servers.
+        Initialize a LocalHoster object. Port refers the the port it accepts connections on
+        and maxservers is the maximum number of virtual machines it is allowed to start.
         """
         self.projectdir = '../'
         self.basedir = os.path.dirname(self.projectdir + '.machines/')
@@ -28,11 +58,12 @@ class LocalHoster(object):
         self.stopped = False
 
         self.maxservers = maxservers
+        self.provider = provider
 
 
     def create_server(self):
         """
-        Create a localserver directory and start the server. 
+        Create a localserver directory and return the server object. 
         :return: Server object containing details for access
         """
         self.counter = self.counter + 1
@@ -43,11 +74,14 @@ class LocalHoster(object):
         if not os.path.exists(machinedir):
             os.mkdir(machinedir)
         else:
-            print('ERROR: localserver should be automatically shut down and remove. If directory still exists, check code or if error occured in vm.')
+            print('ERROR: localserver should be automatically shut down and removed. If directory still exists, check code or if error occured in vm.')
             raise Exception('Localserver directory was not deleted.')
 
         # Copy vagrantfile
-        shutil.copy(self.projectdir + 'Vagrantfile', machinedir)
+        if self.provider == 'virtualbox':
+            shutil.copy(self.projectdir + 'Vagrantfile', machinedir)
+        elif self.provider == 'docker':
+            shutil.copy(self.projectdir + 'Vagrantfile_docker', machinedir + '/Vagrantfile')
 
         server = LocalServer(machinedir)
         self.servers.append(server)
@@ -61,39 +95,43 @@ class LocalHoster(object):
         for server in self.servers:
             server.destroy()
 
-    class LocalHosterHandler:
-        def handle(self):
-            pass
-
     def start(self):
         '''
         Start the localhosting provider, keep making hosts until maxservers is reached
         '''
         # make socket
         serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        serversocket.bind(('127.0.0.1', self.port))
+        serversocket.bind((IP, self.port))
         serversocket.listen(5)
+        try:
+            # listen to socket and return new socket if request is made.
+            while len(self.servers) < self.maxservers:
+                # accept connection
+                (client, address) = serversocket.accept()
 
-        # listen to socket and return new socket if request is made.
-        while len(self.servers) < self.maxservers:
-            # accept connection
-            (client, address) = serversocket.accept()
+                localserver = self.create_server()
 
-            localserver = self.create_server()
-
-            # asynchroniously start server and reply to request
-            handler = AsyncRequestHandler(client, localserver)
-            handler.start()
-
-        serversocket.close()
+                # asynchroniously start server and reply to request
+                handler = AsyncRequestHandler(client, localserver)
+                handler.start()
+        except:
+            pass
+        finally:
+            serversocket.close()
 
 class AsyncRequestHandler(Thread):
+    '''
+    Handle server start request asynchronously, since it takes some time to start a new VM.
+    '''
     def __init__(self, client, localserver):
         self.client = client
         self.localserver = localserver
         super(AsyncRequestHandler, self).__init__()
 
     def run(self):
+        '''
+        Start the server, pass details to connected client and close connection.
+        '''
         self.localserver.start()
 
         with open(self.localserver.private_key, 'r') as f:
@@ -103,15 +141,9 @@ class AsyncRequestHandler(Thread):
         self.client.close()
 
 
-class LocalhostBuyer(VPSBuyer):
-    def place_order(self):
-        # request server from localhoster
-        pass
-
-
 class LocalServer(object):
     """
-    Localserver contains the details to access and destroy a localserver with vagrant.
+    Localserver contains the details to access, start and destroy a localserver with vagrant.
     """
     def __init__(self, machinedir):
         """
@@ -141,7 +173,7 @@ class LocalServer(object):
 
     def start(self):
         '''
-        Start server
+        Start server and save access details.
         '''
         returncode = call(['vagrant', 'up'], cwd=self.machinedir)
         (self.ip,
@@ -167,7 +199,7 @@ if __name__ == '__main__':
     # Example for running localhostingprovider
 
     # Make a localhoster
-    provider = LocalHoster(port=6140, maxservers=1)
+    provider = LocalHoster(maxservers=1, provider='virtualbox')
 
     # Start hoster, it will run until all maxservers var is reached
     provider.start()
