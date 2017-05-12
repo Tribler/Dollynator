@@ -3,6 +3,8 @@ MAINTAINER plebnet
 
 WORKDIR /root/tribler
 
+# Open up RESTapi port to localhost of host system in which the container runs.
 RUN sed -ie 's/"127.0.0.1"/"0.0.0.0"/g' /root/tribler/Tribler/Core/Modules/restapi/rest_manager.py
 
-CMD twistd -n tribler -p 8085
+# Run tribler with plebnet settings on startup
+CMD twistd -n plebnet -p 8085

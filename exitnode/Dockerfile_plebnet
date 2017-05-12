@@ -59,6 +59,8 @@ RUN git clone https://github.com/rjwvandenberg/plebnet
 
 ENV TRIBLER_HOME="/root/tribler"
 
+COPY plebnet_plugin.py /root/tribler/twisted/plugins/
+
 # Copy config and set market_community to true if using it.
 
 CMD /bin/bash
