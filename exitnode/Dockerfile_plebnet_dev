@@ -1,0 +1,8 @@
+FROM plebnet/plebnet
+MAINTAINER plebnet
+
+WORKDIR /root/tribler
+
+RUN sed -ie 's/"127.0.0.1"/"0.0.0.0"/g' /root/tribler/Tribler/Core/Modules/restapi/rest_manager.py
+
+CMD twistd -n tribler -p 8085
