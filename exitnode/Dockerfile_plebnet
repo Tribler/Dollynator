@@ -33,7 +33,11 @@ RUN apt update && apt install -y \
 	python-protobuf \
 	python-socks \
 	python-dnspython \
-	python-jsonrpclib
+	python-jsonrpclib \
+	python-keyrings.alt \
+# Market community reputation dependencies
+	python-networkx \
+	python-scipy
 	
 ADD https://pypi.python.org/packages/63/31/6768a72cdca5dbd299ae798b690801e6c9c2f018332eec3c5fca79370dba/pyaes-1.6.0.tar.gz .
 RUN tar -xvzf pyaes-1.6.0.tar.gz

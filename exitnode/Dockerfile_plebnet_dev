@@ -8,3 +8,4 @@ RUN sed -ie 's/"127.0.0.1"/"0.0.0.0"/g' /root/tribler/Tribler/Core/Modules/resta
 
 # Run tribler with plebnet settings on startup
 CMD twistd -n plebnet -p 8085
+#CMD /bin/bash
