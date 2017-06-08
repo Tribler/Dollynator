@@ -3,10 +3,7 @@ MAINTAINER plebnet
 
 WORKDIR /root
 
-# This dockerfile combines all components needed to run plebnet.
-# in its best practices https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/#minimize-the-number-of-layers
-# it is noted that one should have containers with one concern. 
-# Maybe split these concerns later.
+# This dockerfile starts tribler including market for use by plebnet
 
 RUN apt update && apt install -y \
 # General dependencies
@@ -57,14 +54,14 @@ RUN git submodule update --init --recursive dispersy
 
 WORKDIR /root/
 
-RUN git clone https://github.com/jaapp-/cloudomate
+#RUN git clone https://github.com/jaapp-/cloudomate
 
-RUN git clone https://github.com/rjwvandenberg/plebnet
+#RUN git clone https://github.com/rjwvandenberg/plebnet
 
 ENV TRIBLER_HOME="/root/tribler"
 
-COPY plebnet_plugin.py /root/tribler/twisted/plugins/
+COPY twistd_plugin/plebnet_plugin.py /root/tribler/twisted/plugins/
 
 # Copy config and set market_community to true if using it.
 
-CMD /bin/bash
+CMD twistd -n plebnet
