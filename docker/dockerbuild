@@ -1,1 +1,2 @@
-docker build -t plebnet/$1 -f $1/Dockerfile .
+cd $1
+docker build -t plebnet/$1 -f Dockerfile .

@@ -36,8 +36,9 @@ class Options(usage.Options):
         ["libtorrent", "l", -1, "Use an alternate port for libtorrent", int],
     ]
     optFlags = [
-        ["auto-join-channel", "a", "Automatically join a channel when discovered"],
-        ["log-incoming-searches", "i", "Write information about incoming remote searches to a file"]
+        ["exitnode", "e", "Setup tribler as exitnode"],
+        ["testnet", "t", "Use bitcoin testnet"],
+        ["dummy", "f", "Use dummy wallets"],
     ]
 
 
@@ -54,11 +55,6 @@ class TriblerServiceMaker(object):
         self.session = None
         self._stopping = False
         self.process_checker = None
-
-    def log_incoming_remote_search(self, sock_addr, keywords):
-        d = date.today()
-        with open(os.path.join(self.session.get_state_dir(), 'incoming-searches-%s' % d.isoformat()), 'a') as log_file:
-            log_file.write("%s %s %s %s" % (time.time(), sock_addr[0], sock_addr[1], ";".join(keywords)))
 
     def shutdown_process(self, shutdown_message, code=1):
         msg(shutdown_message)
@@ -87,6 +83,51 @@ class TriblerServiceMaker(object):
 
         # Enable market_community
         config.set_market_community_enabled(True)
+
+        # Enable exitnode if set in options
+        if "exitnode" in options and options["exitnode"]:
+            msg("Enabling exitnode")
+            config.set_tunnel_community_exitnode_enabled(True)
+        else:
+            config.set_tunnel_community_exitnode_enabled(False)
+
+        # Enable bitcoin testnet
+        if "testnet" in options and options["testnet"]:
+            msg("Enabling bitcoin testnet")
+            config.set_btc_testnet(True)
+
+        # Enable dummy wallets
+        if "dummy" in options and options["dummy"]:
+            msg("Enabling dummy wallets")
+            config.set_enable_dummy_wallets(True)
+
+        # Minimize functionality enabled for plebnet
+        # For now, config taken from market_plugin in devos tribler repo
+        config.set_http_api_enabled(True)
+        config.set_enable_multichain(True)
+        config.set_dispersy(True)
+        config.set_megacache(True)  #required by dispersy
+        config.set_mainline_dht(True)
+
+        # Set false in devos tribler repo
+        config.set_torrent_checking(False)
+        config.set_multicast_local_peer_discovery(False)
+        config.set_torrent_collecting(False)
+        config.set_dht_torrent_collecting(False)
+        config.set_videoserver_enabled(False)
+        config.set_enable_torrent_search(False)
+        config.set_enable_channel_search(False)
+
+        # Other options that may be set
+        #config.set_libtorrent()
+        #config.set_torrent_store()
+        #config.set_nickname("PlebNet")
+        #config.set_mugshot("binary image/jpeg")
+        #config.set_channel_community_enabled()
+        #config.set_preview_channel_community_enabled()
+        config.set_upgrader_enabled(False)
+        config.set_watch_folder_enabled(False)
+        #config.set_creditmining_enable()
 
         # Check if we are already running a Tribler instance
         self.process_checker = ProcessChecker()
@@ -118,12 +159,6 @@ class TriblerServiceMaker(object):
             for community in self.session.get_dispersy_instance().get_communities():
                 if isinstance(community, AllChannelCommunity):
                     community.auto_join_channel = True
-
-        if "log-incoming-searches" in options and options["log-incoming-searches"]:
-            msg("Logging incoming remote searches")
-            for community in self.session.get_dispersy_instance().get_communities():
-                if isinstance(community, SearchCommunity):
-                    community.log_incoming_searches = self.log_incoming_remote_search
 
     def makeService(self, options):
         """
