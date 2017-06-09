@@ -22,7 +22,6 @@ class Generator:
     def get_email(self):
         """
         returns a random email adress.
-
         This email adress is bogus and cannot be accessed.
         """
         if hasattr(self, 'email'):
