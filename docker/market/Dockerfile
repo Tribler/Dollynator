@@ -49,19 +49,13 @@ WORKDIR tribler
 RUN git checkout market_community
 RUN git submodule update --init --recursive electrum
 
+# Download dispersy
 WORKDIR Tribler
 RUN git submodule update --init --recursive dispersy
 
-WORKDIR /root/
-
-#RUN git clone https://github.com/jaapp-/cloudomate
-
-#RUN git clone https://github.com/rjwvandenberg/plebnet
-
-ENV TRIBLER_HOME="/root/tribler"
-
+# Copy plebnet twisted plugin for tribler market
 COPY twistd_plugin/plebnet_plugin.py /root/tribler/twisted/plugins/
 
-# Copy config and set market_community to true if using it.
-
+# Start tribler
+WORKDIR /root/tribler
 CMD twistd -n plebnet
