@@ -1,4 +1,4 @@
-FROM plebnet/plebnet
+FROM plebnet/tribler_market
 MAINTAINER plebnet
 
 WORKDIR /root/tribler

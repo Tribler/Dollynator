@@ -53,9 +53,14 @@ RUN git submodule update --init --recursive electrum
 WORKDIR Tribler
 RUN git submodule update --init --recursive dispersy
 
+# Open up RESTapi port to host system
+WORKDIR /root/tribler
+RUN sed -ie 's/"127.0.0.1"/"0.0.0.0"/g' /root/tribler/Tribler/Core/Modules/restapi/rest_manager.py
+
 # Copy plebnet twisted plugin for tribler market
 COPY twistd_plugin/plebnet_plugin.py /root/tribler/twisted/plugins/
 
-# Start tribler
+# Start tribler at port 8085
+# DO NOT bind this port to anything else than the host machine
 WORKDIR /root/tribler
-CMD twistd -n plebnet
+CMD twistd -n plebnet -p 8085
