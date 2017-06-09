@@ -1,0 +1,2 @@
+cd $1
+docker build -t plebnet/$1 -f Dockerfile .
