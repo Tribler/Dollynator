@@ -1,3 +1,4 @@
+requests
 names
 tempmail
 Selenium==3.3.3
