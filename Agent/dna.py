@@ -4,80 +4,10 @@ import random
 class DNA:
     rate = 0.005
     length = 0.0
+    dictionary = {}
 
     def __init__(self):
         pass
-
-    @staticmethod
-    def create_test_dict():
-        dict = {'blueangelhost': 0.5, 'ccihosting': 0.5, 'crowncloud': 0.5, 'legionbox': 0.5, 'linevast': 0.5,
-                'pulseserver': 0.5, 'rockhoster': 0.5, 'undergroundprivate': 0.5}
-        return dict
-
-    @staticmethod
-    def normalize(normdict):
-        length = 0.0
-        for item in normdict:
-            length += normdict[item]
-        for item in normdict:
-            normdict[item] /= length
-        return normdict, length
-
-    def mutate(self, provider, mutdict):
-        mutdict[provider] += self.rate
-        return mutdict
-
-    def demutate(self, provider, demutdict):
-        demutdict[provider] -= self.rate
-        if demutdict[provider] < 0:
-            demutdict[provider] += self.rate
-        return demutdict
-
-    def denormalize(self, denormdict):
-        newlength = 0.0
-        length = self.get_length()
-        for item in denormdict:
-            newlength += denormdict[item]
-        for item in denormdict:
-            denormdict[item] *= (length / newlength)
-        check = 0.0
-        for item in denormdict:
-            check += denormdict[item]
-        return denormdict
-
-    @staticmethod
-    def choose_provider(provdict):
-        number = random.uniform(0, 1)
-        for item in provdict:
-            number -= provdict[item]
-            if number <= 0:
-                return item
-
-    def choose(self, dictionary):
-        dictionary, l = self.normalize(dictionary)
-        self.set_length(l)
-        provider = self.choose_provider(dictionary)
-        return provider
-
-    def positive_evolve(self, posdict, provider):
-        posdict = self.mutate(provider, posdict)
-        posdict = self.denormalize(posdict)
-        return posdict
-
-    def negative_evolve(self, negdict, provider):
-        negdict = self.demutate(provider, negdict)
-        negdict = self.denormalize(negdict)
-        return negdict
-
-    def iterate(self, itdict):
-        for i in xrange(10000):
-            provider = self.choose(itdict)
-            num = random.uniform(0, 1)
-            if num > 0.5:
-                itdict = self.positive_evolve(itdict, provider)
-            else:
-                itdict = self.negative_evolve(itdict, provider)
-        return itdict
 
     def set_length(self, length):
         self.length = length
@@ -85,8 +15,83 @@ class DNA:
     def get_length(self):
         return self.length
 
+    def set_dictionary(self, dict):
+        self.dictionary = dict
 
-print DNA().create_test_dict()
+    def get_dictionary(self):
+        return self.dictionary
+
+    @staticmethod
+    def create_test_dict():
+        dict = {'blueangelhost': 0.5, 'ccihosting': 0.5, 'crowncloud': 0.5, 'legionbox': 0.5, 'linevast': 0.5,
+                'pulseserver': 0.5, 'rockhoster': 0.5, 'undergroundprivate': 0.5}
+        return dict
+
+    def normalize(self):
+        length = 0.0
+        dictionary = self.dictionary
+        for item in dictionary:
+            length += dictionary[item]
+        for item in dictionary:
+            dictionary[item] /= length
+        self.set_dictionary(dictionary)
+        self.set_length(length)
+
+    def mutate(self, provider):
+        dictionary = self.get_dictionary()
+        dictionary[provider] += self.rate
+        self.set_dictionary(dictionary)
+
+    def demutate(self, provider):
+        dictionary = self.get_dictionary()
+        dictionary[provider] -= self.rate
+        if dictionary[provider] < 0:
+            dictionary[provider] += self.rate
+        self.set_dictionary(dictionary)
+
+    def denormalize(self):
+        newlength = 0.0
+        dictionary = self.get_dictionary()
+        length = self.get_length()
+        for item in dictionary:
+            newlength += dictionary[item]
+        for item in dictionary:
+            dictionary[item] *= (length / newlength)
+        self.set_dictionary(dictionary)
+
+    def choose_provider(self):
+        dictionary = self.get_dictionary()
+        number = random.uniform(0, 1)
+        for item in dictionary:
+            number -= dictionary[item]
+            if number <= 0:
+                return item
+
+    def choose(self):
+        self.normalize()
+        provider = self.choose_provider()
+        return provider
+
+    def positive_evolve(self, provider):
+        self.mutate(provider)
+        self.denormalize()
+
+    def negative_evolve(self, provider):
+        self.demutate(provider)
+        self.denormalize()
+
+    def iterate(self, itdict):
+        for i in xrange(10000):
+            provider = self.choose()
+            num = random.uniform(0, 1)
+            if num > 0.5:
+                self.positive_evolve(provider)
+            else:
+                self.negative_evolve(provider)
+
+
 for i in range(100):
     j = DNA().create_test_dict()
-    print DNA().iterate(j)
+    DNA().set_dictionary(j)
+    DNA().iterate(j)
+    print DNA().get_dictionary()
