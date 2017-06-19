@@ -80,7 +80,7 @@ class DNA:
         self.demutate(provider)
         self.denormalize()
 
-    def iterate(self, itdict):
+    def iterate(self):
         for i in xrange(10000):
             provider = self.choose()
             num = random.uniform(0, 1)
@@ -91,7 +91,8 @@ class DNA:
 
 
 for i in range(100):
-    j = DNA().create_test_dict()
-    DNA().set_dictionary(j)
-    DNA().iterate(j)
-    print DNA().get_dictionary()
+    dna = DNA()
+    j = dna.create_test_dict()
+    dna.set_dictionary(j)
+    dna.iterate()
+    print dna.get_dictionary()
