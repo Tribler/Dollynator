@@ -1,25 +1,25 @@
 
 class Account(object):
-    '''
+    """
     Account serves as a datastructure for all account details related to the agent.
-    '''
+    """
 
     def __init__(self):
 
         # Identity
-        self.first_name
-        self.last_name
-        self.email
+        self.first_name = None
+        self.last_name = None
+        self.email = None
 
         # Whereabouts
-        self.city
-        self.state
-        self.postcode
-        self.phonenumber
+        self.city = None
+        self.state = None
+        self.postcode = None
+        self.phonenumber = None
 
         # Login details
-        self.accountname
-        self.password
+        self.accountname = None
+        self.password = None
 
         # Recovery options
 

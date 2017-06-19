@@ -1,8 +1,6 @@
 import sys
 from argparse import ArgumentParser
 
-commands = ["check"]
-
 
 def execute(cmd=sys.argv[1:]):
     parser = ArgumentParser(description="Plebnet")
