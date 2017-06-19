@@ -1,4 +1,3 @@
-import json
 import random
 
 
@@ -10,10 +9,9 @@ class DNA:
 
     @staticmethod
     def create_test_dict():
-        dict = {'DNA': {'blueangelhost': 0.5, 'ccihosting': 0.5, 'crowncloud': 0.5, 'legionbox': 0.5, 'linevast': 0.5,
-                        'pulseserver': 0.5, 'rockhoster': 0.5, 'undergroundprivate': 0.5}}
-        j = json.dumps(dict)
-        return j
+        dict = {'blueangelhost': 0.5, 'ccihosting': 0.5, 'crowncloud': 0.5, 'legionbox': 0.5, 'linevast': 0.5,
+                        'pulseserver': 0.5, 'rockhoster': 0.5, 'undergroundprivate': 0.5}
+        return dict
 
     @staticmethod
     def normalize(normdict):
@@ -64,9 +62,7 @@ class DNA:
             itdict = self.evolve(itdict)
         return itdict
 
-
+print DNA().create_test_dict()
 for i in range(100):
     j = DNA().create_test_dict()
-    x = json.loads(j)['DNA']
-    nj = DNA().iterate(x)
-    print json.dumps(nj)
+    print DNA().iterate(j)
