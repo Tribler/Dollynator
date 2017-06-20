@@ -1,5 +1,0 @@
-requests
-names
-tempmail
-Selenium==3.3.3
-temp-mail==0.2
