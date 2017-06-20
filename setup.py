@@ -40,7 +40,7 @@ setup(
 
     keywords='botnet',
 
-    packages=find_packages(exclude=['docs', 'test']),
+    packages=find_packages(exclude=['docs']),
 
     install_requires=['requests', 'names', 'cloudomate'],
 
