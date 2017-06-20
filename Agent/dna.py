@@ -1,5 +1,8 @@
+import os
 import random
 import json
+
+from appdirs import user_config_dir
 
 
 class DNA:
@@ -13,17 +16,26 @@ class DNA:
     @staticmethod
     def create_test_dict():
         testdict = {'blueangelhost': 0.5, 'ccihosting': 0.5, 'crowncloud': 0.5, 'legionbox': 0.5, 'linevast': 0.5,
-                'pulseserver': 0.5, 'rockhoster': 0.5, 'undergroundprivate': 0.5}
+                    'pulseserver': 0.5, 'rockhoster': 0.5, 'undergroundprivate': 0.5}
         return testdict
 
-    def read_dictionary(self,json):
-        with open('DNA.json') as json_file:
-            data = json.loads(json_file)
-        self.dictionary = data
+    def read_dictionary(self):
+        config_dir = user_config_dir()
+        filename = os.path.join(config_dir, 'DNA.json')
+
+        if not os.path.exists(filename):
+            self.dictionary = self.create_test_dict()
+        else:
+            with open(filename) as json_file:
+                data = json.load(json_file)
+                self.dictionary = data
 
     def write_dictionary(self):
+        config_dir = user_config_dir()
+        filename = os.path.join(config_dir, 'DNA.json')
         dictionary = self.dictionary
-        return json.dumps(dictionary)
+        with open(filename, 'w') as json_file:
+            json.dump(dictionary, json_file)
 
     def normalize(self):
         length = 0.0
@@ -86,11 +98,3 @@ class DNA:
                 self.positive_evolve(provider)
             else:
                 self.negative_evolve(provider)
-
-
-for i in range(100):
-    dna = DNA()
-    j = dna.create_test_dict()
-    dna.dictionary = j
-    dna.iterate()
-    print dna.dictionary
