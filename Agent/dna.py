@@ -89,12 +89,4 @@ class DNA:
     def negative_evolve(self, provider):
         self.demutate(provider)
         self.denormalize()
-
-    def iterate(self):
-        for i in xrange(10000):
-            provider = self.choose()
-            num = random.uniform(0, 1)
-            if num > 0.5:
-                self.positive_evolve(provider)
-            else:
-                self.negative_evolve(provider)
+   
