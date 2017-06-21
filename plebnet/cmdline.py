@@ -1,3 +1,4 @@
+import subprocess
 import sys
 import os
 from argparse import ArgumentParser
@@ -62,7 +63,7 @@ def start_tribler():
     Start tribler
     :return: 
     """
-    raise NotImplementedError('Start tribler? or raise error')
+    return subprocess.call(['twistd', 'plebnet', '-p', '8085', '--exitnode'], cwd=TRIBLER_HOME)
 
 def is_evolve_ready():
     """
