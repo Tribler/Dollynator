@@ -13,15 +13,19 @@ if ! hash sshpass 2> /dev/null; then
 fi
 
 echo "Creating directories"
-sshpass -p${PASSWORD} ssh root@${IP} 'mkdir -p .config/; mkdir -p .electrum/wallets/'
+sshpass -p${PASSWORD} ssh root@${IP} 'mkdir -p .config/; mkdir -p .electrum/wallets/; mkdir -p .Tribler/wallet/'
 
 echo "Copying DNA"
-[ ! -f $HOME/${DNA_FILE} ] && echo "File $HOME/$DNA_FILE not found" && exit 1
-sshpass -p${PASSWORD} scp $HOME/${DNA_FILE} root@${IP}:${DNA_FILE}
+[ ! -f ~/${DNA_FILE} ] && echo "File ~/$DNA_FILE not found" && exit 1
+sshpass -p${PASSWORD} scp ~/${DNA_FILE} root@${IP}:${DNA_FILE}
 
 echo "Copying wallet"
-[ ! -f $HOME/${WALLET_FILE} ] && echo "File $HOME/$WALLET_FILE not found" && exit 1
-sshpass -p${PASSWORD} scp $HOME/${WALLET_FILE} root@${IP}:${WALLET_FILE}
+[ ! -f ~/${WALLET_FILE} ] && echo "File ~/$WALLET_FILE not found" && exit 1
+sshpass -p${PASSWORD} scp ~/${WALLET_FILE} root@${IP}:${WALLET_FILE}
+
+echo "Symlinking to Tribler wallet"
+sshpass -p${PASSWORD} ssh root@${IP} "ln -s ~/${WALLET_FILE} .Tribler/wallet/btc_wallet"
+
 
 echo "Installing PlebNet"
 sshpass -p${PASSWORD} ssh root@${IP} 'apt-get update && \
