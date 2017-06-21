@@ -5,6 +5,8 @@ from argparse import ArgumentParser
 
 from cloudomate.wallet import ElectrumWalletHandler
 from cloudomate.cmdline import providers as cloudomate_providers
+import cloudomate
+from cloudomate.wallet import Wallet
 
 from plebnet import cloudomatecontroller
 from plebnet.agent import marketapi
@@ -54,7 +56,7 @@ def check(args):
         chosen_est_price = update_choice(config, dna)
         place_offer(chosen_est_price)
 
-    if marketapi.get_btc_balance() >= get_cheapest_choice_price(config):
+    if marketapi.get_btc_balance() >= get_cheapest_provider(config)[2]:
         print("Purchase server")
         purchase_choices(config)
 
@@ -109,32 +111,35 @@ def evolve():
 
 def update_choice(config, dna):
     choices = []
-    est_btc_price = 0.0
     all_providers = dna.dictionary
     excluded_providers = config.get('excluded_providers')
     providers = {k: all_providers[k] for k in all_providers if k in all_providers.keys() - set(excluded_providers)}
     if providers >= 1:
-        provider = DNA.choose_provider(providers)
-        option, price = pick_option(provider)
-        est_btc_price = est_btc_price + price
-        choices.append((provider, option))
+        (provider, option, btc_price) = pick_provider(providers)
+        choices.append((provider, option, btc_price))
         del providers[provider]
 
     if config.time_to_expiration() > MAX_DAYS * TIME_IN_DAY and len(providers) >= 1:
         # if more than 5 days left, pick another, to improve margins
-        provider = DNA.choose_provider(providers)
-        option, price = pick_option(provider)
-        est_btc_price = est_btc_price + price
-        choices.append((provider, option))
+        choices.append(pick_provider(providers))
     config.set('chosen_providers', choices)
-    return est_btc_price
+    return sum(i[2] for i in choices)
+
+
+def pick_provider(providers):
+    provider = DNA.choose_provider(providers)
+    gateway = cloudomate_providers[provider].gateway
+    option, price, currency = pick_option(provider)
+    btc_price = gateway.estimate_price(
+        cloudomate.wallet.get_price(price, currency)) + cloudomate.wallet.get_network_fee()
+    return provider, option, btc_price
 
 
 def pick_option(provider):
     """
     Pick most favorable option at a provider. For now pick most bandwidth per bitcoin
     :param provider: 
-    :return: 
+    :return: (option, price, currency)
     """
     vpsoptions = options(cloudomate_providers[provider])
     values = []
@@ -142,9 +147,9 @@ def pick_option(provider):
         bandwidth = item.bandwidth
         if isinstance(bandwidth, str):
             bandwidth = item.connection * 30 * TIME_IN_DAY
-        values.append(bandwidth / item.price)
-    value, option = max((v, i) for (i, v) in enumerate(values))
-    return option
+        values.append((bandwidth / item.price, item.price, item.currency))
+    (bandwidth, price, currency), option = max((v, i) for (i, v) in enumerate(values))
+    return option, price, currency
 
 
 def get_btc_balance():
@@ -165,20 +170,30 @@ def place_offer(chosen_est_price):
     return marketapi.put_ask(price=chosen_est_price, price_type='BTC', quantity=available_mc, quantity_type='MC')
 
 
-def get_cheapest_choice_price(config):
+def get_cheapest_provider(config):
     """
     Get the price of the cheapest target.
     :param config: config
     :return: price
     """
     providers = config.get('chosen_providers')
+    return min(i[2] for i in providers)
 
 
 def purchase_choices(config):
-    # purchase one of choices from config.get('choices') if balance is sufficient
-    # after succesfull buy move this choice to the bought but not installed category
-    wallet = ElectrumWalletHandler()
-    pass
+    """
+    Purchase the cheapest provider in chosen_providers. If buying is successful this provider is moved to bought. In any
+    case the provider is removed from choices.
+    :param config: config
+    :return: success
+    """
+    (provider, vps_option, btc_price) = get_cheapest_provider(config)
+
+    success = cloudomatecontroller.purchase(provider, vps_option, wallet=Wallet())
+    if success:
+        config.get('bought').append(provider)
+    config.get('chosen_providers').remove(provider)
+    return success
 
 
 def uninstalled_server_available(config):
