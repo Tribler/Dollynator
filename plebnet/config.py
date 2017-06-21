@@ -26,6 +26,7 @@ class PlebNetConfig(object):
         config.set('main', 'last_offer',  {'MC': 0, 'BTC:': 0.0})
         config.set('main', 'excluded_providers', [])
         config.set('main', 'chosen_providers', [])
+        config.set('main', 'bought', [])
 
     def save(self):
         config_dir = user_config_dir()
@@ -38,12 +39,12 @@ class PlebNetConfig(object):
 
     def time_to_expiration(self):
         current_time = time.time()
-        expiration = self.config.getfloat('expiration_date')
+        expiration = self.config.getfloat('main', 'expiration_date')
         return expiration - current_time
 
     def time_since_offer(self):
         current_time = time.time()
-        offer_time = self.config.getfloat('last_offer_date')
+        offer_time = self.config.getfloat('main', 'last_offer_date')
         return current_time - offer_time
 
     def set(self, option, value):

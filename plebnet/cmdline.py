@@ -32,13 +32,16 @@ def check(args):
     """
     print("Checking")
     config = PlebNetConfig.load()
+    dna = DNA()
+    dna.read_dictionary()
+
     if not tribler_running():
         print("Tribler not running")
         start_tribler()
 
     if config.time_since_offer() > TIME_IN_DAY:
         print("Updating daily offer")
-        update_choice(config)
+        update_choice(config, dna)
         config.save()
         place_offer(config)
 
@@ -46,8 +49,8 @@ def check(args):
         print("Purchase server")
         purchase_choices(config)
 
-    # implement check for availability of bought, but not installed servers
-    # if available install server
+    if uninstalled_server_available(config):
+        install_server(config)
 
 
 def tribler_running():
@@ -91,7 +94,8 @@ def evolve():
     # adjust dna evolve based on success
     # create children
 
-def update_choice(config):
+def update_choice(config, dna):
+    
     if config.time_to_expiration() <= 5*TIME_IN_DAY:
         # choose(1)
         # from randomly chosen provider pick the best available vpsoption
@@ -120,6 +124,12 @@ def purchase_choices(config):
     #purchase one of choices from config.get('choices') if balance is sufficient
     #after succesfull buy move this choice to the bought but not installed category
 
+    pass
+
+def uninstalled_server_available(config):
+    pass
+
+def install_server(config):
     pass
 
 
