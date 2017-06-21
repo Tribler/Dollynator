@@ -3,6 +3,9 @@ import subprocess
 import sys
 from argparse import ArgumentParser
 
+from cloudomate.wallet import ElectrumWalletHandler
+
+from plebnet import cloudomatecontroller
 from plebnet.agent import marketapi
 from plebnet.agent.dna import DNA
 from plebnet.cloudomatecontroller import options
@@ -36,7 +39,7 @@ def check(args):
     :return: 
     """
     print("Checking")
-    config = PlebNetConfig.load()
+    config = PlebNetConfig()
 
     dna = DNA()
     dna.read_dictionary()
@@ -51,7 +54,7 @@ def check(args):
         config.save()
         place_offer(chosen_est_price)
 
-    if marketapi.get_btc_balance() >= get_choice_estimate(config):
+    if marketapi.get_btc_balance() >= get_cheapest_choice_price(config):
         print("Purchase server")
         purchase_choices(config)
 
@@ -92,7 +95,7 @@ def evolve():
     dna = DNA()
     dna.read_dictionary()
 
-    config = PlebNetConfig.load()
+    config = PlebNetConfig()
     config.get('')
     providers = dna.choose()
 
@@ -161,15 +164,19 @@ def place_offer(chosen_est_price):
     return marketapi.put_ask(price=chosen_est_price, price_type='BTC', quantity=available_mc, quantity_type='MC')
 
 
-def get_choice_estimate():
-    # return estimated price for all choices or lowest of choices?
-    pass
+def get_cheapest_choice_price(config):
+    """
+    Get the price of the cheapest target.
+    :param config: config
+    :return: price
+    """
+    providers = config.get('chosen_providers')
 
 
 def purchase_choices(config):
     # purchase one of choices from config.get('choices') if balance is sufficient
     # after succesfull buy move this choice to the bought but not installed category
-
+    wallet = ElectrumWalletHandler()
     pass
 
 
