@@ -28,7 +28,7 @@ def add_parser_setup(subparsers):
 def setup(args):
     print("Setting up PlebNet")
     cp = cloudomatecontroller.generate_config()
-    # twitter.tweet_arrival(cp.get('firstname') + ' ' + cp.get('lastname'))
+    twitter.tweet_arrival(cp.get('firstname') + ' ' + cp.get('lastname'))
 
 
 def check(args):
