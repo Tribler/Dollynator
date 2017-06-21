@@ -1,13 +1,15 @@
-import sys
 import os
+import sys
 from argparse import ArgumentParser
 
 from plebnet.agent.dna import DNA
+from plebnet.cloudomatecontroller import options
 from plebnet.config import PlebNetConfig
 
 TRIBLER_HOME = "/root/tribler"
 PLEBNET_CONFIG = "/root/.plebnet.cfg"
 TIME_IN_DAY = 60.0 * 60.0 * 24.0
+MAX_DAYS = 5
 
 
 def execute(cmd=sys.argv[1:]):
@@ -23,6 +25,7 @@ def execute(cmd=sys.argv[1:]):
 def add_parser_check(subparsers):
     parser_list = subparsers.add_parser("check", help="Check plebnet")
     parser_list.set_defaults(func=check)
+
 
 def check(args):
     """
@@ -41,7 +44,7 @@ def check(args):
 
     if config.time_since_offer() > TIME_IN_DAY:
         print("Updating daily offer")
-        update_choice(config, dna)
+        chosen_est_price = update_choice(config, dna)
         config.save()
         place_offer(config)
 
@@ -60,6 +63,7 @@ def tribler_running():
     """
     return os.path.exists(os.path.join(TRIBLER_HOME, '/twistd.pid'))
 
+
 def start_tribler():
     """
     Start tribler
@@ -67,12 +71,14 @@ def start_tribler():
     """
     raise NotImplementedError('Start tribler? or raise error')
 
+
 def is_evolve_ready():
     """
     Determine whether the pleb is ready to evolve
     :return: 
     """
     return True
+
 
 def evolve():
     """
@@ -82,7 +88,6 @@ def evolve():
     # Load DNA
     dna = DNA()
     dna.read_dictionary()
-
 
     config = PlebNetConfig.load()
     config.get('')
@@ -94,40 +99,71 @@ def evolve():
     # adjust dna evolve based on success
     # create children
 
+
 def update_choice(config, dna):
-    
-    if config.time_to_expiration() <= 5*TIME_IN_DAY:
-        # choose(1)
-        # from randomly chosen provider pick the best available vpsoption
-        pass
-    else:
-        # choose(2)
-        # from 2 randomly chosen providers pick the best available vpsoptions
-        pass
-    #save the choices as (hoster, vpsoption) pairs in config.get('choices') as a list
-    # return estimated price
+    choices = []
+    est_btc_price = 0.0
+    all_providers = dna.dictionary
+    excluded_providers = config.get('excluded_providers')
+    providers = {k: all_providers[k] for k in all_providers if k in all_providers.keys() - set(excluded_providers)}
+    if providers >= 1:
+        provider = DNA.choose_provider(providers)
+        option, price = pick_option(provider)
+        est_btc_price = est_btc_price + price
+        choices.append((provider, option))
+        del providers[provider]
+
+    if config.time_to_expiration() > MAX_DAYS * TIME_IN_DAY & & len(providers) >= 1:
+        # if more than 5 days left, pick another, to improve margins
+        provider = DNA.choose_provider(providers)
+        option, price = pick_option(provider)
+        est_btc_price = est_btc_price + price
+        choices.append((provider, option))
+    config.set('chosen_providers', choices)
+    return est_btc_price
+
+
+def pick_option(provider):
+    """
+    Pick most favorable option at a provider. For now pick most bandwidth per bitcoin
+    :param provider: 
+    :return: 
+    """
+    vpsoptions = options()
+
+
+
+
+    # retrieve options from provider and pick the best one
+    # for now most bandwidth per price
+
 
 def place_offer(config):
     # get available mc and put this amount of mc on market for required BTC in choices
     #
     pass
 
+
 def get_btc_balance():
-    #return btc balance of wallet
+    # return btc balance of wallet
     pass
+
 
 def get_choice_estimate():
     # return estimated price for all choices or lowest of choices?
     pass
 
+
 def purchase_choices(config):
-    #purchase one of choices from config.get('choices') if balance is sufficient
-    #after succesfull buy move this choice to the bought but not installed category
+    # purchase one of choices from config.get('choices') if balance is sufficient
+    # after succesfull buy move this choice to the bought but not installed category
 
     pass
+
 
 def uninstalled_server_available(config):
     pass
+
 
 def install_server(config):
     pass
