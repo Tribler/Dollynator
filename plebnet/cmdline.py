@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 from argparse import ArgumentParser
 
@@ -35,6 +36,7 @@ def check(args):
     """
     print("Checking")
     config = PlebNetConfig.load()
+
     dna = DNA()
     dna.read_dictionary()
 
@@ -69,7 +71,7 @@ def start_tribler():
     Start tribler
     :return: 
     """
-    raise NotImplementedError('Start tribler? or raise error')
+    return subprocess.call(['twistd', 'plebnet', '-p', '8085', '--exitnode'], cwd=TRIBLER_HOME)
 
 
 def is_evolve_ready():
@@ -130,10 +132,6 @@ def pick_option(provider):
     :return: 
     """
     vpsoptions = options()
-
-
-
-
     # retrieve options from provider and pick the best one
     # for now most bandwidth per price
 
