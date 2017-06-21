@@ -37,7 +37,6 @@ def generate_config():
         config.read_settings(filename=filename)
         return config
     locale = random.choice(['bg_BG', 'cs_CZ', 'de_DE', 'dk_DK', 'es_ES', 'et_EE', 'hr_HR', 'it_IT'])
-    print(locale)
     fake = Factory().create(locale)
     cp = ConfigParser.ConfigParser()
     _generate_address(cp, fake)
@@ -46,6 +45,7 @@ def generate_config():
     _remove_unicode(cp)
     with codecs.open(filename, 'w', 'utf8') as config_file:
         cp.write(config_file)
+    return cp
 
 
 def _remove_unicode(cp):
@@ -83,8 +83,3 @@ def _generate_server(cp, fake):
     cp.set('Server', 'ns1', 'ns1')
     cp.set('Server', 'ns2', 'ns2')
     cp.set('Server', 'hostname', fake.word())
-
-
-if __name__ == '__main__':
-    # print purchase(RockHoster(), options(RockHoster())[0], Wallet())
-    generate_config()
