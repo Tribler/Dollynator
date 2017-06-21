@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 IP=$1
 PASSWORD=$2
 DNA_FILE=".config/DNA.json"
@@ -12,19 +13,18 @@ if ! hash sshpass 2> /dev/null; then
 fi
 
 echo "Creating directories"
-sshpass -p$PASSWORD ssh root@$IP 'mkdir -p .config/; mkdir -p .electrum/wallets/'
-
+sshpass -p${PASSWORD} ssh root@${IP} 'mkdir -p .config/; mkdir -p .electrum/wallets/'
 
 echo "Copying DNA"
-[ ! -f $HOME/$DNA_FILE ] && echo "File $HOME/$DNA_FILE not found" && exit 1
-sshpass -p$PASSWORD scp $HOME/$DNA_FILE root@$IP:$DNA_FILE
+[ ! -f $HOME/${DNA_FILE} ] && echo "File $HOME/$DNA_FILE not found" && exit 1
+sshpass -p${PASSWORD} scp $HOME/${DNA_FILE} root@${IP}:${DNA_FILE}
 
 echo "Copying wallet"
-[ ! -f $HOME/$WALLET_FILE ] && echo "File $HOME/$WALLET_FILE not found" && exit 1
-sshpass -p$PASSWORD scp $HOME/$WALLET_FILE root@$IP:$WALLET_FILE
+[ ! -f $HOME/${WALLET_FILE} ] && echo "File $HOME/$WALLET_FILE not found" && exit 1
+sshpass -p${PASSWORD} scp $HOME/${WALLET_FILE} root@${IP}:${WALLET_FILE}
 
 echo "Installing PlebNet"
-sshpass -p$PASSWORD ssh root@$IP 'apt-get update && \
+sshpass -p${PASSWORD} ssh root@${IP} 'apt-get update && \
     apt-get install git && \
     git clone https://github.com/rjwvandenberg/PlebNet && \
     cd PlebNet && git checkout scripts && scripts/install.sh'
