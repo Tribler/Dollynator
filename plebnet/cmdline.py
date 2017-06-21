@@ -4,6 +4,7 @@ import sys
 from argparse import ArgumentParser
 
 from cloudomate.wallet import ElectrumWalletHandler
+from cloudomate.cmdline import providers as cloudomate_providers
 
 from plebnet import cloudomatecontroller
 from plebnet.agent import marketapi
@@ -135,7 +136,7 @@ def pick_option(provider):
     :param provider: 
     :return: 
     """
-    vpsoptions = options(provider)
+    vpsoptions = options(cloudomate_providers[provider])
     values = []
     for item in vpsoptions:
         bandwidth = item.bandwidth
