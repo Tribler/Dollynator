@@ -42,7 +42,7 @@ setup(
 
     packages=find_packages(exclude=['docs']),
 
-    install_requires=['requests', 'names', 'cloudomate'],
+    install_requires=['requests', 'names', 'cloudomate', 'faker'],
 
     extras_require={
         'dev': [],
