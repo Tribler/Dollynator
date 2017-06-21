@@ -1,6 +1,7 @@
 import os
 import random
 import json
+import copy
 
 from appdirs import user_config_dir
 
@@ -33,9 +34,8 @@ class DNA:
     def write_dictionary(self):
         config_dir = user_config_dir()
         filename = os.path.join(config_dir, 'DNA.json')
-        dictionary = self.dictionary
         with open(filename, 'w') as json_file:
-            json.dump(dictionary, json_file)
+            json.dump(self.dictionary, json_file)
 
     def add_provider(self, provider):
         self.dictionary[provider] = 0.5
@@ -44,53 +44,52 @@ class DNA:
         self.dictionary.pop(provider)
 
     def normalize(self):
-        length = 0.0
-        dictionary = self.dictionary
-        for item in dictionary:
-            length += dictionary[item]
-        for item in dictionary:
-            dictionary[item] /= length
-        self.dictionary = dictionary
-        self.length = length
+        self.length = sum(self.dictionary.values())
+        for item in self.dictionary:
+            self.dictionary[item] /= self.length
 
     def mutate(self, provider):
-        dictionary = self.dictionary
-        dictionary[provider] += self.rate
-        self.dictionary = dictionary
+        self.dictionary[provider] += self.rate
 
     def demutate(self, provider):
-        dictionary = self.dictionary
-        dictionary[provider] -= self.rate
-        if dictionary[provider] < 0:
-            dictionary[provider] += self.rate
-        self.dictionary = dictionary
+        self.dictionary[provider] -= self.rate
+        if self.dictionary[provider] < 0:
+            self.dictionary[provider] += self.rate
 
     def denormalize(self):
-        newlength = 0.0
-        dictionary = self.dictionary
-        length = self.length
-        for item in dictionary:
-            newlength += dictionary[item]
-        for item in dictionary:
-            dictionary[item] *= (length / newlength)
-        self.dictionary = dictionary
+        newlength = sum(self.dictionary.values())
+        for item in self.dictionary:
+            self.dictionary[item] *= (self.length / newlength)
 
-    def choose_provider(self, exclude=None):
-        dictionary = self.dictionary
+    @staticmethod
+    def choose_provider(dictionary):
         number = random.uniform(0, 1)
         for item in dictionary:
             number -= dictionary[item]
             if number <= 0:
-                if item != exclude:
-                    return item
+                return item
+
+    def exclude(self, provider):
+        dictionary = copy.deepcopy(self.dictionary)
+        dictionary.pop(provider)
+        return dictionary
+
+    @staticmethod
+    def normalize_excluded(dictionary):
+        length = sum(dictionary.values())
+        for item in dictionary:
+            dictionary[item] /= length
+        return dictionary
 
     def choose(self):
         self.normalize()
-        provider = self.choose_provider()
+        provider = self.choose_provider(self.dictionary)
+        self.denormalize()
+        dictionary = self.exclude(provider)
+        dictionary = self.normalize_excluded(dictionary)
         provider2 = None
         while not provider2:
-            provider2 = self.choose_provider(provider)
-        self.denormalize()
+            provider2 = self.choose_provider(dictionary)
         return provider, provider2
 
     def positive_evolve(self, provider):
