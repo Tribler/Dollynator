@@ -14,23 +14,22 @@ class PlebNetConfig(object):
         filename = os.path.join(config_dir, CONFIG_NAME)
         cfg = PlebNetConfig()
         with open(filename, 'r') as json_file:
-            cfg.config = json.loads(json_file)
+            cfg.config = json.load(json_file)
         return cfg
 
     def __init__(self):
-        config = self.config = {}
-        config['expiration_date'] = 0
-        config['last_offer_date'] = 0
-        config['last_offer'] = {'MC': 0, 'BTC:': 0.0}
-        config['excluded_providers'] = []
-        config['chosen_providers'] = []
-        config['bought'] = []
+        self.config = {'expiration_date': 0,
+                       'last_offer_date': 0,
+                       'last_offer': {'MC': 0,
+                                      'BTC:': 0.0},
+                       'excluded_providers': [],
+                       'chosen_providers': [],
+                       'bought': []}
+        self.load()
 
     def save(self):
         config_dir = user_config_dir()
         filename = os.path.join(config_dir, CONFIG_NAME)
-        print(self.config)
-        print(filename)
         with open(filename, 'w') as f:
             json.dump(self.config, f)
 
