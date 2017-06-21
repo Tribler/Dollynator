@@ -69,18 +69,22 @@ class DNA:
             dictionary[item] *= (length / newlength)
         self.dictionary = dictionary
 
-    def choose_provider(self):
+    def choose_provider(self, exclude=None):
         dictionary = self.dictionary
         number = random.uniform(0, 1)
         for item in dictionary:
             number -= dictionary[item]
             if number <= 0:
-                return item
+                if item != exclude:
+                    return item
 
     def choose(self):
         self.normalize()
         provider = self.choose_provider()
-        return provider
+        provider2 = None
+        while not provider2:
+            provider2 = self.choose_provider(provider)
+        return provider, provider2
 
     def positive_evolve(self, provider):
         self.mutate(provider)
@@ -89,4 +93,9 @@ class DNA:
     def negative_evolve(self, provider):
         self.demutate(provider)
         self.denormalize()
-   
+
+
+dna = DNA()
+dna.dictionary = dna.create_test_dict()
+for x in xrange(100):
+    print dna.choose()
