@@ -3,6 +3,7 @@ import subprocess
 import sys
 from argparse import ArgumentParser
 
+from plebnet.agent import marketapi
 from plebnet.agent.dna import DNA
 from plebnet.cloudomatecontroller import options
 from plebnet.config import PlebNetConfig
@@ -48,9 +49,9 @@ def check(args):
         print("Updating daily offer")
         chosen_est_price = update_choice(config, dna)
         config.save()
-        place_offer(config, chosen_est_price)
+        place_offer(chosen_est_price)
 
-    if get_btc_balance() >= get_choice_estimate(config):
+    if marketapi.get_btc_balance() >= get_choice_estimate(config):
         print("Purchase server")
         purchase_choices(config)
 
@@ -142,15 +143,22 @@ def pick_option(provider):
     return option
 
 
-def place_offer(config, chosen_est_price):
-    # get available mc and put this amount of mc on market for required BTC in choices
-    #
-    pass
-
-
 def get_btc_balance():
     # return btc balance of wallet
     pass
+
+
+def place_offer(chosen_est_price):
+    """
+    Sell all available MC for the chosen estimated price on the Tribler market.
+    :param chosen_est_price: Target amount of BTC to receive
+    :return: success of offer placement
+    """
+    available_mc = marketapi.get_mc_balance()
+    if available_mc == 0:
+        print("No MC available")
+        return False
+    return marketapi.put_ask(price=chosen_est_price, price_type='BTC', quantity=available_mc, quantity_type='MC')
 
 
 def get_choice_estimate():

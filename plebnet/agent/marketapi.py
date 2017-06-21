@@ -10,8 +10,14 @@ def is_market_running():
         return False
 
 
-def get_balance():
+def get_mc_balance():
     r = requests.get('http://localhost:8085/wallets/MC/balance')
+    balance = r.json()
+    return balance['balance']['available']
+
+
+def get_btc_balance():
+    r = requests.get('http://localhost:8085/wallets/BTC/balance')
     balance = r.json()
     return balance['balance']['available']
 
@@ -54,7 +60,7 @@ if __name__ == '__main__':
     if not is_market_running():
         print "Market isn't running"
         exit(0)
-    print get_balance()
+    print get_mc_balance()
     print put_bid(1, 'MC', 1, 'BTC')
     print put_ask(1, 'MC', 1, 'BTC')
     print asks()
