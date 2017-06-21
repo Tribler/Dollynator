@@ -1,6 +1,9 @@
 echo 'LANG=en_US.UTF-8' > /etc/locale.conf
 locale-gen en_US.UTF-8
-apt-get update && apt-get -y --force-yes upgrade
+DEBIAN_FRONTEND=noninteractive
+echo force-confold >> /etc/dpkg/dpkg.cfg
+echo force-confdef >> /etc/dpkg/dpkg.cfg
+apt-get update && apt-get -y upgrade
 
 sudo apt-get install -y libav-tools libsodium18 libx11-6 python-crypto python-cryptography python-matplotlib python-pil python-pyasn1
 
@@ -42,6 +45,7 @@ git checkout market_community
 git submodule update --init --recursive electrum
 git submodule update --init --recursive Tribler/dispersy
 git submodule update --init --recursive Tribler/Core/DecentralizedTracking/pymdht
+pip install ./electrum
 
 cd $HOME
 git clone https://github.com/rjwvandenberg/PlebNet
