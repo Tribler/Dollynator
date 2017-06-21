@@ -1,14 +1,12 @@
 """
 This twistd plugin enables to start Tribler headless using the twistd command.
-It sets up all services needed by the PlebNet agent.
-
-TODO: go through it thorougly
 """
 from datetime import date
 import os
 import signal
 import time
 
+from Tribler.Core.Config.tribler_config import TriblerConfig
 from twisted.application.service import MultiService, IServiceMaker
 from twisted.conch import manhole_tap
 from twisted.internet import reactor
@@ -19,10 +17,10 @@ from zope.interface import implements
 
 from Tribler.Core.Modules.process_checker import ProcessChecker
 from Tribler.Core.Session import Session
-from Tribler.Core.SessionConfig import SessionStartupConfig
 
 # Register yappi profiler
-from Tribler.community.allchannel.community import AllChannelCommunity
+from Tribler.community.market.community import MarketCommunity
+from Tribler.dispersy.utils import twistd_yappi
 
 
 class Options(usage.Options):
@@ -40,24 +38,30 @@ class Options(usage.Options):
     ]
 
 
-class TriblerServiceMaker(object):
+class MarketServiceMaker(object):
     implements(IServiceMaker, IPlugin)
     tapname = "plebnet"
     description = "headless tribler for plebnet agent"
     options = Options
 
     def __init__(self):
-        """
-        Initialize the variables of the TriblerServiceMaker and the logger.
-        """
         self.session = None
         self._stopping = False
         self.process_checker = None
+        self.market_community = None
 
     def shutdown_process(self, shutdown_message, code=1):
         msg(shutdown_message)
         reactor.addSystemEventTrigger('after', 'shutdown', os._exit, code)
         reactor.stop()
+
+    def load_market_community(self, _):
+        """
+        Load the Market community
+        """
+        msg("Loading market community...")
+        self.market_community = self.session.get_dispersy_instance().define_auto_load(
+            MarketCommunity, self.session.dispersy_member, load=True, kargs={'tribler_session': self.session})
 
     def start_tribler(self, options):
         """
@@ -77,10 +81,7 @@ class TriblerServiceMaker(object):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-        config = SessionStartupConfig().load()  # Load the default configuration file
-
-        # Enable market_community
-        config.set_market_community_enabled(True)
+        config = TriblerConfig()
 
         # Enable exitnode if set in options
         if "exitnode" in options and options["exitnode"]:
@@ -103,30 +104,9 @@ class TriblerServiceMaker(object):
         # Minimize functionality enabled for plebnet
         # For now, config taken from market_plugin in devos tribler repo
         config.set_http_api_enabled(True)
-        config.set_enable_multichain(True)
-        config.set_dispersy(True)
-        config.set_megacache(True)  #required by dispersy
-        config.set_mainline_dht(True)
-
-        # Set false in devos tribler repo
-        config.set_torrent_checking(False)
-        config.set_multicast_local_peer_discovery(False)
-        config.set_torrent_collecting(False)
-        config.set_dht_torrent_collecting(False)
-        config.set_videoserver_enabled(False)
-        config.set_enable_torrent_search(False)
-        config.set_enable_channel_search(False)
-
-        # Other options that may be set
-        #config.set_libtorrent()
-        #config.set_torrent_store()
-        #config.set_nickname("PlebNet")
-        #config.set_mugshot("binary image/jpeg")
-        #config.set_channel_community_enabled()
-        #config.set_preview_channel_community_enabled()
-        config.set_upgrader_enabled(False)
-        config.set_watch_folder_enabled(False)
-        #config.set_creditmining_enable()
+        config.set_video_server_enabled(False)
+        config.set_torrent_search_enabled(False)
+        config.set_channel_search_enabled(False)
 
         # Check if we are already running a Tribler instance
         self.process_checker = ProcessChecker()
@@ -143,28 +123,23 @@ class TriblerServiceMaker(object):
             config.set_http_api_enabled(True)
             config.set_http_api_port(options["restapi"])
 
-        if options["dispersy"] > 0:
+        if options["dispersy"] != -1 and options["dispersy"] > 0:
             config.set_dispersy_port(options["dispersy"])
 
-        if options["libtorrent"] > 0:
+        if options["libtorrent"] != -1 and options["libtorrent"] > 0:
             config.set_listen_port(options["libtorrent"])
 
         self.session = Session(config)
-        self.session.start().addErrback(lambda failure: self.shutdown_process(failure.getErrorMessage()))
+        self.session.start().addErrback(lambda failure: self.shutdown_process(failure.getErrorMessage()))\
+            .addCallback(self.load_market_community)
         msg("Tribler started")
-
-        if "auto-join-channel" in options and options["auto-join-channel"]:
-            msg("Enabling auto-joining of channels")
-            for community in self.session.get_dispersy_instance().get_communities():
-                if isinstance(community, AllChannelCommunity):
-                    community.auto_join_channel = True
 
     def makeService(self, options):
         """
         Construct a Tribler service.
         """
         tribler_service = MultiService()
-        tribler_service.setName("Tribler")
+        tribler_service.setName("Market")
 
         manhole_namespace = {}
         if options["manhole"] > 0:
@@ -181,4 +156,4 @@ class TriblerServiceMaker(object):
 
         return tribler_service
 
-service_maker = TriblerServiceMaker()
+service_maker = MarketServiceMaker()
