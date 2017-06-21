@@ -23,8 +23,6 @@ from Tribler.Core.SessionConfig import SessionStartupConfig
 
 # Register yappi profiler
 from Tribler.community.allchannel.community import AllChannelCommunity
-from Tribler.community.search.community import SearchCommunity
-from Tribler.dispersy.utils import twistd_yappi
 
 
 class Options(usage.Options):
@@ -87,6 +85,7 @@ class TriblerServiceMaker(object):
         # Enable exitnode if set in options
         if "exitnode" in options and options["exitnode"]:
             msg("Enabling exitnode")
+            config.set_tunnel_community_enabled(True)
             config.set_tunnel_community_exitnode_enabled(True)
         else:
             config.set_tunnel_community_exitnode_enabled(False)
