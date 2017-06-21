@@ -48,7 +48,7 @@ git submodule update --init --recursive Tribler/Core/DecentralizedTracking/pymdh
 pip install ./electrum
 
 cd $HOME
-git clone https://github.com/rjwvandenberg/PlebNet
+[ ! -d "PlebNet" ] && git clone https://github.com/rjwvandenberg/PlebNet
 pip install PlebNet
 cd PlebNet
 cd docker/market/twistd_plugin/
