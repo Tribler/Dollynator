@@ -37,6 +37,12 @@ class DNA:
         with open(filename, 'w') as json_file:
             json.dump(dictionary, json_file)
 
+    def add_provider(self, provider):
+        self.dictionary[provider] = 0.5
+
+    def remove_provider(self, provider):
+        self.dictionary.pop(provider)
+
     def normalize(self):
         length = 0.0
         dictionary = self.dictionary
@@ -84,18 +90,15 @@ class DNA:
         provider2 = None
         while not provider2:
             provider2 = self.choose_provider(provider)
+        self.denormalize()
         return provider, provider2
 
     def positive_evolve(self, provider):
+        self.normalize()
         self.mutate(provider)
         self.denormalize()
 
     def negative_evolve(self, provider):
+        self.normalize()
         self.demutate(provider)
         self.denormalize()
-
-
-dna = DNA()
-dna.dictionary = dna.create_test_dict()
-for x in xrange(100):
-    print dna.choose()
