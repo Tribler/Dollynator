@@ -1,13 +1,21 @@
+# Add locale
 echo 'LANG=en_US.UTF-8' > /etc/locale.conf
 locale-gen en_US.UTF-8
+
+# No interactivity
 DEBIAN_FRONTEND=noninteractive
 echo force-confold >> /etc/dpkg/dpkg.cfg
 echo force-confdef >> /etc/dpkg/dpkg.cfg
+
+# Upgrade system
 apt-get update && apt-get -y upgrade
 
-sudo apt-get install -y libav-tools libsodium18 libx11-6 python-crypto python-cryptography python-matplotlib python-pil python-pyasn1
 
-apt-get install -y \
+# Install dependencies
+sudo apt-get install -y \
+    python-crypto \
+    python-cryptography \
+    python-pyasn1 \
     python-twisted \
     python-libtorrent \
     python-apsw \
@@ -55,7 +63,11 @@ cd docker/market/twistd_plugin/
 cp plebnet_plugin.py ~/tribler/twisted/plugins/
 
 cd $HOME
-# sed -ie 's/"127.0.0.1"/"0.0.0.0"/g' /root/tribler/Tribler/Core/Modules/restapi/rest_manager.py
 cd tribler
 export PYTHONPATH=.
 twistd plebnet -p 8085 --exitnode
+
+plebnet setup
+
+# cron plebnet check
+echo "* * * * * root /usr/local/bin/plebnet" > /etc/cron.d/plebnet
