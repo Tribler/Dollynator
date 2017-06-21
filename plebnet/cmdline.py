@@ -51,7 +51,6 @@ def check(args):
     if config.time_since_offer() > TIME_IN_DAY:
         print("Updating daily offer")
         chosen_est_price = update_choice(config, dna)
-        config.save()
         place_offer(chosen_est_price)
 
     if marketapi.get_btc_balance() >= get_cheapest_choice_price(config):
@@ -60,6 +59,7 @@ def check(args):
 
     if uninstalled_server_available(config):
         install_server(config)
+    config.save()
 
 
 def tribler_running():
