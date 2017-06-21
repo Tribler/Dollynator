@@ -1,7 +1,8 @@
-from cloudomate.util.config import UserOptions
-from cloudomate.vps.rockhoster import RockHoster
 from cloudomate import wallet as wallet_util
 from cloudomate.cmdline import providers
+from cloudomate.util.config import UserOptions
+from cloudomate.vps.rockhoster import RockHoster
+
 
 def _user_settings():
     settings = UserOptions()
@@ -13,10 +14,11 @@ def status(provider):
     settings = _user_settings()
     return provider.get_status(settings)
 
+
 def options(provider):
-    providers[provider]
-    for i, item, estimated_price, price_string in providers.get_configurations():
-        yield i, item, estimated_price
+    p = providers[provider]
+    return p.options()
+
 
 def get_network_fee():
     return wallet_util.get_network_fee()

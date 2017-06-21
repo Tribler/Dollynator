@@ -48,7 +48,7 @@ def check(args):
         print("Updating daily offer")
         chosen_est_price = update_choice(config, dna)
         config.save()
-        place_offer(config)
+        place_offer(config, chosen_est_price)
 
     if get_btc_balance() >= get_choice_estimate(config):
         print("Purchase server")
@@ -115,7 +115,7 @@ def update_choice(config, dna):
         choices.append((provider, option))
         del providers[provider]
 
-    if config.time_to_expiration() > MAX_DAYS * TIME_IN_DAY & & len(providers) >= 1:
+    if config.time_to_expiration() > MAX_DAYS * TIME_IN_DAY and len(providers) >= 1:
         # if more than 5 days left, pick another, to improve margins
         provider = DNA.choose_provider(providers)
         option, price = pick_option(provider)
@@ -131,12 +131,18 @@ def pick_option(provider):
     :param provider: 
     :return: 
     """
-    vpsoptions = options()
-    # retrieve options from provider and pick the best one
-    # for now most bandwidth per price
+    vpsoptions = options(provider)
+    values = []
+    for item in vpsoptions:
+        bandwidth = item.bandwidth
+        if isinstance(bandwidth, str):
+            bandwidth = item.connection * 30 * TIME_IN_DAY
+        values.append(bandwidth / item.price)
+    value, option = max((v, i) for (i, v) in enumerate(values))
+    return option
 
 
-def place_offer(config):
+def place_offer(config, chosen_est_price):
     # get available mc and put this amount of mc on market for required BTC in choices
     #
     pass
