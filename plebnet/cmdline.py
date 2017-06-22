@@ -18,6 +18,7 @@ TRIBLER_HOME = os.path.expanduser("~/tribler")
 PLEBNET_CONFIG = os.path.expanduser("~/.plebnet.cfg")
 TIME_IN_DAY = 60.0 * 60.0 * 24.0
 MAX_DAYS = 5
+test_offer = False
 
 
 def execute(cmd=sys.argv[1:]):
@@ -56,9 +57,9 @@ def check(args):
         chosen_est_price = update_choice(config, dna)
         place_offer(chosen_est_price, config)
 
-    if plebnet_trail_mc_balance():
+    if plebnet_trial_mc_balance():
         print("Placing offer on Tribler market")
-        chosen_est_price = update_choice(config, dna)
+        chosen_est_price = get_price(config)
         place_offer(chosen_est_price, config)
 
     if marketapi.get_btc_balance() >= get_cheapest_provider(config)[2]:
@@ -96,7 +97,7 @@ def is_evolve_ready():
     return True
 
 
-def plebnet_trail_mc_balance():
+def plebnet_trial_mc_balance():
     """
     Determines if plebnet has mc it can sell, used for trail
     :return: True if multichain balance is more than 0
@@ -144,6 +145,13 @@ def update_choice(config, dna):
         print("Second provider: %s" % provider)
     config.set('chosen_providers', choices)
     return sum(i[2] for i in choices)
+
+
+def get_price(config):
+    price = 0.0
+    for k in config.get('chosen_providers'):
+        price += k[2]
+    return price
 
 
 def pick_provider(providers):
