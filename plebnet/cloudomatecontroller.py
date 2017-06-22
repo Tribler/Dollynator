@@ -2,9 +2,10 @@
 import ConfigParser
 import codecs
 import random
-
 import unicodedata
+
 from appdirs import user_config_dir
+from cloudomate import wallet as wallet_util
 from cloudomate.util.config import UserOptions, os
 from faker.factory import Factory
 
@@ -21,7 +22,11 @@ def status(provider):
 
 
 def options(provider):
-    return list(provider.start())
+    return provider.options()
+
+
+def get_network_fee():
+    return wallet_util.get_network_fee()
 
 
 def purchase(provider, vps_option, wallet):
