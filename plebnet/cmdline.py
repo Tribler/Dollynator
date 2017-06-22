@@ -94,7 +94,7 @@ def check(args):
         else:
             evolve(provider, dna, success)
 
-    install_available_servers(config)
+    install_available_servers(config, dna)
     config.save()
 
 
@@ -248,7 +248,7 @@ def purchase_choices(config):
     return success, provider
 
 
-def install_available_servers(config):
+def install_available_servers(config, dna):
     bought = config.get('bought')
 
     for provider in bought:
@@ -258,6 +258,7 @@ def install_available_servers(config):
             user_options.read_settings()
             rootpw = user_options.get('rootpw')
             cloudomatecontroller.setrootpw(cloudomate_providers[provider], rootpw)
+            dna.create_child_dna(provider)
             install_server(ip, rootpw)
             mail_message = 'IP: %s\n' % ip
             mail_message += 'Root password: %s\n' % rootpw
