@@ -118,9 +118,3 @@ class DNA:
     def set_own_provider(self, provider):
         self.dictionary['Self'] = provider
         self.write_dictionary()
-
-
-dna = DNA()
-dna.read_dictionary()
-dna.positive_evolve('pulseserver')
-dna.create_child_dna('rockhoster')
