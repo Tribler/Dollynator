@@ -73,7 +73,9 @@ def check(args):
 
     if not tribler_running():
         print("Tribler not running")
-        start_tribler()
+        success = start_tribler()
+        print(success)
+        return success
 
     if config.time_since_offer() > TIME_IN_DAY:
         print("Updating daily offer")
