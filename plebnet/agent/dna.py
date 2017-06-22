@@ -1,7 +1,7 @@
+import copy
+import json
 import os
 import random
-import json
-import copy
 
 from appdirs import user_config_dir
 
@@ -118,6 +118,7 @@ class DNA:
     def set_own_provider(self, provider):
         self.dictionary['Self'] = provider
         self.write_dictionary()
+
 
 dna = DNA()
 dna.read_dictionary()

@@ -11,8 +11,8 @@ from subprocess import CalledProcessError
 import cloudomate
 from cloudomate.cmdline import providers as cloudomate_providers
 from cloudomate.util.config import UserOptions
-from cloudomate.wallet import ElectrumWalletHandler
 from cloudomate.wallet import Wallet
+
 from plebnet import cloudomatecontroller
 from plebnet.agent import marketapi
 from plebnet.agent.dna import DNA
