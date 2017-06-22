@@ -6,6 +6,7 @@ import subprocess
 import sys
 import time
 from argparse import ArgumentParser
+from subprocess import CalledProcessError
 
 import cloudomate
 from cloudomate.cmdline import providers as cloudomate_providers
@@ -85,9 +86,10 @@ def check(args):
         place_offer(chosen_est_price, config)
         config.set('test_offer', True)
 
-    if marketapi.get_btc_balance() >= get_cheapest_provider(config)[2]:
-        print("Purchase server")
-        purchase_choices(config)
+    if len(config.get('chosen_providers')) > 0 and False:
+        if marketapi.get_btc_balance() >= get_cheapest_provider(config)[2]:
+            print("Purchase server")
+            purchase_choices(config)
 
     install_available_servers(config)
     config.save()
@@ -108,7 +110,11 @@ def start_tribler():
     """
     env = os.environ.copy()
     env['PYTHONPATH'] = TRIBLER_HOME
-    return subprocess.call(['twistd', 'plebnet', '-p', '8085', '--exitnode'], cwd=TRIBLER_HOME, env=env)
+    try:
+        subprocess.call(['twistd', 'plebnet', '-p', '8085', '--exitnode'], cwd=TRIBLER_HOME, env=env)
+        return True
+    except CalledProcessError:
+        return False
 
 
 def is_evolve_ready():
@@ -231,10 +237,10 @@ def purchase_choices(config):
     """
     (provider, vps_option, btc_price) = get_cheapest_provider(config)
 
-    success = cloudomatecontroller.purchase(provider, vps_option, wallet=Wallet())
+    success = cloudomatecontroller.purchase(cloudomate_providers[provider], vps_option, wallet=Wallet())
     if success:
         config.get('bought').append(provider)
-    config.get('chosen_providers').remove(provider)
+    config.get('chosen_providers').remove((provider, vps_option, btc_price))
     config.get('excluded_providers').append(provider)
     return success
 
@@ -243,19 +249,24 @@ def install_available_servers(config):
     bought = config.get('bought')
 
     for provider in bought:
-        ip = subprocess.check_output(['cloudomate', 'getip', provider])
-        if is_valid_ip(ip):
-            user_options = UserOptions()
-            user_options.read_settings()
-            rootpw = user_options.get('rootpw')
-            cloudomatecontroller.setrootpw(cloudomate_providers[provider], rootpw)
-            install_server(ip, rootpw)
-            mail_message = 'IP: %s\n' % ip
-            mail_message += 'Root password: %s\n' % rootpw
-            mail_dna = DNA()
-            mail_dna.read_dictionary()
-            mail_message += '\nDNA\n%s\n' % json.dumps(mail_dna.dictionary)
-            send_mail(mail_message, user_options.get('firstname') + ' ' + user_options.get('lastname'))
+        print("Checking whether %s is activated" % provider)
+        try:
+            ip = subprocess.check_output(['cloudomate', 'getip', provider])
+            print("Installling child on %s " % provider)
+            if is_valid_ip(ip):
+                user_options = UserOptions()
+                user_options.read_settings()
+                rootpw = user_options.get('rootpw')
+                cloudomatecontroller.setrootpw(cloudomate_providers[provider], rootpw)
+                install_server(ip, rootpw)
+                mail_message = 'IP: %s\n' % ip
+                mail_message += 'Root password: %s\n' % rootpw
+                mail_dna = DNA()
+                mail_dna.read_dictionary()
+                mail_message += '\nDNA\n%s\n' % json.dumps(mail_dna.dictionary)
+                send_mail(mail_message, user_options.get('firstname') + ' ' + user_options.get('lastname'))
+        except CalledProcessError:
+            print("%s not ready yet" % provider)
 
 
 def is_valid_ip(ip):

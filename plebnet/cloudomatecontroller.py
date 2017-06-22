@@ -42,7 +42,8 @@ def get_network_fee():
 
 def purchase(provider, vps_option, wallet):
     settings = _user_settings()
-    return provider.purchase(settings, vps_option, wallet)
+    option = options(provider)[vps_option]
+    return provider.purchase(settings, option, wallet)
 
 
 def generate_config():
