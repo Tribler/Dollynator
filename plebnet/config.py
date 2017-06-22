@@ -8,14 +8,11 @@ CONFIG_NAME = "plebnet.json"
 
 
 class PlebNetConfig(object):
-    @staticmethod
-    def load():
+    def load(self):
         config_dir = user_config_dir()
         filename = os.path.join(config_dir, CONFIG_NAME)
-        cfg = PlebNetConfig()
         with open(filename, 'r') as json_file:
-            cfg.config = json.load(json_file)
-        return cfg
+            self.config = json.load(json_file)
 
     def __init__(self):
         self.config = {'expiration_date': 0,
@@ -31,7 +28,7 @@ class PlebNetConfig(object):
         config_dir = user_config_dir()
         filename = os.path.join(config_dir, CONFIG_NAME)
         with open(filename, 'w') as f:
-            json.dump(self.config, f)
+            json.dump(self.config, f, indent=3)
 
     def get(self, option):
         return self.config[option]
@@ -45,6 +42,9 @@ class PlebNetConfig(object):
         current_time = time.time()
         offer_time = float(self.config['last_offer_date'])
         return current_time - offer_time
+
+    def bump_offer_date(self):
+        self.config['last_offer_date'] = time.time()
 
     def set(self, option, value):
         self.config[option] = value

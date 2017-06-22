@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 from cloudomate.wallet import ElectrumWalletHandler
 from cloudomate.cmdline import providers as cloudomate_providers
 import cloudomate
+from cloudomate.cmdline import providers as cloudomate_providers
 from cloudomate.wallet import Wallet
 
 from plebnet import cloudomatecontroller
@@ -14,8 +15,8 @@ from plebnet.agent.dna import DNA
 from plebnet.cloudomatecontroller import options
 from plebnet.config import PlebNetConfig
 
-TRIBLER_HOME = "/root/tribler"
-PLEBNET_CONFIG = "/root/.plebnet.cfg"
+TRIBLER_HOME = os.path.expanduser("~/tribler")
+PLEBNET_CONFIG = os.path.expanduser("~/.plebnet.cfg")
 TIME_IN_DAY = 60.0 * 60.0 * 24.0
 MAX_DAYS = 5
 
@@ -70,7 +71,7 @@ def tribler_running():
     Check if tribler is running.
     :return: True if twistd.pid exists in /root/tribler
     """
-    return os.path.exists(os.path.join(TRIBLER_HOME, '/twistd.pid'))
+    return os.path.isfile(os.path.join(TRIBLER_HOME, 'twistd.pid'))
 
 
 def start_tribler():
@@ -78,7 +79,9 @@ def start_tribler():
     Start tribler
     :return: 
     """
-    return subprocess.call(['twistd', 'plebnet', '-p', '8085', '--exitnode'], cwd=TRIBLER_HOME)
+    env = os.environ.copy()
+    env['PYTHONPATH'] = TRIBLER_HOME
+    return subprocess.call(['twistd', 'plebnet', '-p', '8085', '--exitnode'], cwd=TRIBLER_HOME, env=env)
 
 
 def is_evolve_ready():
@@ -113,7 +116,8 @@ def update_choice(config, dna):
     choices = []
     all_providers = dna.dictionary
     excluded_providers = config.get('excluded_providers')
-    providers = {k: all_providers[k] for k in all_providers if k in all_providers.keys() - set(excluded_providers)}
+    available_providers = list(set(all_providers.keys()) - set(excluded_providers))
+    providers = {k: all_providers[k] for k in all_providers if k in available_providers}
     if providers >= 1:
         (provider, option, btc_price) = pick_provider(providers)
         choices.append((provider, option, btc_price))
@@ -146,15 +150,10 @@ def pick_option(provider):
     for item in vpsoptions:
         bandwidth = item.bandwidth
         if isinstance(bandwidth, str):
-            bandwidth = item.connection * 30 * TIME_IN_DAY
+            bandwidth = float(item.connection) * 30 * TIME_IN_DAY
         values.append((bandwidth / item.price, item.price, item.currency))
     (bandwidth, price, currency), option = max((v, i) for (i, v) in enumerate(values))
     return option, price, currency
-
-
-def get_btc_balance():
-    # return btc balance of wallet
-    pass
 
 
 def place_offer(chosen_est_price):
@@ -177,7 +176,14 @@ def get_cheapest_provider(config):
     :return: price
     """
     providers = config.get('chosen_providers')
-    return min(i[2] for i in providers)
+    cheapest_provider = providers[0]
+    min = cheapest_provider[2]
+    for provider in providers:
+        if provider[2] < min:
+            min = provider[2]
+            cheapest_provider = provider
+
+    return cheapest_provider
 
 
 def purchase_choices(config):
