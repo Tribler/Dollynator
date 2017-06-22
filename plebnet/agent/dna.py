@@ -16,7 +16,7 @@ class DNA:
 
     @staticmethod
     def create_test_dict():
-        testdict = {'blueangelhost': 0.5, 'ccihosting': 0.5, 'crowncloud': 0, 'legionbox': 0, 'linevast': 0.5,
+        testdict = {'blueangelhost': 0, 'ccihosting': 0.5, 'crowncloud': 0, 'legionbox': 0, 'linevast': 0.5,
                     'pulseserver': 0.5, 'rockhoster': 0.5, 'undergroundprivate': 0}
         return testdict
 
@@ -96,8 +96,10 @@ class DNA:
         self.normalize()
         self.mutate(provider)
         self.denormalize()
+        self.write_dictionary()
 
     def negative_evolve(self, provider):
         self.normalize()
         self.demutate(provider)
         self.denormalize()
+        self.write_dictionary()
