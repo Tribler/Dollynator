@@ -11,6 +11,8 @@ class PlebNetConfig(object):
     def load(self):
         config_dir = user_config_dir()
         filename = os.path.join(config_dir, CONFIG_NAME)
+        if not os.path.isfile(filename):
+            self.save()
         with open(filename, 'r') as json_file:
             self.config = json.load(json_file)
 

@@ -4,6 +4,7 @@ import sys
 from argparse import ArgumentParser
 
 import cloudomate
+import time
 from cloudomate.cmdline import providers as cloudomate_providers
 from cloudomate.wallet import ElectrumWalletHandler
 from cloudomate.wallet import Wallet
@@ -43,8 +44,11 @@ def add_parser_setup(subparsers):
 
 def setup(args):
     print("Setting up PlebNet")
-    cp = cloudomatecontroller.generate_config()
-    twitter.tweet_arrival(cp.get('firstname') + ' ' + cp.get('lastname'))
+    cloudomatecontroller.generate_config()
+    config = PlebNetConfig()
+    config.set('expiration_date', time.time() + 30 * TIME_IN_DAY)
+    config.save()
+    # twitter.tweet_arrival(cp.get('firstname') + ' ' + cp.get('lastname'))
 
 
 def check(args):
