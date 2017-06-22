@@ -89,7 +89,7 @@ def check(args):
         print("Purchase server")
         success, provider = purchase_choices(config)
         if success:
-            own_provider = get_own_provider(config)
+            own_provider = get_own_provider(dna)
             evolve(own_provider, dna, success)
         else:
             evolve(provider, dna, success)
