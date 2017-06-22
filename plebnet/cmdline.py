@@ -57,6 +57,11 @@ def check(args):
         chosen_est_price = update_choice(config, dna)
         place_offer(chosen_est_price)
 
+    if plebnet_trail_mc_balance():
+        print("Placing offer on Tribler market")
+        chosen_est_price = update_choice(config, dna)
+        place_offer(chosen_est_price)
+
     if marketapi.get_btc_balance() >= get_cheapest_provider(config)[2]:
         print("Purchase server")
         purchase_choices(config)
@@ -90,6 +95,14 @@ def is_evolve_ready():
     :return: 
     """
     return True
+
+
+def plebnet_trail_mc_balance():
+    """
+    Determines if plebnet has mc it can sell, used for trail
+    :return: True if multichain balance is more than 0
+    """
+    return marketapi.get_mc_balance() > 0
 
 
 def evolve():
