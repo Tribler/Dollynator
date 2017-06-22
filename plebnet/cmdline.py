@@ -48,6 +48,10 @@ def setup(args):
     config = PlebNetConfig()
     config.set('expiration_date', time.time() + 30 * TIME_IN_DAY)
     config.save()
+
+    dna = DNA()
+    dna.read_dictionary()
+    dna.write_dictionary()
     # twitter.tweet_arrival(cp.get('firstname') + ' ' + cp.get('lastname'))
 
 
@@ -236,8 +240,8 @@ def uninstalled_server_available(config):
     pass
 
 
-def install_server(config):
-    pass
+def install_server(config, ip, password):
+    subprocess.call(['../scripts/create-child.sh', ip, password])
 
 
 if __name__ == '__main__':
