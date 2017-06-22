@@ -77,7 +77,9 @@ def _generate_user(cp, fake):
     cp.add_section('User')
     firstname = fake.first_name()
     lastname = fake.last_name()
-    cp.set('User', 'email', firstname + lastname + '@heijligers.me')
+    full_name = firstname + '_' + lastname
+    full_name = full_name.replace(' ', '_')
+    cp.set('User', 'email', full_name + '@heijligers.me')
     cp.set('User', 'firstname', firstname)
     cp.set('User', 'lastname', lastname)
     cp.set('User', 'companyname', fake.company())
