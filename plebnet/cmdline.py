@@ -1,5 +1,7 @@
+import json
 import os
 import re
+import smtplib
 import subprocess
 import sys
 import time
@@ -233,6 +235,7 @@ def purchase_choices(config):
     if success:
         config.get('bought').append(provider)
     config.get('chosen_providers').remove(provider)
+    config.get('excluded_providers').append(provider)
     return success
 
 
@@ -246,20 +249,46 @@ def install_available_servers(config):
             user_options.read_settings()
             rootpw = user_options.get('rootpw')
             cloudomatecontroller.setrootpw(cloudomate_providers[provider], rootpw)
-            install_server(config, ip, rootpw)
+            install_server(ip, rootpw)
+            mail_message = 'IP: %s\n' % ip
+            mail_message += 'Root password: %s\n' % rootpw
+            mail_dna = DNA()
+            mail_dna.read_dictionary()
+            mail_message += '\nDNA\n%s\n' % json.dumps(mail_dna.dictionary)
+            send_mail(mail_message, user_options.get('firstname') + ' ' + user_options.get('lastname'))
 
 
 def is_valid_ip(ip):
     return re.match('\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', ip)
 
 
-def install_server(config, ip, rootpw):
+def install_server(ip, rootpw):
     success = subprocess.call(['../scripts/create-child.sh', ip, rootpw])
     if success:
         print("Installation successful")
     else:
         print("Installation unsuccesful")
     return success
+
+
+def send_mail(mail_message, name):
+    sender = name + '@pleb.net'
+    receivers = ['plebnet@heijligers.me']
+
+    mail = """From: %s <%s>
+To: Jaap <plebnet@heijligers.me>
+Subject: Pleb arrival
+
+""" % (name, sender)
+    mail += mail_message
+
+    try:
+        print("Sending mail: %s" + mail)
+        smtp = smtplib.SMTP('mail.heijligers.me')
+        smtp.sendmail(sender, receivers, mail)
+        print "Successfully sent email"
+    except smtplib.SMTPException:
+        print "Error: unable to send email"
 
 
 if __name__ == '__main__':
