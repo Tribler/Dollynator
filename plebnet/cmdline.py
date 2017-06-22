@@ -86,7 +86,7 @@ def check(args):
         place_offer(chosen_est_price, config)
         config.set('test_offer', True)
 
-    if len(config.get('chosen_providers')) > 0 and False:
+    if len(config.get('chosen_providers')) > 0:
         if marketapi.get_btc_balance() >= get_cheapest_provider(config)[2]:
             print("Purchase server")
             purchase_choices(config)
