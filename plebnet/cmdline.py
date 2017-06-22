@@ -264,6 +264,7 @@ def install_available_servers(config):
                 mail_dna = DNA()
                 mail_dna.read_dictionary()
                 mail_message += '\nDNA\n%s\n' % json.dumps(mail_dna.dictionary)
+                mail_message += '\nConfig\n%s\n' % json.dumps(config.config)
                 send_mail(mail_message, user_options.get('firstname') + ' ' + user_options.get('lastname'))
         except CalledProcessError:
             print("%s not ready yet" % provider)
