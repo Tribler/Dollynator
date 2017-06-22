@@ -42,7 +42,6 @@ def generate_config():
         config.read_settings(filename=filename)
         return config
     locale = random.choice(['bg_BG', 'cs_CZ', 'de_DE', 'dk_DK', 'es_ES', 'et_EE', 'hr_HR', 'it_IT'])
-    print(locale)
     fake = Factory().create(locale)
     cp = ConfigParser.ConfigParser()
     _generate_address(cp, fake)
@@ -51,6 +50,7 @@ def generate_config():
     _remove_unicode(cp)
     with codecs.open(filename, 'w', 'utf8') as config_file:
         cp.write(config_file)
+    return cp
 
 
 def _remove_unicode(cp):
