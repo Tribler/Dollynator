@@ -121,24 +121,11 @@ def plebnet_trial_mc_balance():
     return marketapi.get_mc_balance() > 0
 
 
-def evolve():
-    """
-    Execute the commands required to evolve
-    :return: 
-    """
-    # Load DNA
-    dna = DNA()
-    dna.read_dictionary()
-
-    config = PlebNetConfig()
-    config.get('')
-    providers = dna.choose()
-
-    # sell mc at transaction cost
-    # buy servers
-    # wait until both fail/succeed
-    # adjust dna evolve based on success
-    # create children
+def evolve(provider, dna, success):
+    if success:
+        dna.positive_evolve(provider)
+    else:
+        dna.negative_evolve(provider)
 
 
 def update_choice(config, dna):
