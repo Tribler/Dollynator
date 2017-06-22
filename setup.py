@@ -42,7 +42,7 @@ setup(
 
     packages=find_packages(exclude=['docs']),
 
-    install_requires=['requests', 'names', 'cloudomate', 'faker'],
+    install_requires=['requests', 'names', 'cloudomate', 'faker', 'twython'],
 
     extras_require={
         'dev': [],
