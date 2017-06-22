@@ -59,7 +59,7 @@ pip install ./electrum
 
 cd $HOME
 [ ! -d "PlebNet" ] && git clone https://github.com/rjwvandenberg/PlebNet
-pip install ./PlebNet
+pip install --upgrade ./PlebNet
 cd PlebNet
 cd docker/market/twistd_plugin/
 cp plebnet_plugin.py ~/tribler/twisted/plugins/
