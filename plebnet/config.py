@@ -21,7 +21,8 @@ class PlebNetConfig(object):
                                       'BTC:': 0.0},
                        'excluded_providers': [],
                        'chosen_providers': [],
-                       'bought': []}
+                       'bought': [],
+                       'test_offer': False}
         self.load()
 
     def save(self):

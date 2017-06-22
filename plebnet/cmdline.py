@@ -18,7 +18,6 @@ TRIBLER_HOME = os.path.expanduser("~/tribler")
 PLEBNET_CONFIG = os.path.expanduser("~/.plebnet.cfg")
 TIME_IN_DAY = 60.0 * 60.0 * 24.0
 MAX_DAYS = 5
-test_offer = False
 
 
 def execute(cmd=sys.argv[1:]):
@@ -69,10 +68,11 @@ def check(args):
         chosen_est_price = update_choice(config, dna)
         place_offer(chosen_est_price, config)
 
-    if plebnet_trial_mc_balance():
+    if plebnet_trial_mc_balance() and not config.get('test_offer'):
         print("Placing offer on Tribler market")
         chosen_est_price = get_price(config)
         place_offer(chosen_est_price, config)
+        config.set('test_offer', True)
 
     if marketapi.get_btc_balance() >= get_cheapest_provider(config)[2]:
         print("Purchase server")
