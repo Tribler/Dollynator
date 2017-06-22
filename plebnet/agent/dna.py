@@ -10,14 +10,16 @@ class DNA:
     rate = 0.005
     length = 0.0
     dictionary = {}
+    vps = {}
 
     def __init__(self):
         pass
 
     @staticmethod
     def create_test_dict():
-        testdict = {'blueangelhost': 0.5, 'ccihosting': 0.5, 'crowncloud': 0, 'legionbox': 0, 'linevast': 0.5,
-                    'pulseserver': 0.5, 'rockhoster': 0.5, 'undergroundprivate': 0}
+        testdict = {'Self': '',
+                    'VPS': {'blueangelhost': 0, 'ccihosting': 0.5, 'crowncloud': 0, 'legionbox': 0, 'linevast': 0.5,
+                            'pulseserver': 0.5, 'rockhoster': 0.5, 'undergroundprivate': 0}}
         return testdict
 
     def read_dictionary(self):
@@ -30,6 +32,7 @@ class DNA:
             with open(filename) as json_file:
                 data = json.load(json_file)
                 self.dictionary = data
+        self.vps = self.dictionary['VPS']
 
     def write_dictionary(self):
         config_dir = user_config_dir()
@@ -37,29 +40,37 @@ class DNA:
         with open(filename, 'w') as json_file:
             json.dump(self.dictionary, json_file)
 
+    def create_child_dna(self, provider):
+        dictionary = copy.deepcopy(self.dictionary)
+        dictionary['Self'] = provider
+        config_dir = user_config_dir()
+        filename = os.path.join(config_dir, 'Child_DNA.json')
+        with open(filename, 'w') as json_file:
+            json.dump(dictionary, json_file)
+
     def add_provider(self, provider):
-        self.dictionary[provider] = 0.5
+        self.vps[provider] = 0.5
 
     def remove_provider(self, provider):
-        self.dictionary.pop(provider)
+        self.vps.pop(provider)
 
     def normalize(self):
-        self.length = sum(self.dictionary.values())
-        for item in self.dictionary:
-            self.dictionary[item] /= self.length
+        self.length = sum(self.vps.values())
+        for item in self.vps:
+            self.vps[item] /= self.length
 
     def mutate(self, provider):
-        self.dictionary[provider] += self.rate
+        self.vps[provider] += self.rate
 
     def demutate(self, provider):
-        self.dictionary[provider] -= self.rate
-        if self.dictionary[provider] < 0:
-            self.dictionary[provider] += self.rate
+        self.vps[provider] -= self.rate
+        if self.vps[provider] < 0:
+            self.vps[provider] += self.rate
 
     def denormalize(self):
-        newlength = sum(self.dictionary.values())
-        for item in self.dictionary:
-            self.dictionary[item] *= (self.length / newlength)
+        newlength = sum(self.vps.values())
+        for item in self.vps:
+            self.vps[item] *= (self.length / newlength)
 
     @staticmethod
     def choose_provider(dictionary):
@@ -70,7 +81,7 @@ class DNA:
                 return item
 
     def exclude(self, provider):
-        dictionary = copy.deepcopy(self.dictionary)
+        dictionary = copy.deepcopy(self.vps)
         dictionary.pop(provider)
         return dictionary
 
@@ -83,7 +94,7 @@ class DNA:
 
     def choose(self):
         self.normalize()
-        provider = self.choose_provider(self.dictionary)
+        provider = self.choose_provider(self.vps)
         self.denormalize()
         dictionary = self.exclude(provider)
         dictionary = self.normalize_excluded(dictionary)
@@ -96,8 +107,19 @@ class DNA:
         self.normalize()
         self.mutate(provider)
         self.denormalize()
+        self.write_dictionary()
 
     def negative_evolve(self, provider):
         self.normalize()
         self.demutate(provider)
         self.denormalize()
+        self.write_dictionary()
+
+    def set_own_provider(self, provider):
+        self.dictionary['Self'] = provider
+        self.write_dictionary()
+
+dna = DNA()
+dna.read_dictionary()
+dna.positive_evolve('pulseserver')
+dna.create_child_dna('rockhoster')

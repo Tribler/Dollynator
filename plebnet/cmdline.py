@@ -89,9 +89,14 @@ def check(args):
     if len(config.get('chosen_providers')) > 0:
         if marketapi.get_btc_balance() >= get_cheapest_provider(config)[2]:
             print("Purchase server")
-            purchase_choices(config)
+            success, provider = purchase_choices(config)
+            if success:
+                own_provider = get_own_provider(dna)
+                evolve(own_provider, dna, success)
+            else:
+                evolve(provider, dna, success)
 
-    install_available_servers(config)
+    install_available_servers(config, dna)
     config.save()
 
 
@@ -169,6 +174,10 @@ def get_price(config):
     return price
 
 
+def get_own_provider(dna):
+    return dna.dictionary['Self']
+
+
 def pick_provider(providers):
     provider = DNA.choose_provider(providers)
     gateway = cloudomate_providers[provider].gateway
@@ -242,10 +251,10 @@ def purchase_choices(config):
         config.get('bought').append(provider)
     config.get('chosen_providers').remove((provider, vps_option, btc_price))
     config.get('excluded_providers').append(provider)
-    return success
+    return success, provider
 
 
-def install_available_servers(config):
+def install_available_servers(config, dna):
     bought = config.get('bought')
 
     for provider in bought:
@@ -258,6 +267,7 @@ def install_available_servers(config):
                 user_options.read_settings()
                 rootpw = user_options.get('rootpw')
                 cloudomatecontroller.setrootpw(cloudomate_providers[provider], rootpw)
+                dna.create_child_dna(provider)
                 install_server(ip, rootpw)
                 mail_message = 'IP: %s\n' % ip
                 mail_message += 'Root password: %s\n' % rootpw
