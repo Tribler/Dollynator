@@ -147,7 +147,7 @@ def evolve(provider, dna, success):
 
 def update_choice(config, dna):
     choices = []
-    all_providers = dna.dictionary
+    all_providers = dna.vps
     excluded_providers = config.get('excluded_providers')
     available_providers = list(set(all_providers.keys()) - set(excluded_providers))
     providers = {k: all_providers[k] for k in all_providers if k in available_providers}
