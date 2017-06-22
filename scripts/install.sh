@@ -72,4 +72,4 @@ twistd plebnet -p 8085 --exitnode
 plebnet setup
 
 # cron plebnet check
-echo "* * * * * root /usr/local/bin/plebnet check > ~/plebnet.log" > /etc/cron.d/plebnet
+echo "* * * * * root /usr/local/bin/plebnet check >> ~/plebnet.log 2>&1" > /etc/cron.d/plebnet
