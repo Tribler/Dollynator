@@ -87,7 +87,8 @@ def check(args):
 
     if marketapi.get_btc_balance() >= get_cheapest_provider(config)[2]:
         print("Purchase server")
-        purchase_choices(config)
+        success, provider = purchase_choices(config)
+        evolve(provider, dna, success)
 
     install_available_servers(config)
     config.save()
@@ -236,7 +237,7 @@ def purchase_choices(config):
         config.get('bought').append(provider)
     config.get('chosen_providers').remove(provider)
     config.get('excluded_providers').append(provider)
-    return success
+    return success, provider
 
 
 def install_available_servers(config):
