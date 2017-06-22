@@ -21,6 +21,17 @@ def status(provider):
     return provider.get_status(settings)
 
 
+def get_ip(provider):
+    settings = _user_settings()
+    return provider.get_ip(settings)
+
+
+def setrootpw(provider, password):
+    settings = _user_settings()
+    settings.put('rootpw', password)
+    return provider.set_rootpw(settings)
+
+
 def options(provider):
     return provider.options()
 

@@ -1,15 +1,16 @@
 import os
+import re
 import subprocess
 import sys
+import time
 from argparse import ArgumentParser
 
 import cloudomate
-import time
 from cloudomate.cmdline import providers as cloudomate_providers
+from cloudomate.util.config import UserOptions
 from cloudomate.wallet import ElectrumWalletHandler
 from cloudomate.wallet import Wallet
-
-from plebnet import cloudomatecontroller, twitter
+from plebnet import cloudomatecontroller
 from plebnet.agent import marketapi
 from plebnet.agent.dna import DNA
 from plebnet.cloudomatecontroller import options
@@ -86,8 +87,7 @@ def check(args):
         print("Purchase server")
         purchase_choices(config)
 
-    if uninstalled_server_available(config):
-        install_server(config)
+    install_available_servers(config)
     config.save()
 
 
@@ -236,12 +236,30 @@ def purchase_choices(config):
     return success
 
 
-def uninstalled_server_available(config):
-    pass
+def install_available_servers(config):
+    bought = config.get('bought')
+
+    for provider in bought:
+        ip = subprocess.check_output(['cloudomate', 'getip', provider])
+        if is_valid_ip(ip):
+            user_options = UserOptions()
+            user_options.read_settings()
+            rootpw = user_options.get('rootpw')
+            cloudomatecontroller.setrootpw(cloudomate_providers[provider], rootpw)
+            install_server(config, ip, rootpw)
 
 
-def install_server(config, ip, password):
-    subprocess.call(['../scripts/create-child.sh', ip, password])
+def is_valid_ip(ip):
+    return re.match('\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', ip)
+
+
+def install_server(config, ip, rootpw):
+    success = subprocess.call(['../scripts/create-child.sh', ip, rootpw])
+    if success:
+        print("Installation successful")
+    else:
+        print("Installation unsuccesful")
+    return success
 
 
 if __name__ == '__main__':
