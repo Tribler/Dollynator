@@ -3,10 +3,9 @@ import subprocess
 import sys
 from argparse import ArgumentParser
 
-from cloudomate.wallet import ElectrumWalletHandler
-from cloudomate.cmdline import providers as cloudomate_providers
 import cloudomate
 from cloudomate.cmdline import providers as cloudomate_providers
+from cloudomate.wallet import ElectrumWalletHandler
 from cloudomate.wallet import Wallet
 
 from plebnet import cloudomatecontroller
@@ -55,12 +54,12 @@ def check(args):
     if config.time_since_offer() > TIME_IN_DAY:
         print("Updating daily offer")
         chosen_est_price = update_choice(config, dna)
-        place_offer(chosen_est_price)
+        place_offer(chosen_est_price, config)
 
     if plebnet_trail_mc_balance():
         print("Placing offer on Tribler market")
         chosen_est_price = update_choice(config, dna)
-        place_offer(chosen_est_price)
+        place_offer(chosen_est_price, config)
 
     if marketapi.get_btc_balance() >= get_cheapest_provider(config)[2]:
         print("Purchase server")
@@ -131,14 +130,18 @@ def update_choice(config, dna):
     excluded_providers = config.get('excluded_providers')
     available_providers = list(set(all_providers.keys()) - set(excluded_providers))
     providers = {k: all_providers[k] for k in all_providers if k in available_providers}
+    print("Providers: %s" % providers)
     if providers >= 1:
         (provider, option, btc_price) = pick_provider(providers)
         choices.append((provider, option, btc_price))
+        print("First provider: %s" % provider)
         del providers[provider]
 
     if config.time_to_expiration() > MAX_DAYS * TIME_IN_DAY and len(providers) >= 1:
         # if more than 5 days left, pick another, to improve margins
-        choices.append(pick_provider(providers))
+        (provider, option, btc_price) = pick_provider(providers)
+        choices.append((provider, option, btc_price))
+        print("Second provider: %s" % provider)
     config.set('chosen_providers', choices)
     return sum(i[2] for i in choices)
 
@@ -169,9 +172,10 @@ def pick_option(provider):
     return option, price, currency
 
 
-def place_offer(chosen_est_price):
+def place_offer(chosen_est_price, config):
     """
     Sell all available MC for the chosen estimated price on the Tribler market.
+    :param config: config
     :param chosen_est_price: Target amount of BTC to receive
     :return: success of offer placement
     """
@@ -179,6 +183,7 @@ def place_offer(chosen_est_price):
     if available_mc == 0:
         print("No MC available")
         return False
+    config.bump_offer_date()
     return marketapi.put_ask(price=chosen_est_price, price_type='BTC', quantity=available_mc, quantity_type='MC')
 
 
@@ -190,10 +195,10 @@ def get_cheapest_provider(config):
     """
     providers = config.get('chosen_providers')
     cheapest_provider = providers[0]
-    min = cheapest_provider[2]
+    min_price = cheapest_provider[2]
     for provider in providers:
-        if provider[2] < min:
-            min = provider[2]
+        if provider[2] < min_price:
+            min_price = provider[2]
             cheapest_provider = provider
 
     return cheapest_provider
