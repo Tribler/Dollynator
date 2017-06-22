@@ -94,6 +94,7 @@ def check(args):
         else:
             evolve(provider, dna, success)
 
+
     install_available_servers(config, dna)
     config.save()
 
