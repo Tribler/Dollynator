@@ -15,22 +15,22 @@ if ! hash sshpass 2> /dev/null; then
 fi
 
 echo "Creating directories"
-sshpass -p${PASSWORD} ssh root@${IP} 'mkdir -p .config/; mkdir -p .electrum/wallets/; mkdir -p .Tribler/wallet/'
+sshpass -p${PASSWORD} ssh -o StrictHostKeyChecking=no root@${IP} 'mkdir -p .config/; mkdir -p .electrum/wallets/; mkdir -p .Tribler/wallet/'
 
 echo "Copying DNA"
 [ ! -f ${CHILD_DNA_FILE} ] && echo "File $CHILD_DNA_FILE not found" && exit 1
-sshpass -p${PASSWORD} scp ${CHILD_DNA_FILE} root@${IP}:${DNA_FILE}
+sshpass -p${PASSWORD} scp -o StrictHostKeyChecking=no ${CHILD_DNA_FILE} root@${IP}:${DNA_FILE}
 
 echo "Copying wallet"
 [ ! -f ${WALLET_FILE} ] && echo "File $WALLET_FILE not found" && exit 1
-sshpass -p${PASSWORD} scp ${WALLET_FILE} root@${IP}:${WALLET_FILE}
+sshpass -p${PASSWORD} scp -o StrictHostKeyChecking=no ${WALLET_FILE} root@${IP}:${WALLET_FILE}
 
 echo "Symlinking to Tribler wallet"
-sshpass -p${PASSWORD} ssh root@${IP} "ln -s ${WALLET_FILE} .Tribler/wallet/btc_wallet"
+sshpass -p${PASSWORD} ssh -o StrictHostKeyChecking=no root@${IP} "ln -s ${WALLET_FILE} .Tribler/wallet/btc_wallet"
 
 
 echo "Installing PlebNet"
-sshpass -p${PASSWORD} ssh root@${IP} 'apt-get update && \
+sshpass -p${PASSWORD} ssh -o StrictHostKeyChecking=no root@${IP} 'apt-get update && \
     apt-get install git && \
     git clone https://github.com/rjwvandenberg/PlebNet && \
     cd PlebNet && git checkout scripts && scripts/install.sh'
