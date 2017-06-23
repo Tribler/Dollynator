@@ -64,11 +64,6 @@ cd PlebNet
 cd docker/market/twistd_plugin/
 cp plebnet_plugin.py ~/tribler/twisted/plugins/
 
-cd $HOME
-cd tribler
-export PYTHONPATH=.
-twistd plebnet -p 8085 --exitnode
-
 plebnet setup
 
 # cron plebnet check
