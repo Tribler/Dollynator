@@ -272,9 +272,13 @@ def install_available_servers(config, dna):
                 rootpw = user_options.get('rootpw')
                 cloudomatecontroller.setrootpw(cloudomate_providers[provider], rootpw)
                 dna.create_child_dna(provider)
-                install_server(ip, rootpw)
+                success = install_server(ip, rootpw)
+                config.get('installed').append({provider: success})
+                if provider in bought:
+                    bought.remove(provider)
                 mail_message = 'IP: %s\n' % ip
                 mail_message += 'Root password: %s\n' % rootpw
+                mail_message += 'Success: %s\n' % success
                 mail_dna = DNA()
                 mail_dna.read_dictionary()
                 mail_message += '\nDNA\n%s\n' % json.dumps(mail_dna.dictionary)
