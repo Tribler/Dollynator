@@ -251,8 +251,9 @@ def purchase_choices(config):
     success = cloudomatecontroller.purchase(cloudomate_providers[provider], vps_option, wallet=Wallet())
     if success:
         config.get('bought').append(provider)
-    config.get('chosen_providers').remove((provider, vps_option, btc_price))
     config.get('excluded_providers').append(provider)
+    if (provider, vps_option, btc_price) in config.get('chosen_providers'):
+        config.get('chosen_providers').remove((provider, vps_option, btc_price))
     return success, provider
 
 
