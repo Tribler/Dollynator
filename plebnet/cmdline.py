@@ -289,7 +289,9 @@ def is_valid_ip(ip):
 
 
 def install_server(ip, rootpw):
-    success = subprocess.call(['../scripts/create-child.sh', ip, rootpw])
+    file_path = os.path.dirname(os.path.realpath(__file__))
+    script_path = os.path.join(file_path, '../scripts/create-child.sh')
+    success = subprocess.call([script_path, ip, rootpw])
     if success:
         print("Installation successful")
     else:
