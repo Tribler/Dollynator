@@ -19,7 +19,7 @@ class DNA:
     def create_test_dict():
         testdict = {'Self': '',
                     'VPS': {'blueangelhost': 0, 'ccihosting': 0.5, 'crowncloud': 0, 'legionbox': 0, 'linevast': 0.5,
-                            'pulseserver': 0.5, 'rockhoster': 0.5, 'undergroundprivate': 0}}
+                            'pulseservers': 0.5, 'rockhoster': 0.5, 'undergroundprivate': 0}}
         return testdict
 
     def read_dictionary(self):
