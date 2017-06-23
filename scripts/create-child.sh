@@ -26,7 +26,7 @@ echo "Copying wallet"
 sshpass -p${PASSWORD} scp -o StrictHostKeyChecking=no ${WALLET_FILE} root@${IP}:${WALLET_FILE}
 
 echo "Symlinking to Tribler wallet"
-sshpass -p${PASSWORD} ssh -o StrictHostKeyChecking=no root@${IP} "ln -s ${WALLET_FILE} .Tribler/wallet/btc_wallet"
+sshpass -p${PASSWORD} ssh -o StrictHostKeyChecking=no root@${IP} "ln -s ~/${WALLET_FILE} .Tribler/wallet/btc_wallet"
 
 
 echo "Installing PlebNet"
