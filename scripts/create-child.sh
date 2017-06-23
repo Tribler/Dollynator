@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-
 IP=$1
 PASSWORD=$2
 CHILD_DNA_FILE=".config/Child_DNA.json"
 DNA_FILE=".config/DNA.json"
 WALLET_FILE=".electrum/wallets/default_wallet"
+
+cd
 
 [ -z "$1" ] || [ -z "$2" ] && echo "Usage: $0 <ip address> <password>" && exit 1
 
@@ -17,15 +18,15 @@ echo "Creating directories"
 sshpass -p${PASSWORD} ssh root@${IP} 'mkdir -p .config/; mkdir -p .electrum/wallets/; mkdir -p .Tribler/wallet/'
 
 echo "Copying DNA"
-[ ! -f ~/${CHILD_DNA_FILE} ] && echo "File ~/$CHILD_DNA_FILE not found" && exit 1
-sshpass -p${PASSWORD} scp ~/${CHILD_DNA_FILE} root@${IP}:${DNA_FILE}
+[ ! -f ${CHILD_DNA_FILE} ] && echo "File $CHILD_DNA_FILE not found" && exit 1
+sshpass -p${PASSWORD} scp ${CHILD_DNA_FILE} root@${IP}:${DNA_FILE}
 
 echo "Copying wallet"
-[ ! -f ~/${WALLET_FILE} ] && echo "File ~/$WALLET_FILE not found" && exit 1
-sshpass -p${PASSWORD} scp ~/${WALLET_FILE} root@${IP}:${WALLET_FILE}
+[ ! -f ${WALLET_FILE} ] && echo "File $WALLET_FILE not found" && exit 1
+sshpass -p${PASSWORD} scp ${WALLET_FILE} root@${IP}:${WALLET_FILE}
 
 echo "Symlinking to Tribler wallet"
-sshpass -p${PASSWORD} ssh root@${IP} "ln -s ~/${WALLET_FILE} .Tribler/wallet/btc_wallet"
+sshpass -p${PASSWORD} ssh root@${IP} "ln -s ${WALLET_FILE} .Tribler/wallet/btc_wallet"
 
 
 echo "Installing PlebNet"
