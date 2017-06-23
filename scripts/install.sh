@@ -44,7 +44,8 @@ sudo apt-get install -y \
     python-scipy \
     python-wxtools \
     git \
-    python-pip
+    python-pip \
+    python-lxml
 
 pip install pyaes
 
