@@ -53,7 +53,7 @@ def generate_config():
         print("cloudomate.cfg already present at %s" % filename)
         config.read_settings(filename=filename)
         return config
-    locale = random.choice(['bg_BG', 'cs_CZ', 'de_DE', 'dk_DK', 'es_ES', 'et_EE', 'hr_HR', 'it_IT'])
+    locale = random.choice(['cs_CZ', 'de_DE', 'dk_DK', 'es_ES', 'et_EE', 'hr_HR', 'it_IT'])
     fake = Factory().create(locale)
     cp = ConfigParser.ConfigParser()
     _generate_address(cp, fake)
