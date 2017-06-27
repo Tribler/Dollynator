@@ -19,7 +19,7 @@ from plebnet.agent.dna import DNA
 from plebnet.cloudomatecontroller import options
 from plebnet.config import PlebNetConfig
 
-TRIBLER_HOME = os.path.expanduser("~/tribler")
+TRIBLER_HOME = os.path.expanduser("~/PlebNet/tribler")
 PLEBNET_CONFIG = os.path.expanduser("~/.plebnet.cfg")
 TIME_IN_DAY = 60.0 * 60.0 * 24.0
 MAX_DAYS = 5
@@ -75,6 +75,7 @@ def check(args):
         print("Tribler not running")
         success = start_tribler()
         print(success)
+        # Now give tribler time to startup
         return success
 
     if config.time_since_offer() > TIME_IN_DAY:
