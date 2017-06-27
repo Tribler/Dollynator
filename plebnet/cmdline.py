@@ -13,7 +13,7 @@ from cloudomate.cmdline import providers as cloudomate_providers
 from cloudomate.util.config import UserOptions
 from cloudomate.wallet import Wallet
 
-from plebnet import cloudomatecontroller
+from plebnet import cloudomatecontroller, twitter
 from plebnet.agent import marketapi
 from plebnet.agent.dna import DNA
 from plebnet.cloudomatecontroller import options
@@ -48,7 +48,7 @@ def add_parser_setup(subparsers):
 
 def setup(args):
     print("Setting up PlebNet")
-    cloudomatecontroller.generate_config()
+    cp = cloudomatecontroller.generate_config()
     config = PlebNetConfig()
     config.set('expiration_date', time.time() + 30 * TIME_IN_DAY)
     config.save()
@@ -56,7 +56,10 @@ def setup(args):
     dna = DNA()
     dna.read_dictionary()
     dna.write_dictionary()
-    # twitter.tweet_arrival(cp.get('firstname') + ' ' + cp.get('lastname'))
+    twitter_config = dna.dictionary['twitter']
+    twitter.tweet_arrival(cp.get('firstname') + ' ' + cp.get('lastname'), twitter_config['app_key'],
+                          twitter_config['app_secret'], twitter_config['oauth_token'],
+                          twitter_config['oauth_token_secret'])
 
 
 def check(args):
@@ -214,7 +217,8 @@ def place_offer(chosen_est_price, config):
         return False
     config.bump_offer_date()
     config.set('last_offer', {'BTC': chosen_est_price, 'MC': available_mc})
-    return marketapi.put_ask(price=chosen_est_price, price_type='BTC', quantity=available_mc, quantity_type='MC', timeout=TIME_IN_DAY)
+    return marketapi.put_ask(price=chosen_est_price, price_type='BTC', quantity=available_mc, quantity_type='MC',
+                             timeout=TIME_IN_DAY)
 
 
 def get_cheapest_provider(config):
@@ -270,21 +274,25 @@ def install_available_servers(config, dna):
                 # Save config before entering possibly long lasting process
                 config.save()
                 success = install_server(ip, rootpw)
+                send_child_creation_mail(ip, rootpw, success, config, user_options)
                 # Reload config in case install takes a long time
                 config.load()
                 config.get('installed').append({provider: success})
                 if provider in bought:
                     bought.remove(provider)
-                mail_message = 'IP: %s\n' % ip
-                mail_message += 'Root password: %s\n' % rootpw
-                mail_message += 'Success: %s\n' % success
-                mail_dna = DNA()
-                mail_dna.read_dictionary()
-                mail_message += '\nDNA\n%s\n' % json.dumps(mail_dna.dictionary)
-                mail_message += '\nConfig\n%s\n' % json.dumps(config.config)
-                send_mail(mail_message, user_options.get('firstname') + ' ' + user_options.get('lastname'))
         except CalledProcessError:
             print("%s not ready yet" % provider)
+
+
+def send_child_creation_mail(ip, rootpw, success, config, user_options):
+    mail_message = 'IP: %s\n' % ip
+    mail_message += 'Root password: %s\n' % rootpw
+    mail_message += 'Success: %s\n' % success
+    mail_dna = DNA()
+    mail_dna.read_dictionary()
+    mail_message += '\nDNA\n%s\n' % json.dumps(mail_dna.dictionary)
+    mail_message += '\nConfig\n%s\n' % json.dumps(config.config)
+    send_mail(mail_message, user_options.get('firstname') + ' ' + user_options.get('lastname'))
 
 
 def is_valid_ip(ip):
@@ -310,7 +318,7 @@ def send_mail(mail_message, name):
 
     mail = """From: %s <%s>
 To: Jaap <plebnet@heijligers.me>
-Subject: Pleb arrival
+Subject: New child spawned
 
 """ % (name, sender)
     mail += mail_message
