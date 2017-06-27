@@ -47,6 +47,11 @@ sudo apt-get install -y \
     python-pip \
     python-lxml
 
+# Update pip to avoid locale errors in certain configurations
+echo "upgrading pip"
+LC_ALL=en_US.UTF-8 pip install --upgrade pip
+echo "done upgrading pip"
+
 pip install pyaes
 
 cd $HOME
@@ -55,8 +60,7 @@ pip install --upgrade ./PlebNet
 cd PlebNet
 git submodule update --init --recursive tribler
 pip install ./tribler/electrum
-cd docker/market/twistd_plugin/
-cp plebnet_plugin.py ~/tribler/twisted/plugins/
+cp docker/market/twistd_plugin/plebnet_plugin.py $HOME/PlebNet/tribler/twisted/plugins/
 
 plebnet setup
 
