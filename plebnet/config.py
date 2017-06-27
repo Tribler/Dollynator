@@ -24,8 +24,7 @@ class PlebNetConfig(object):
                        'excluded_providers': [],
                        'chosen_providers': [],
                        'bought': [],
-                       'installed': [],
-                       'test_offer': False}
+                       'installed': []}
         self.load()
 
     def save(self):

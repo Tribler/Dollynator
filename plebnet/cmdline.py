@@ -83,12 +83,6 @@ def check(args):
         chosen_est_price = update_choice(config, dna)
         place_offer(chosen_est_price, config)
 
-    if plebnet_trial_mc_balance() and not config.get('test_offer'):
-        print("Placing offer on Tribler market")
-        chosen_est_price = get_price(config)
-        place_offer(chosen_est_price, config)
-        config.set('test_offer', True)
-
     if len(config.get('chosen_providers')) > 0:
         if marketapi.get_btc_balance() >= get_cheapest_provider(config)[2]:
             print("Purchase server")
@@ -220,7 +214,7 @@ def place_offer(chosen_est_price, config):
         return False
     config.bump_offer_date()
     config.set('last_offer', {'BTC': chosen_est_price, 'MC': available_mc})
-    return marketapi.put_ask(price=chosen_est_price, price_type='BTC', quantity=available_mc, quantity_type='MC')
+    return marketapi.put_ask(price=chosen_est_price, price_type='BTC', quantity=available_mc, quantity_type='MC', timeout=TIME_IN_DAY)
 
 
 def get_cheapest_provider(config):
