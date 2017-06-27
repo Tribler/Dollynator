@@ -272,7 +272,11 @@ def install_available_servers(config, dna):
                 rootpw = user_options.get('rootpw')
                 cloudomatecontroller.setrootpw(cloudomate_providers[provider], rootpw)
                 dna.create_child_dna(provider)
+                # Save config before entering possibly long lasting process
+                config.save()
                 success = install_server(ip, rootpw)
+                # Reload config in case install takes a long time
+                config.load()
                 config.get('installed').append({provider: success})
                 if provider in bought:
                     bought.remove(provider)
