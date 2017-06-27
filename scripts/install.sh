@@ -49,19 +49,22 @@ sudo apt-get install -y \
 
 pip install pyaes
 
-cd $HOME
-git clone --recursive https://github.com/devos50/tribler
-cd tribler
-git checkout market_community
-git submodule update --init --recursive electrum
-git submodule update --init --recursive Tribler/dispersy
-git submodule update --init --recursive Tribler/Core/DecentralizedTracking/pymdht
-pip install ./electrum
+#moving tribler to subdirectory of plebnet so we can cherrypick a specific checkout
+#cd $HOME
+#git clone --recursive https://github.com/devos50/tribler
+#cd tribler
+#git checkout market_community
+#git submodule update --init --recursive electrum
+#git submodule update --init --recursive Tribler/dispersy
+#git submodule update --init --recursive Tribler/Core/DecentralizedTracking/pymdht
+#pip install ./electrum
 
 cd $HOME
-[ ! -d "PlebNet" ] && git clone https://github.com/rjwvandenberg/PlebNet
+[ ! -d "PlebNet" ] && git clone -b market_community_fix_version https://github.com/rjwvandenberg/PlebNet
 pip install --upgrade ./PlebNet
 cd PlebNet
+git submodule update --init --recursive tribler
+pip install ./tribler/electrum
 cd docker/market/twistd_plugin/
 cp plebnet_plugin.py ~/tribler/twisted/plugins/
 

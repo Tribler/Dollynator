@@ -1,0 +1,4 @@
+[submodule "tribler"]
+	path = tribler
+	url = https://github.com/devos50/tribler
+	branch = market_community
