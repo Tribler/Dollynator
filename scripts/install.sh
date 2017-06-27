@@ -10,7 +10,10 @@ echo force-confold >> /etc/dpkg/dpkg.cfg
 echo force-confdef >> /etc/dpkg/dpkg.cfg
 
 # Upgrade system
-apt-get update && apt-get -y upgrade
+apt-get update
+# Do not upgrade for now as in some VPS it will cause for example grub to update
+# Requiring manual configuration after installation
+# && apt-get -y upgrade
 
 
 # Install dependencies
