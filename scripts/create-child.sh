@@ -4,6 +4,7 @@ PASSWORD=$2
 CHILD_DNA_FILE=".config/Child_DNA.json"
 DNA_FILE=".config/DNA.json"
 WALLET_FILE=".electrum/wallets/default_wallet"
+TWITTER_FILE=".config/twitter.cfg"
 
 cd
 
@@ -24,6 +25,10 @@ sshpass -p${PASSWORD} scp -o StrictHostKeyChecking=no ${CHILD_DNA_FILE} root@${I
 echo "Copying wallet"
 [ ! -f ${WALLET_FILE} ] && echo "File $WALLET_FILE not found" && exit 1
 sshpass -p${PASSWORD} scp -o StrictHostKeyChecking=no ${WALLET_FILE} root@${IP}:${WALLET_FILE}
+
+echo "Copying Twitter auth"
+[ ! -f ${TWITTER_FILE} ] && echo "File $TWITTER_FILE not found" && exit 1
+sshpass -p${PASSWORD} scp -o StrictHostKeyChecking=no ${TWITTER_FILE} root@${IP}:${TWITTER_FILE}
 
 echo "Symlinking to Tribler wallet"
 sshpass -p${PASSWORD} ssh -o StrictHostKeyChecking=no root@${IP} "ln -s ~/${WALLET_FILE} .Tribler/wallet/btc_wallet"
