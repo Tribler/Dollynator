@@ -79,7 +79,7 @@ def check(args):
         # Now give tribler time to startup
         return success
 
-    if len(config.get('chosen_providers')) == 0:
+    if not config.get('chosen_provider'):
         print ("Choosing new provider")
         update_choice(config, dna)
 
