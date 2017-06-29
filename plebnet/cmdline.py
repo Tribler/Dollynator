@@ -56,10 +56,7 @@ def setup(args):
     dna = DNA()
     dna.read_dictionary()
     dna.write_dictionary()
-    twitter_config = dna.dictionary['twitter']
-    twitter.tweet_arrival(cp.get('firstname') + ' ' + cp.get('lastname'), twitter_config['app_key'],
-                          twitter_config['app_secret'], twitter_config['oauth_token'],
-                          twitter_config['oauth_token_secret'])
+    twitter.tweet_arrival()
 
 
 def check(args):
