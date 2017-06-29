@@ -44,7 +44,8 @@ def purchase(provider, vps_option, wallet):
     settings = _user_settings()
     option = options(provider)[vps_option]
     try:
-        return provider.purchase(settings, option, wallet)
+        provider.purchase(settings, option, wallet)
+        return True
     except SystemExit:
         return False
 

@@ -18,8 +18,8 @@ class DNA:
     @staticmethod
     def create_test_dict():
         testdict = {'Self': '',
-                    'VPS': {'blueangelhost': 0, 'ccihosting': 0.5, 'crowncloud': 0, 'legionbox': 0, 'linevast': 0.5,
-                            'pulseservers': 0.5, 'rockhoster': 0.5, 'undergroundprivate': 0}}
+                    'parent': '',
+                    'VPS': {'ccihosting': 0.5, 'linevast': 0.5, 'pulseservers': 0.5, 'rockhoster': 0.5}}
         return testdict
 
     def read_dictionary(self):
@@ -40,9 +40,10 @@ class DNA:
         with open(filename, 'w') as json_file:
             json.dump(self.dictionary, json_file)
 
-    def create_child_dna(self, provider):
+    def create_child_dna(self, provider, parentname):
         dictionary = copy.deepcopy(self.dictionary)
         dictionary['Self'] = provider
+        dictionary['parent'] = parentname
         config_dir = user_config_dir()
         filename = os.path.join(config_dir, 'Child_DNA.json')
         with open(filename, 'w') as json_file:
@@ -118,3 +119,15 @@ class DNA:
     def set_own_provider(self, provider):
         self.dictionary['Self'] = provider
         self.write_dictionary()
+
+
+if __name__=="__main__":
+    dna = DNA()
+    dna.read_dictionary()
+    print(dna.dictionary)
+    dictionary = dna.exclude('linevast')
+    print(dictionary)
+    for i in range(100):
+        dna.positive_evolve('rockhoster')
+    print(dna.dictionary)
+    print(dna.choose_provider(dictionary))

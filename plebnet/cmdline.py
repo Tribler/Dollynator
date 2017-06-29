@@ -20,7 +20,9 @@ from plebnet.config import PlebNetConfig
 
 TRIBLER_HOME = os.path.expanduser("~/PlebNet/tribler")
 PLEBNET_CONFIG = os.path.expanduser("~/.plebnet.cfg")
-TIME_IN_DAY = 60.0 * 60.0 * 24.0
+TIME_IN_HOUR = 60.0 * 60.0
+TIME_IN_DAY = TIME_IN_HOUR * 24.0
+
 MAX_DAYS = 5
 
 
@@ -77,19 +79,25 @@ def check(args):
         # Now give tribler time to startup
         return success
 
-    if config.time_since_offer() > TIME_IN_DAY:
-        print("Updating daily offer")
-        chosen_est_price = update_choice(config, dna)
-        place_offer(chosen_est_price, config)
+    if len(config.get('chosen_providers')) == 0:
+        print ("Choosing new provider")
+        update_choice(config, dna)
 
-    if len(config.get('chosen_providers')) > 0:
-        if marketapi.get_btc_balance() >= get_cheapest_provider(config)[2]:
+    if config.time_since_offer() > TIME_IN_HOUR:
+        print("Calculating new offer")
+        update_offer(config, dna)
+
+    if config.get('chosen_provider'):
+        (provider, option, _) = config.get('chosen_provider')
+        if marketapi.get_btc_balance() >= calculate_price(provider, option):
             print("Purchase server")
-            success, provider = purchase_choices(config)
+            success, provider = purchase_choice(config)
             if success:
+                # evolve yourself positively if you are successfull
                 own_provider = get_own_provider(dna)
                 evolve(own_provider, dna, success)
             else:
+                # evolve provider negatively if not succesfull
                 evolve(provider, dna, success)
 
     install_available_servers(config, dna)
@@ -118,86 +126,20 @@ def start_tribler():
         return False
 
 
-def is_evolve_ready():
-    """
-    Determine whether the pleb is ready to evolve
-    :return: 
-    """
-    return True
+def update_offer(config, dna):
+    if not config.get('chosen_provider'):
+        return
+    (provider, option, _) = config.get('chosen_provider')
+    btc_price = calculate_price(provider, option) * 1.1
+    place_offer(btc_price)
 
 
-def plebnet_trial_mc_balance():
-    """
-    Determines if plebnet has mc it can sell, used for trail
-    :return: True if multichain balance is more than 0
-    """
-    return marketapi.get_mc_balance() > 0
-
-
-def evolve(provider, dna, success):
-    if success:
-        dna.positive_evolve(provider)
-    else:
-        dna.negative_evolve(provider)
-
-
-def update_choice(config, dna):
-    choices = []
-    all_providers = dna.vps
-    excluded_providers = config.get('excluded_providers')
-    available_providers = list(set(all_providers.keys()) - set(excluded_providers))
-    providers = {k: all_providers[k] for k in all_providers if k in available_providers}
-    print("Providers: %s" % providers)
-    if providers >= 1:
-        (provider, option, btc_price) = pick_provider(providers)
-        choices.append((provider, option, btc_price))
-        print("First provider: %s" % provider)
-        del providers[provider]
-
-    if config.time_to_expiration() > MAX_DAYS * TIME_IN_DAY and len(providers) >= 1:
-        # if more than 5 days left, pick another, to improve margins
-        (provider, option, btc_price) = pick_provider(providers)
-        choices.append((provider, option, btc_price))
-        print("Second provider: %s" % provider)
-    config.set('chosen_providers', choices)
-    return sum(i[2] for i in choices)
-
-
-def get_price(config):
-    price = 0.0
-    for k in config.get('chosen_providers'):
-        price += k[2]
-    return price
-
-
-def get_own_provider(dna):
-    return dna.dictionary['Self']
-
-
-def pick_provider(providers):
-    provider = DNA.choose_provider(providers)
+def calculate_price(provider, option):
+    vpsoption = options(cloudomate_providers[provider])[option]
     gateway = cloudomate_providers[provider].gateway
-    option, price, currency = pick_option(provider)
     btc_price = gateway.estimate_price(
-        cloudomate.wallet.get_price(price, currency)) + cloudomate.wallet.get_network_fee()
-    return provider, option, btc_price
-
-
-def pick_option(provider):
-    """
-    Pick most favorable option at a provider. For now pick most bandwidth per bitcoin
-    :param provider: 
-    :return: (option, price, currency)
-    """
-    vpsoptions = options(cloudomate_providers[provider])
-    values = []
-    for item in vpsoptions:
-        bandwidth = item.bandwidth
-        if isinstance(bandwidth, str):
-            bandwidth = float(item.connection) * 30 * TIME_IN_DAY
-        values.append((bandwidth / item.price, item.price, item.currency))
-    (bandwidth, price, currency), option = max((v, i) for (i, v) in enumerate(values))
-    return option, price, currency
+        cloudomate.wallet.get_price(vpsoption.price, vpsoption.currency)) + cloudomate.wallet.get_network_fee()
+    return btc_price
 
 
 def place_offer(chosen_est_price, config):
@@ -214,43 +156,57 @@ def place_offer(chosen_est_price, config):
     config.bump_offer_date()
     config.set('last_offer', {'BTC': chosen_est_price, 'MC': available_mc})
     return marketapi.put_ask(price=chosen_est_price, price_type='BTC', quantity=available_mc, quantity_type='MC',
-                             timeout=TIME_IN_DAY)
+                             timeout=TIME_IN_HOUR)
 
 
-def get_cheapest_provider(config):
-    """
-    Get the price of the cheapest target.
-    :param config: config
-    :return: price
-    """
-    providers = config.get('chosen_providers')
-    cheapest_provider = providers[0]
-    min_price = cheapest_provider[2]
-    for provider in providers:
-        if provider[2] < min_price:
-            min_price = provider[2]
-            cheapest_provider = provider
-
-    return cheapest_provider
+def update_choice(config, dna):
+    all_providers = dna.vps
+    excluded_providers = config.get('excluded_providers')
+    available_providers = list(set(all_providers.keys()) - set(excluded_providers))
+    providers = {k: all_providers[k] for k in all_providers if k in available_providers}
+    print("Providers: %s" % providers)
+    if providers >= 1:
+        providers = DNA.normalize_excluded(providers)
+        choice = (provider, option, price) = pick_provider(providers)
+        config.set('chosen_provider', choice)
+        print("First provider: %s" % provider)
 
 
-def purchase_choices(config):
+def pick_provider(providers):
+    provider = DNA.choose_provider(providers)
+    gateway = cloudomate_providers[provider].gateway
+    option, price, currency = pick_option(provider)
+    btc_price = gateway.estimate_price(
+        cloudomate.wallet.get_price(price, currency)) + cloudomate.wallet.get_network_fee()
+    return provider, option, btc_price
+
+
+def purchase_choice(config):
     """
     Purchase the cheapest provider in chosen_providers. If buying is successful this provider is moved to bought. In any
     case the provider is removed from choices.
     :param config: config
     :return: success
     """
-    (provider, vps_option, btc_price) = get_cheapest_provider(config)
-
-    success = cloudomatecontroller.purchase(cloudomate_providers[provider], vps_option, wallet=Wallet())
+    (provider, option, _) = config.get('chosen_provider')
+    success = cloudomatecontroller.purchase(cloudomate_providers[provider], option, wallet=Wallet())
     if success:
         config.get('bought').append(provider)
+        config.set('chosen_provider', None)
     if provider not in config.get('excluded_providers'):
         config.get('excluded_providers').append(provider)
-    if [provider, vps_option, btc_price] in config.get('chosen_providers'):
-        config.get('chosen_providers').remove([provider, vps_option, btc_price])
     return success, provider
+
+
+def get_own_provider(dna):
+    return dna.dictionary['Self']
+
+
+def evolve(provider, dna, success):
+    if success:
+        dna.positive_evolve(provider)
+    else:
+        dna.negative_evolve(provider)
 
 
 def install_available_servers(config, dna):
@@ -266,7 +222,8 @@ def install_available_servers(config, dna):
                 user_options.read_settings()
                 rootpw = user_options.get('rootpw')
                 cloudomatecontroller.setrootpw(cloudomate_providers[provider], rootpw)
-                dna.create_child_dna(provider)
+                parentname = '{0}-{1}'.format(user_options.get('firstname'), user_options.get('lastname'))
+                dna.create_child_dna(provider, parentname)
                 # Save config before entering possibly long lasting process
                 config.save()
                 success = install_server(ip, rootpw)
@@ -330,3 +287,65 @@ Subject: New child spawned
 
 if __name__ == '__main__':
     execute()
+
+
+# old code below
+
+
+
+
+def is_evolve_ready():
+    """
+    Determine whether the pleb is ready to evolve
+    :return: 
+    """
+    return True
+
+
+def plebnet_trial_mc_balance():
+    """
+    Determines if plebnet has mc it can sell, used for trail
+    :return: True if multichain balance is more than 0
+    """
+    return marketapi.get_mc_balance() > 0
+
+
+def get_price(config):
+    price = 0.0
+    for k in config.get('chosen_providers'):
+        price += k[2]
+    return price
+
+
+def pick_option(provider):
+    """
+    Pick most favorable option at a provider. For now pick cheapest option
+    :param provider: 
+    :return: (option, price, currency)
+    """
+    vpsoptions = options(cloudomate_providers[provider])
+    values = []
+    for item in vpsoptions:
+        bandwidth = item.bandwidth
+        if isinstance(bandwidth, str):
+            bandwidth = float(item.connection) * 30 * TIME_IN_DAY
+        values.append((bandwidth / item.price, item.price, item.currency))
+    (bandwidth, price, currency), option = max((v, i) for (i, v) in enumerate(values))
+    return option, price, currency
+
+
+def get_cheapest_provider(config):
+    """
+    Get the price of the cheapest target.
+    :param config: config
+    :return: price
+    """
+    providers = config.get('chosen_providers')
+    cheapest_provider = providers[0]
+    min_price = cheapest_provider[2]
+    for provider in providers:
+        if provider[2] < min_price:
+            min_price = provider[2]
+            cheapest_provider = provider
+
+    return cheapest_provider
