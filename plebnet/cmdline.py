@@ -131,7 +131,7 @@ def update_offer(config, dna):
         return
     (provider, option, _) = config.get('chosen_provider')
     btc_price = calculate_price(provider, option) * 1.1
-    place_offer(btc_price)
+    place_offer(btc_price, config)
 
 
 def calculate_price(provider, option):
