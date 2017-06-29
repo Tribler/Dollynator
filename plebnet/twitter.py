@@ -29,6 +29,3 @@ def tweet_arrival():
         print e
         return False
     return True
-
-
-tweet_arrival()
