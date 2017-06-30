@@ -9,15 +9,22 @@ from argparse import ArgumentParser
 from subprocess import CalledProcessError
 
 import cloudomate
+import electrum
 from cloudomate.cmdline import providers as cloudomate_providers
 from cloudomate.util.config import UserOptions
 from cloudomate.wallet import Wallet
+from electrum import keystore
+from electrum import WalletStorage
+from electrum.mnemonic import Mnemonic
+from electrum import Wallet as ElectrumWallet
+
 from plebnet import cloudomatecontroller, twitter
 from plebnet.agent import marketapi
 from plebnet.agent.dna import DNA
 from plebnet.cloudomatecontroller import options
 from plebnet.config import PlebNetConfig
 
+WALLET_FILE = os.path.expanduser("~/.electrum/wallets/default_wallet")
 TRIBLER_HOME = os.path.expanduser("~/PlebNet/tribler")
 PLEBNET_CONFIG = os.path.expanduser("~/.plebnet.cfg")
 TIME_IN_HOUR = 60.0 * 60.0
@@ -58,6 +65,34 @@ def setup(args):
     dna.read_dictionary()
     dna.write_dictionary()
     twitter.tweet_arrival()
+    create_wallet()
+
+
+def create_wallet():
+    """
+    Create an electrum wallet if it does not exist
+    :return: 
+    """
+    if not os.path.isfile(WALLET_FILE):
+        print("Creating wallet")
+        config = electrum.SimpleConfig()
+        storage = WalletStorage(config.get_wallet_path())
+        passphrase = config.get('passphrase', '')
+        seed = Mnemonic('en').make_seed()
+        k = keystore.from_seed(seed, passphrase)
+        k.update_password(None, None)
+        storage.put('keystore', k.dump())
+        storage.put('wallet_type', 'standard')
+        storage.put('use_encryption', False)
+        storage.write()
+        wallet = ElectrumWallet(storage)
+        wallet.synchronize()
+        print("Your wallet generation seed is:\n\"%s\"" % seed)
+        print("Please keep it in a safe place; if you lose it, you will not be able to restore your wallet.")
+        wallet.storage.write()
+        print("Wallet saved in '%s'" % wallet.storage.path)
+    else:
+        print("Wallet already present")
 
 
 def check(args):

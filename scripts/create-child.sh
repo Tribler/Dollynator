@@ -22,9 +22,9 @@ echo "Copying DNA"
 [ ! -f ${CHILD_DNA_FILE} ] && echo "File $CHILD_DNA_FILE not found" && exit 1
 sshpass -p${PASSWORD} scp -o StrictHostKeyChecking=no ${CHILD_DNA_FILE} root@${IP}:${DNA_FILE}
 
-echo "Copying wallet"
-[ ! -f ${WALLET_FILE} ] && echo "File $WALLET_FILE not found" && exit 1
-sshpass -p${PASSWORD} scp -o StrictHostKeyChecking=no ${WALLET_FILE} root@${IP}:${WALLET_FILE}
+#echo "Copying wallet"
+#[ ! -f ${WALLET_FILE} ] && echo "File $WALLET_FILE not found" && exit 1
+#sshpass -p${PASSWORD} scp -o StrictHostKeyChecking=no ${WALLET_FILE} root@${IP}:${WALLET_FILE}
 
 echo "Copying Twitter auth"
 [ ! -f ${TWITTER_FILE} ] && echo "File $TWITTER_FILE not found" && exit 1
