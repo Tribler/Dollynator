@@ -1,6 +1,6 @@
 import requests
 from requests.exceptions import ConnectionError
-
+from cloudomate.wallet import Wallet
 
 def is_market_running():
     try:
@@ -17,9 +17,8 @@ def get_mc_balance():
 
 
 def get_btc_balance():
-    r = requests.get('http://localhost:8085/wallets/BTC/balance')
-    balance = r.json()
-    return balance['balance']['available']
+    w = Wallet()
+    return w.get_balance_confirmed()
 
 
 def put_ask(price, price_type, quantity, quantity_type, timeout):
