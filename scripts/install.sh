@@ -55,15 +55,16 @@ echo "upgrading pip"
 LC_ALL=en_US.UTF-8 pip install --upgrade pip
 echo "done upgrading pip"
 
-pip install pyaes
+pip install pyaes psutil
 
 cd $HOME
-[ ! -d "PlebNet" ] && git clone -b master https://github.com/rjwvandenberg/PlebNet
+[ ! -d "PlebNet" ] && git clone -b performance_comms https://github.com/rjwvandenberg/PlebNet
 pip install --upgrade ./PlebNet
 cd PlebNet
 git submodule update --init --recursive tribler
 pip install ./tribler/electrum
-cp docker/market/twistd_plugin/plebnet_plugin.py $HOME/PlebNet/tribler/twisted/plugins/
+#no longer used since importing own tribler fork
+#cp docker/market/twistd_plugin/plebnet_plugin.py $HOME/PlebNet/tribler/twisted/plugins/
 
 plebnet setup
 

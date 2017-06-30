@@ -22,7 +22,7 @@ class PlebNetConfig(object):
                        'last_offer': {'MC': 0,
                                       'BTC:': 0.0},
                        'excluded_providers': [],
-                       'chosen_providers': [],
+                       'chosen_provider': None,
                        'bought': [],
                        'installed': []}
         self.load()
