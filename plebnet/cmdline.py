@@ -89,7 +89,7 @@ def check(args):
         except CalledProcessError:
             return False
     #TEMP TO SEE EXITNODE PERFORMANCE
-    
+
     if not config.get('chosen_provider'):
         print ("Choosing new provider")
         update_choice(config, dna)
