@@ -167,7 +167,8 @@ def place_offer(chosen_est_price, config):
         return False
     config.bump_offer_date()
     config.set('last_offer', {'BTC': chosen_est_price, 'MC': available_mc})
-    return marketapi.put_ask(price=chosen_est_price, price_type='BTC', quantity=available_mc, quantity_type='MC',
+    price_per_unit = chosen_est_price / float(available_mc)
+    return marketapi.put_ask(price=price_per_unit, price_type='BTC', quantity=available_mc, quantity_type='MC',
                              timeout=TIME_IN_HOUR)
 
 
