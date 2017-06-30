@@ -19,6 +19,7 @@ class DNA:
     def create_test_dict():
         testdict = {'Self': '',
                     'parent': '',
+                    'transaction_hash': '',
                     'VPS': {'ccihosting': 0.5, 'linevast': 0.5, 'pulseservers': 0.5, 'rockhoster': 0.5}}
         return testdict
 
@@ -40,10 +41,11 @@ class DNA:
         with open(filename, 'w') as json_file:
             json.dump(self.dictionary, json_file)
 
-    def create_child_dna(self, provider, parentname):
+    def create_child_dna(self, provider, parentname, transaction_hash):
         dictionary = copy.deepcopy(self.dictionary)
         dictionary['Self'] = provider
         dictionary['parent'] = parentname
+        dictionary['transaction_hash'] = transaction_hash
         config_dir = user_config_dir()
         filename = os.path.join(config_dir, 'Child_DNA.json')
         with open(filename, 'w') as json_file:

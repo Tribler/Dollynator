@@ -91,14 +91,15 @@ def check(args):
         (provider, option, _) = config.get('chosen_provider')
         if marketapi.get_btc_balance() >= calculate_price(provider, option):
             print("Purchase server")
-            success, provider = purchase_choice(config)
-            if success:
+            transaction_hash, provider = purchase_choice(config)
+            if transaction_hash:
+                config.get('transactions').append(transaction_hash)
                 # evolve yourself positively if you are successfull
                 own_provider = get_own_provider(dna)
-                evolve(own_provider, dna, success)
+                evolve(own_provider, dna, True)
             else:
                 # evolve provider negatively if not succesfull
-                evolve(provider, dna, success)
+                evolve(provider, dna, False)
 
     install_available_servers(config, dna)
     config.save()
@@ -204,13 +205,13 @@ def purchase_choice(config):
     :return: success
     """
     (provider, option, _) = config.get('chosen_provider')
-    success = cloudomatecontroller.purchase(cloudomate_providers[provider], option, wallet=Wallet())
-    if success:
-        config.get('bought').append(provider)
+    transaction_hash = cloudomatecontroller.purchase(cloudomate_providers[provider], option, wallet=Wallet())
+    if transaction_hash:
+        config.get('bought').append((provider, transaction_hash))
         config.set('chosen_provider', None)
     if provider not in config.get('excluded_providers'):
         config.get('excluded_providers').append(provider)
-    return success, provider
+    return transaction_hash, provider
 
 
 def get_own_provider(dna):
@@ -227,7 +228,7 @@ def evolve(provider, dna, success):
 def install_available_servers(config, dna):
     bought = config.get('bought')
 
-    for provider in bought:
+    for provider, transaction_hash in bought:
         print("Checking whether %s is activated" % provider)
         try:
             ip = subprocess.check_output(['cloudomate', 'getip', provider])
@@ -238,24 +239,25 @@ def install_available_servers(config, dna):
                 rootpw = user_options.get('rootpw')
                 cloudomatecontroller.setrootpw(cloudomate_providers[provider], rootpw)
                 parentname = '{0}-{1}'.format(user_options.get('firstname'), user_options.get('lastname'))
-                dna.create_child_dna(provider, parentname)
+                dna.create_child_dna(provider, parentname, transaction_hash)
                 # Save config before entering possibly long lasting process
                 config.save()
                 success = install_server(ip, rootpw)
-                send_child_creation_mail(ip, rootpw, success, config, user_options)
+                send_child_creation_mail(ip, rootpw, success, config, user_options, transaction_hash)
                 # Reload config in case install takes a long time
                 config.load()
                 config.get('installed').append({provider: success})
-                if provider in bought:
-                    bought.remove(provider)
+                if (provider, transaction_hash) in bought:
+                    bought.remove((provider, transaction_hash))
         except CalledProcessError:
             print("%s not ready yet" % provider)
 
 
-def send_child_creation_mail(ip, rootpw, success, config, user_options):
+def send_child_creation_mail(ip, rootpw, success, config, user_options, transaction_hash):
     mail_message = 'IP: %s\n' % ip
     mail_message += 'Root password: %s\n' % rootpw
     mail_message += 'Success: %s\n' % success
+    mail_message += 'Transaction_hash: %s\n' % transaction_hash
     mail_dna = DNA()
     mail_dna.read_dictionary()
     mail_message += '\nDNA\n%s\n' % json.dumps(mail_dna.dictionary)
