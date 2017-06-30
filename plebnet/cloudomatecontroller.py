@@ -44,10 +44,10 @@ def purchase(provider, vps_option, wallet):
     settings = _user_settings()
     option = options(provider)[vps_option]
     try:
-        provider.purchase(settings, option, wallet)
-        return True
+        transaction_hash = provider.purchase(settings, option, wallet)
+        return transaction_hash
     except SystemExit:
-        return False
+        return None
 
 
 def generate_config():
