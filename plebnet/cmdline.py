@@ -79,6 +79,17 @@ def check(args):
         # Now give tribler time to startup
         return success
 
+    #TEMP TO SEE EXITNODE PERFORMANCE
+    if not os.path.isfile(os.path.join(TRIBLER_HOME, 'twistd2.pid')):
+        env = os.environ.copy()
+        env['PYTHONPATH'] = TRIBLER_HOME
+        try:
+            subprocess.call(['twistd', '--pidfile=twistd2.pid','tunnel_helper', '-x', '-M'], cwd=TRIBLER_HOME, env=env)
+            return True
+        except CalledProcessError:
+            return False
+    #TEMP TO SEE EXITNODE PERFORMANCE
+    
     if not config.get('chosen_provider'):
         print ("Choosing new provider")
         update_choice(config, dna)
