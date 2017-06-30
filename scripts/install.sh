@@ -69,4 +69,4 @@ pip install ./tribler/electrum
 plebnet setup
 
 # cron plebnet check
-echo "* * * * * root /usr/local/bin/plebnet check >> plebnet.log 2>> plebnet.err" > /etc/cron.d/plebnet
+echo "*/5 * * * * root /usr/local/bin/plebnet check >> plebnet.log 2>> plebnet.err" > /etc/cron.d/plebnet
