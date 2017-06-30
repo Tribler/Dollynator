@@ -12,7 +12,6 @@ import cloudomate
 from cloudomate.cmdline import providers as cloudomate_providers
 from cloudomate.util.config import UserOptions
 from cloudomate.wallet import Wallet
-
 from plebnet import cloudomatecontroller, twitter
 from plebnet.agent import marketapi
 from plebnet.agent.dna import DNA
@@ -48,7 +47,7 @@ def add_parser_setup(subparsers):
 
 def setup(args):
     print("Setting up PlebNet")
-    cp = cloudomatecontroller.generate_config()
+    cloudomatecontroller.generate_config()
     config = PlebNetConfig()
     config.set('expiration_date', time.time() + 30 * TIME_IN_DAY)
     config.save()
@@ -56,10 +55,7 @@ def setup(args):
     dna = DNA()
     dna.read_dictionary()
     dna.write_dictionary()
-    twitter_config = dna.dictionary['twitter']
-    twitter.tweet_arrival(cp.get('firstname') + ' ' + cp.get('lastname'), twitter_config['app_key'],
-                          twitter_config['app_secret'], twitter_config['oauth_token'],
-                          twitter_config['oauth_token_secret'])
+    twitter.tweet_arrival()
 
 
 def check(args):
