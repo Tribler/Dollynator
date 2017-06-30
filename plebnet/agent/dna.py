@@ -63,9 +63,15 @@ class DNA:
             self.vps[item] /= self.length
 
     def mutate(self, provider):
+        if provider not in self.vps:
+            print("{0} not in dna".format(provider))
+            return False
         self.vps[provider] += self.rate
 
     def demutate(self, provider):
+        if provider not in self.vps:
+            print("{0} not in dna".format(provider))
+            return False
         self.vps[provider] -= self.rate
         if self.vps[provider] < 0:
             self.vps[provider] += self.rate
@@ -123,7 +129,7 @@ class DNA:
         self.write_dictionary()
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     dna = DNA()
     dna.read_dictionary()
     print(dna.dictionary)
