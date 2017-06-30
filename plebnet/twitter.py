@@ -23,7 +23,8 @@ def tweet_arrival():
                           cp.get('twitter', 'app_secret'),
                           cp.get('twitter', 'oauth_token'),
                           cp.get('twitter', 'oauth_token_secret'))
-        twitter.update_status(status='Pleb %s has joined the botnet for good.' % name)
+        twitter.update_status(
+            status='Pleb %s has joined the botnet for good. #PlebNet #Cloudomate #Tribler #Bitcoin' % name)
         print("Tweeted arrival")
     except Exception, e:
         print e
