@@ -165,7 +165,7 @@ def update_choice(config, dna):
     available_providers = list(set(all_providers.keys()) - set(excluded_providers))
     providers = {k: all_providers[k] for k in all_providers if k in available_providers}
     print("Providers: %s" % providers)
-    if providers >= 1:
+    if providers >= 1 and sum(providers.values()) > 0:
         providers = DNA.normalize_excluded(providers)
         choice = (provider, option, price) = pick_provider(providers)
         config.set('chosen_provider', choice)
@@ -179,6 +179,21 @@ def pick_provider(providers):
     btc_price = gateway.estimate_price(
         cloudomate.wallet.get_price(price, currency)) + cloudomate.wallet.get_network_fee()
     return provider, option, btc_price
+
+
+def pick_option(provider):
+    """
+    Pick most favorable option at a provider. For now pick cheapest option
+    :param provider: 
+    :return: (option, price, currency)
+    """
+    vpsoptions = options(cloudomate_providers[provider])
+    cheapestoption = 0
+    for item in range(len(vpsoptions)):
+        if vpsoptions[item].price < vpsoptions[cheapestoption].price:
+            cheapestoption = item
+
+    return cheapestoption, vpsoptions[cheapestoption].price, vpsoptions[cheapestoption].currency
 
 
 def purchase_choice(config):
@@ -287,65 +302,3 @@ Subject: New child spawned
 
 if __name__ == '__main__':
     execute()
-
-
-# old code below
-
-
-
-
-def is_evolve_ready():
-    """
-    Determine whether the pleb is ready to evolve
-    :return: 
-    """
-    return True
-
-
-def plebnet_trial_mc_balance():
-    """
-    Determines if plebnet has mc it can sell, used for trail
-    :return: True if multichain balance is more than 0
-    """
-    return marketapi.get_mc_balance() > 0
-
-
-def get_price(config):
-    price = 0.0
-    for k in config.get('chosen_providers'):
-        price += k[2]
-    return price
-
-
-def pick_option(provider):
-    """
-    Pick most favorable option at a provider. For now pick cheapest option
-    :param provider: 
-    :return: (option, price, currency)
-    """
-    vpsoptions = options(cloudomate_providers[provider])
-    values = []
-    for item in vpsoptions:
-        bandwidth = item.bandwidth
-        if isinstance(bandwidth, str):
-            bandwidth = float(item.connection) * 30 * TIME_IN_DAY
-        values.append((bandwidth / item.price, item.price, item.currency))
-    (bandwidth, price, currency), option = max((v, i) for (i, v) in enumerate(values))
-    return option, price, currency
-
-
-def get_cheapest_provider(config):
-    """
-    Get the price of the cheapest target.
-    :param config: config
-    :return: price
-    """
-    providers = config.get('chosen_providers')
-    cheapest_provider = providers[0]
-    min_price = cheapest_provider[2]
-    for provider in providers:
-        if provider[2] < min_price:
-            min_price = provider[2]
-            cheapest_provider = provider
-
-    return cheapest_provider
