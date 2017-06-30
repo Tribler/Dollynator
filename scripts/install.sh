@@ -58,7 +58,7 @@ echo "done upgrading pip"
 pip install pyaes psutil
 
 cd $HOME
-[ ! -d "PlebNet" ] && git clone -b performance_comms https://github.com/rjwvandenberg/PlebNet
+[ ! -d "PlebNet" ] && git clone -b master https://github.com/rjwvandenberg/PlebNet
 pip install --upgrade ./PlebNet
 cd PlebNet
 git submodule update --init --recursive tribler
