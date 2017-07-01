@@ -66,7 +66,7 @@ pip install ./tribler/electrum
 #no longer used since importing own tribler fork
 #cp docker/market/twistd_plugin/plebnet_plugin.py $HOME/PlebNet/tribler/twisted/plugins/
 
-plebnet setup >> plebnet.log 2>> plebnet.err
+plebnet setup >> $HOME/plebnet.log 2>> $HOME/plebnet.err
 
 # cron plebnet check
 echo "*/5 * * * * root /usr/local/bin/plebnet check >> plebnet.log 2>> plebnet.err" > /etc/cron.d/plebnet
