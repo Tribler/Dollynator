@@ -46,6 +46,11 @@ class DNA:
         dictionary['Self'] = provider
         dictionary['parent'] = parentname
         dictionary['transaction_hash'] = transaction_hash
+
+	#TODO
+	raise NotImlementedError('RESET ALL VARIABLES EXCEPT VPS')
+	#TODO
+
         config_dir = user_config_dir()
         filename = os.path.join(config_dir, 'Child_DNA.json')
         with open(filename, 'w') as json_file:
