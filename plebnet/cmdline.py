@@ -13,10 +13,10 @@ import electrum
 from cloudomate.cmdline import providers as cloudomate_providers
 from cloudomate.util.config import UserOptions
 from cloudomate.wallet import Wallet
-from electrum import keystore
-from electrum import WalletStorage
-from electrum.mnemonic import Mnemonic
 from electrum import Wallet as ElectrumWallet
+from electrum import WalletStorage
+from electrum import keystore
+from electrum.mnemonic import Mnemonic
 
 from plebnet import cloudomatecontroller, twitter
 from plebnet.agent import marketapi
@@ -107,23 +107,37 @@ def check(args):
     dna = DNA()
     dna.read_dictionary()
 
-    if not tribler_running():
-        print("Tribler not running")
-        success = start_tribler()
-        print(success)
-        # Now give tribler time to startup
-        return success
+    # Disabled for demo
+    #if not tribler_running():
+    #    print("Tribler not running")
+    #    success = start_tribler()
+    #    print(success)
+    #    # Now give tribler time to startup
+    #    return success
+    # TEMP TO SEE EXITNODE PERFORMANCE, tunnel_helper should merge with market or other way around
+    #if not os.path.isfile(os.path.join(TRIBLER_HOME, 'twistd2.pid')):
+    #    env = os.environ.copy()
+    #    env['PYTHONPATH'] = TRIBLER_HOME
+    #    try:
+    #        subprocess.call(['twistd', '--pidfile=twistd2.pid', 'tunnel_helper', '-x', '-M'], cwd=TRIBLER_HOME, env=env)
+    #        return True
+    #    except CalledProcessError:
+    #        return False
+    #        # TEMP TO SEE EXITNODE PERFORMANCE
 
-    #TEMP TO SEE EXITNODE PERFORMANCE
-    if not os.path.isfile(os.path.join(TRIBLER_HOME, 'twistd2.pid')):
+
+    # Enabled for demo (no exitnode)
+    if not tribler_running():
         env = os.environ.copy()
         env['PYTHONPATH'] = TRIBLER_HOME
         try:
-            subprocess.call(['twistd', '--pidfile=twistd2.pid','tunnel_helper', '-x', '-M'], cwd=TRIBLER_HOME, env=env)
+            subprocess.call(['twistd', 'plebnet', '-p', '8085'], cwd=TRIBLER_HOME, env=env)
             return True
         except CalledProcessError:
             return False
-    #TEMP TO SEE EXITNODE PERFORMANCE
+
+
+
 
     if not config.get('chosen_provider'):
         print ("Choosing new provider")
@@ -277,27 +291,30 @@ def install_available_servers(config, dna):
 
     for provider, transaction_hash in bought:
         print("Checking whether %s is activated" % provider)
-        try:
-            ip = subprocess.check_output(['cloudomate', 'getip', provider])
-            print("Installling child on %s " % provider)
-            if is_valid_ip(ip):
-                user_options = UserOptions()
-                user_options.read_settings()
-                rootpw = user_options.get('rootpw')
-                cloudomatecontroller.setrootpw(cloudomate_providers[provider], rootpw)
-                parentname = '{0}-{1}'.format(user_options.get('firstname'), user_options.get('lastname'))
-                dna.create_child_dna(provider, parentname, transaction_hash)
-                # Save config before entering possibly long lasting process
-                config.save()
-                success = install_server(ip, rootpw)
-                send_child_creation_mail(ip, rootpw, success, config, user_options, transaction_hash)
-                # Reload config in case install takes a long time
-                config.load()
-                config.get('installed').append({provider: success})
-                if (provider, transaction_hash) in bought:
-                    bought.remove((provider, transaction_hash))
-        except CalledProcessError:
+
+        process = subprocess.Popen(['cloudomate', 'getip', provider], stdout=subprocess.PIPE)
+        ip, e = process.communicate()
+        if process.returncode != 0:
             print("%s not ready yet" % provider)
+            return
+
+        print("Installling child on %s " % provider)
+        if is_valid_ip(ip):
+            user_options = UserOptions()
+            user_options.read_settings()
+            rootpw = user_options.get('rootpw')
+            cloudomatecontroller.setrootpw(cloudomate_providers[provider], rootpw)
+            parentname = '{0}-{1}'.format(user_options.get('firstname'), user_options.get('lastname'))
+            dna.create_child_dna(provider, parentname, transaction_hash)
+            # Save config before entering possibly long lasting process
+            config.save()
+            success = install_server(ip, rootpw)
+            send_child_creation_mail(ip, rootpw, success, config, user_options, transaction_hash)
+            # Reload config in case install takes a long time
+            config.load()
+            config.get('installed').append({provider: success})
+            if (provider, transaction_hash) in bought:
+                bought.remove((provider, transaction_hash))
 
 
 def send_child_creation_mail(ip, rootpw, success, config, user_options, transaction_hash):
