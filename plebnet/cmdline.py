@@ -254,9 +254,8 @@ def purchase_choice(config):
     """
     (provider, option, _) = config.get('chosen_provider')
     transaction_hash = cloudomatecontroller.purchase(cloudomate_providers[provider], option, wallet=Wallet())
-    if transaction_hash:
-        config.get('bought').append((provider, transaction_hash))
-        config.set('chosen_provider', None)
+    config.get('bought').append((provider, transaction_hash))
+    config.set('chosen_provider', None)
     if provider not in config.get('excluded_providers'):
         config.get('excluded_providers').append(provider)
     return transaction_hash, provider
@@ -279,9 +278,10 @@ def install_available_servers(config, dna):
     for provider, transaction_hash in bought:
         print("Checking whether %s is activated" % provider)
 
-        process = subprocess.Popen(['cloudomate', 'getip', provider], stdout=subprocess.PIPE)
-        ip, e = process.communicate()
-        if process.returncode != 0:
+        try:
+            process = subprocess.Popen(['cloudomate', 'getip', provider], stdout=subprocess.PIPE)
+            ip, e = process.communicate()
+        except BaseException as e:
             print("%s not ready yet" % provider)
             return
 

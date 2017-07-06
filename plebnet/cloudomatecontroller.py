@@ -45,9 +45,12 @@ def purchase(provider, vps_option, wallet):
     option = options(provider)[vps_option]
     try:
         transaction_hash = provider.purchase(settings, option, wallet)
+        print("Transaction hash of purchase: {0}".format(transaction_hash))
         return transaction_hash
-    except SystemExit:
-        return None
+    except SystemExit, e:
+        print("SystemExit catched at cloudomatecontroller purchase")
+        print(e)
+        return False
 
 
 def generate_config():
