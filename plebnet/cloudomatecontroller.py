@@ -91,7 +91,7 @@ def _generate_user(cp, fake):
     cp.set('User', 'lastname', lastname)
     cp.set('User', 'companyname', fake.company())
     cp.set('User', 'phonenumber', fake.numerify('##########'))
-    cp.set('User', 'password', fake.password())
+    cp.set('User', 'password', fake.password(length=10, special_chars=False))
 
 
 def _generate_address(cp, fake):
@@ -105,7 +105,7 @@ def _generate_address(cp, fake):
 
 def _generate_server(cp, fake):
     cp.add_section('Server')
-    cp.set('Server', 'rootpw', fake.password())
+    cp.set('Server', 'rootpw', fake.password(length=10, special_chars=False))
     cp.set('Server', 'ns1', 'ns1')
     cp.set('Server', 'ns2', 'ns2')
     cp.set('Server', 'hostname', fake.word())
