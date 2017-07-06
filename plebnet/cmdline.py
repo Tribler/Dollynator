@@ -129,10 +129,12 @@ def check(args):
     if not config.get('chosen_provider'):
         print ("Choosing new provider")
         update_choice(config, dna)
+        config.save()
 
     if config.time_since_offer() > TIME_IN_HOUR:
         print("Calculating new offer")
         update_offer(config, dna)
+        config.save()
 
     if config.get('chosen_provider'):
         (provider, option, _) = config.get('chosen_provider')
@@ -147,6 +149,8 @@ def check(args):
             else:
                 # evolve provider negatively if not succesfull
                 evolve(provider, dna, False)
+        config.save()
+        return
 
     install_available_servers(config, dna)
     config.save()
@@ -178,7 +182,7 @@ def update_offer(config, dna):
     if not config.get('chosen_provider'):
         return
     (provider, option, _) = config.get('chosen_provider')
-    btc_price = calculate_price(provider, option) * 1.1
+    btc_price = calculate_price(provider, option) * 1.15
     place_offer(btc_price, config)
 
 
@@ -254,8 +258,12 @@ def purchase_choice(config):
     """
     (provider, option, _) = config.get('chosen_provider')
     transaction_hash = cloudomatecontroller.purchase(cloudomate_providers[provider], option, wallet=Wallet())
-    config.get('bought').append((provider, transaction_hash))
-    config.set('chosen_provider', None)
+    if transaction_hash:
+        config.get('bought').append((provider, transaction_hash))
+        config.set('chosen_provider', None)
+    else:
+        print("Insufficient funds")
+        return
     if provider not in config.get('excluded_providers'):
         config.get('excluded_providers').append(provider)
     return transaction_hash, provider
@@ -303,6 +311,7 @@ def install_available_servers(config, dna):
             config.get('installed').append({provider: success})
             if [provider, transaction_hash] in bought:
                 bought.remove([provider, transaction_hash])
+            config.save()
 
 
 def send_child_creation_mail(ip, rootpw, success, config, user_options, transaction_hash):
