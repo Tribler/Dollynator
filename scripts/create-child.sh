@@ -6,6 +6,8 @@ DNA_FILE=".config/DNA.json"
 WALLET_FILE=".electrum/wallets/default_wallet"
 TWITTER_FILE=".config/twitter.cfg"
 
+export DEBIAN_FRONTEND=noninteractive
+
 cd
 
 [ -z "$1" ] || [ -z "$2" ] && echo "Usage: $0 <ip address> <password>" && exit 1
