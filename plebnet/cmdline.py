@@ -301,8 +301,8 @@ def install_available_servers(config, dna):
             # Reload config in case install takes a long time
             config.load()
             config.get('installed').append({provider: success})
-            if (provider, transaction_hash) in bought:
-                bought.remove((provider, transaction_hash))
+            if [provider, transaction_hash] in bought:
+                bought.remove([provider, transaction_hash])
 
 
 def send_child_creation_mail(ip, rootpw, success, config, user_options, transaction_hash):
