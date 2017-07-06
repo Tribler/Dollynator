@@ -107,35 +107,22 @@ def check(args):
     dna = DNA()
     dna.read_dictionary()
 
-    # Disabled for demo
-    #if not tribler_running():
-    #    print("Tribler not running")
-    #    success = start_tribler()
-    #    print(success)
-    #    # Now give tribler time to startup
-    #    return success
-    # TEMP TO SEE EXITNODE PERFORMANCE, tunnel_helper should merge with market or other way around
-    #if not os.path.isfile(os.path.join(TRIBLER_HOME, 'twistd2.pid')):
-    #    env = os.environ.copy()
-    #    env['PYTHONPATH'] = TRIBLER_HOME
-    #    try:
-    #        subprocess.call(['twistd', '--pidfile=twistd2.pid', 'tunnel_helper', '-x', '-M'], cwd=TRIBLER_HOME, env=env)
-    #        return True
-    #    except CalledProcessError:
-    #        return False
-    #        # TEMP TO SEE EXITNODE PERFORMANCE
-
-
-    # Enabled for demo (no exitnode)
     if not tribler_running():
+        print("Tribler not running")
+        success = start_tribler()
+        print(success)
+        # Now give tribler time to startup
+        return success
+    # TEMP TO SEE EXITNODE PERFORMANCE, tunnel_helper should merge with market or other way around
+    if not os.path.isfile(os.path.join(TRIBLER_HOME, 'twistd2.pid')):
         env = os.environ.copy()
         env['PYTHONPATH'] = TRIBLER_HOME
         try:
-            subprocess.call(['twistd', 'plebnet', '-p', '8085'], cwd=TRIBLER_HOME, env=env)
+            subprocess.call(['twistd', '--pidfile=twistd2.pid', 'tunnel_helper', '-x', '-M'], cwd=TRIBLER_HOME, env=env)
             return True
         except CalledProcessError:
             return False
-
+    # TEMP TO SEE EXITNODE PERFORMANCE
 
 
 
