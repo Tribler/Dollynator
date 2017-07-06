@@ -290,6 +290,7 @@ def install_available_servers(config, dna):
             user_options = UserOptions()
             user_options.read_settings()
             rootpw = user_options.get('rootpw')
+            cloudomate_providers[provider].br = cloudomate_providers[provider]._create_browser()
             cloudomatecontroller.setrootpw(cloudomate_providers[provider], rootpw)
             parentname = '{0}-{1}'.format(user_options.get('firstname'), user_options.get('lastname'))
             dna.create_child_dna(provider, parentname, transaction_hash)
