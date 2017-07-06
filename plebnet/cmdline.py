@@ -323,7 +323,7 @@ def is_valid_ip(ip):
 
 def install_server(ip, rootpw):
     file_path = os.path.dirname(os.path.realpath(__file__))
-    script_path = os.path.join(file_path, '../scripts/create-child.sh')
+    script_path = os.path.join(file_path, '/root/PlebNet/scripts/create-child.sh')
     command = '%s %s %s' % (script_path, ip.strip(), rootpw.strip())
     print("Running %s" % command)
     success = subprocess.call(command, shell=True)
