@@ -17,16 +17,15 @@ apt-get update
 
 
 # Install dependencies
+sudo apt-get install -y python-pip
 sudo apt-get install -y \
     python-crypto \
-    python-cryptography \
     python-pyasn1 \
     python-twisted \
     python-libtorrent \
     python-apsw \
     python-chardet \
     python-cherrypy3 \
-    python-nacl \
     python-m2crypto \
     python-configobj \
     python-netifaces \
@@ -34,21 +33,37 @@ sudo apt-get install -y \
     python-decorator \
     python-feedparser \
     python-keyring \
-    python-libnacl \
     python-ecdsa \
     python-pbkdf2 \
     python-requests \
     python-protobuf \
-    python-socks \
     python-dnspython \
     python-jsonrpclib \
-    python-keyrings.alt \
     python-networkx \
     python-scipy \
     python-wxtools \
     git \
-    python-pip \
     python-lxml
+if [ $(lsb_release -cs) == "trusty" ]
+then
+    echo "Trusty detected"
+    sudo apt-get install -y build-essential libssl-dev libffi-dev python-dev software-properties-common
+    pip install cryptography
+    pip install pynacl
+    pip install pysocks
+    pip install keyrings.alt
+    pip install libnacl
+    sudo add-apt-repository -y ppa:chris-lea/libsodium;
+    sudo echo "deb http://ppa.launchpad.net/chris-lea/libsodium/ubuntu trusty main" >> /etc/apt/sources.list;
+    sudo echo "deb-src http://ppa.launchpad.net/chris-lea/libsodium/ubuntu trusty main" >> /etc/apt/sources.list;
+    sudo apt-get update && sudo apt-get install -y libsodium-dev;
+else
+    apt-get install -y python-cryptography \
+	python-nacl \
+	python-libnacl \
+	python-socks \
+	keyrings.alt
+fi
 
 # Update pip to avoid locale errors in certain configurations
 echo "upgrading pip"
