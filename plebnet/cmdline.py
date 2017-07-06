@@ -279,8 +279,9 @@ def install_available_servers(config, dna):
         print("Checking whether %s is activated" % provider)
 
         try:
-            ip = cloudomatecontroller.get_ip(provider)
+            ip = cloudomatecontroller.get_ip(cloudomate_providers[provider])
         except BaseException as e:
+            print(e)
             print("%s not ready yet" % provider)
             return
 
