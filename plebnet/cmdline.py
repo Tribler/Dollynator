@@ -8,10 +8,8 @@ import time
 from argparse import ArgumentParser
 from subprocess import CalledProcessError
 
-import cloudomate
+import copy
 import electrum
-from cloudomate.cmdline import providers as cloudomate_providers
-from cloudomate.util.config import UserOptions
 from cloudomate.wallet import Wallet
 from electrum import Wallet as ElectrumWallet
 from electrum import WalletStorage
@@ -21,7 +19,6 @@ from electrum.mnemonic import Mnemonic
 from plebnet import cloudomatecontroller, twitter
 from plebnet.agent import marketapi
 from plebnet.agent.dna import DNA
-from plebnet.cloudomatecontroller import options
 from plebnet.config import PlebNetConfig
 
 WALLET_FILE = os.path.expanduser("~/.electrum/wallets/default_wallet")
@@ -97,59 +94,95 @@ def create_wallet():
 
 def check(args):
     """
-    Check whether conditions for buying new server are met and proceed if so
+    Start plebnet check, first load all data structures and make sure no other check is running.
     :param args: 
     :return: 
     """
-    print("Checking")
-    config = PlebNetConfig()
+    try:
+        if os.path.isfile(os.path.join(TRIBLER_HOME, 'plebnet.pid')):
+            print("Plebnet Check is already running")
+            return
+        with open(os.path.join(TRIBLER_HOME, 'plebnet.pid'), 'r') as f:
+            f.write(str(time.time()))
 
-    dna = DNA()
-    dna.read_dictionary()
+        print("Checking")
+        config = PlebNetConfig()
+        config_backup = copy.deepcopy(config)
+        dna = DNA()
+        dna.read_dictionary()
+        start_check(config, dna)
+        print("Done checking")
+    except BaseException as e:
+        print("Error caught in check function")
+        print(e)
+        print("Old configuration:")
+        print(config_backup)
+        print("New configuration:")
+        print(config)
+        print("Resuming check")
+    finally:
+        print("Start check cleanup")
+        if os.path.isfile(os.path.join(TRIBLER_HOME, 'plebnet.pid')):
+            os.remove(os.path.join(TRIBLER_HOME, 'plebnet.pid'))
+        config.save()
+        print("Done with check cleanup")
 
-    if not tribler_running():
-        print("Tribler not running")
-        success = start_tribler()
-        print(success)
-        # Now give tribler time to startup
-        return success
-    # TEMP TO SEE EXITNODE PERFORMANCE, tunnel_helper should merge with market or other way around
-    if not os.path.isfile(os.path.join(TRIBLER_HOME, 'twistd2.pid')):
-        env = os.environ.copy()
-        env['PYTHONPATH'] = TRIBLER_HOME
-        try:
-            subprocess.call(['twistd', '--pidfile=twistd2.pid', 'tunnel_helper', '-x', '-M'], cwd=TRIBLER_HOME, env=env)
-            return True
-        except CalledProcessError:
-            return False
-    # TEMP TO SEE EXITNODE PERFORMANCE
 
+def start_check(config, dna):
+    """
+    Execute commands based on state of config
+    :param config: 
+    :param dna: 
+    :return: 
+    """
+    start_tribler()
 
+    if config.get('bought'):
+        print("Installing servers")
+        install_available_servers(config, dna)
+    else:
+        print("No servers to install")
 
     if not config.get('chosen_provider'):
         print ("Choosing new provider")
         update_choice(config, dna)
+    else:
+        print("Server already chosen: {0}".format(config.get('chosen_provider')))
 
     if config.time_since_offer() > TIME_IN_HOUR:
         print("Calculating new offer")
         update_offer(config, dna)
+    else:
+        print("Last offer has not yet expired")
 
     if config.get('chosen_provider'):
-        (provider, option, _) = config.get('chosen_provider')
-        if marketapi.get_btc_balance() >= calculate_price(provider, option):
-            print("Purchase server")
-            transaction_hash, provider = purchase_choice(config)
-            if transaction_hash:
-                config.get('transactions').append(transaction_hash)
-                # evolve yourself positively if you are successfull
-                own_provider = get_own_provider(dna)
-                evolve(own_provider, dna, True)
-            else:
-                # evolve provider negatively if not succesfull
-                evolve(provider, dna, False)
+        print("Attempting Purchase of chosen provider")
+        attempt_purchase(config, dna)
+    else:
+        print("No chosen provider set or done choosing")
 
-    install_available_servers(config, dna)
-    config.save()
+
+def attempt_purchase(config, dna):
+    """
+    Attempt to purchase the chosen provider
+    :param config: 
+    :param dna: 
+    :return: 
+    """
+    (provider, option, _) = config.get('chosen_provider')
+    if marketapi.get_btc_balance() >= cloudomatecontroller.estimate_price(provider, option):
+        print("Purchase server")
+        transaction_hash, provider = purchase_choice(config)
+        if transaction_hash:
+            config.get('transactions').append(transaction_hash)
+            # evolve yourself positively if you are successfull
+            own_provider = get_own_provider(dna)
+            evolve(own_provider, dna, True)
+        else:
+            # evolve provider negatively if not succesfull
+            evolve(provider, dna, False)
+    else:
+        print("Insufficient balance to purchase server")
 
 
 def tribler_running():
@@ -161,6 +194,25 @@ def tribler_running():
 
 
 def start_tribler():
+    if not tribler_running():
+        print("Tribler not running")
+        success = run_tribler()
+        print(success)
+        # Now give tribler time to startup
+        return success
+
+    # TEMP TO SEE EXITNODE PERFORMANCE, tunnel_helper should be merged with market or other way around
+    if not os.path.isfile(os.path.join(TRIBLER_HOME, 'twistd2.pid')):
+        env = os.environ.copy()
+        env['PYTHONPATH'] = TRIBLER_HOME
+        try:
+            subprocess.call(['twistd', '--pidfile=twistd2.pid', 'tunnel_helper', '-x', '-M'], cwd=TRIBLER_HOME, env=env)
+            return True
+        except CalledProcessError:
+            return False
+    # TEMP TO SEE EXITNODE PERFORMANCE
+
+def run_tribler():
     """
     Start tribler
     :return: 
@@ -178,16 +230,8 @@ def update_offer(config, dna):
     if not config.get('chosen_provider'):
         return
     (provider, option, _) = config.get('chosen_provider')
-    btc_price = calculate_price(provider, option) * 1.1
+    btc_price = 1.15 * cloudomatecontroller.estimate_price(provider, option)
     place_offer(btc_price, config)
-
-
-def calculate_price(provider, option):
-    vpsoption = options(cloudomate_providers[provider])[option]
-    gateway = cloudomate_providers[provider].gateway
-    btc_price = gateway.estimate_price(
-        cloudomate.wallet.get_price(vpsoption.price, vpsoption.currency)) + cloudomate.wallet.get_network_fee()
-    return btc_price
 
 
 def place_offer(chosen_est_price, config):
@@ -209,6 +253,12 @@ def place_offer(chosen_est_price, config):
 
 
 def update_choice(config, dna):
+    """
+    Choose a new provider and option to try an purchase
+    :param config: 
+    :param dna: 
+    :return: 
+    """
     all_providers = dna.vps
     excluded_providers = config.get('excluded_providers')
     available_providers = list(set(all_providers.keys()) - set(excluded_providers))
@@ -219,14 +269,21 @@ def update_choice(config, dna):
         choice = (provider, option, price) = pick_provider(providers)
         config.set('chosen_provider', choice)
         print("First provider: %s" % provider)
+    else:
+        print("No providers left")
+        print("Continuing as exit node only")
+        sys.exit()
 
 
 def pick_provider(providers):
+    """
+    Pick provider and calculate option which is most favorable
+    :param providers: 
+    :return: 
+    """
     provider = DNA.choose_provider(providers)
-    gateway = cloudomate_providers[provider].gateway
     option, price, currency = pick_option(provider)
-    btc_price = gateway.estimate_price(
-        cloudomate.wallet.get_price(price, currency)) + cloudomate.wallet.get_network_fee()
+    btc_price = cloudomatecontroller.estimate_price(provider, option)
     return provider, option, btc_price
 
 
@@ -236,7 +293,7 @@ def pick_option(provider):
     :param provider: 
     :return: (option, price, currency)
     """
-    vpsoptions = options(cloudomate_providers[provider])
+    vpsoptions = cloudomatecontroller.options(provider)
     cheapestoption = 0
     for item in range(len(vpsoptions)):
         if vpsoptions[item].price < vpsoptions[cheapestoption].price:
@@ -253,7 +310,8 @@ def purchase_choice(config):
     :return: success
     """
     (provider, option, _) = config.get('chosen_provider')
-    transaction_hash = cloudomatecontroller.purchase(cloudomate_providers[provider], option, wallet=Wallet())
+    transaction_hash = cloudomatecontroller.purchase(provider, option, wallet=Wallet())
+
     config.get('bought').append((provider, transaction_hash))
     config.set('chosen_provider', None)
     if provider not in config.get('excluded_providers'):
@@ -287,11 +345,11 @@ def install_available_servers(config, dna):
 
         print("Installling child on %s " % provider)
         if is_valid_ip(ip):
-            user_options = UserOptions()
-            user_options.read_settings()
+            # reset browser, since login requires browser not currently logged in (get_ip is logged in)
+            cloudomatecontroller.reset_browser(provider)
+            user_options = cloudomatecontroller._user_settings()
             rootpw = user_options.get('rootpw')
-            cloudomate_providers[provider].br = cloudomate_providers[provider]._create_browser()
-            cloudomatecontroller.setrootpw(cloudomate_providers[provider], rootpw)
+            cloudomatecontroller.setrootpw(provider, rootpw)
             parentname = '{0}-{1}'.format(user_options.get('firstname'), user_options.get('lastname'))
             dna.create_child_dna(provider, parentname, transaction_hash)
             # Save config before entering possibly long lasting process
