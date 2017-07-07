@@ -4,16 +4,12 @@ import codecs
 import random
 import unicodedata
 
+import cloudomate
 from appdirs import user_config_dir
 from cloudomate import wallet as wallet_util
+from cloudomate.cmdline import providers as cloudomate_providers
 from cloudomate.util.config import UserOptions, os
 from faker.factory import Factory
-
-
-def _user_settings():
-    settings = UserOptions()
-    settings.read_settings()
-    return settings
 
 
 def status(provider):
@@ -26,21 +22,51 @@ def get_ip(provider):
     return provider.get_ip(settings)
 
 
+def estimate_price(provider, option):
+    """
+    Estimate the price for purchasing option at provider
+    :param provider: 
+    :param option
+    :return: 
+    """
+    cl_provider = cloudomate_providers[provider]
+    vpsoption = cl_provider.options()[option]
+    gateway = cl_provider.gateway
+    btc_price = gateway.estimate_price(cloudomate.wallet.get_price(vpsoption.price, vpsoption.currency)) \
+                + cloudomate.wallet.get_network_fee()
+    return btc_price
+
+
 def setrootpw(provider, password):
+    """
+    Reset root password for server hosted at provider
+    :param provider: 
+    :param password: 
+    :return: 
+    """
+    cl_provider = cloudomate_providers[provider]
     settings = _user_settings()
     settings.put('rootpw', password)
-    return provider.set_rootpw(settings)
+    return cl_provider.set_rootpw(settings)
 
 
 def options(provider):
-    return provider.options()
-
-
-def get_network_fee():
-    return wallet_util.get_network_fee()
+    """
+    Return the vps options for provider
+    :param provider: 
+    :return: 
+    """
+    return cloudomate_providers[provider].options()
 
 
 def purchase(provider, vps_option, wallet):
+    """
+    Purchace the chosen vps_option from provider with funds in wallet
+    :param provider: 
+    :param vps_option: 
+    :param wallet: 
+    :return: 
+    """
     settings = _user_settings()
     option = options(provider)[vps_option]
     try:
@@ -54,6 +80,10 @@ def purchase(provider, vps_option, wallet):
 
 
 def generate_config():
+    """
+    Generate a new identity for the newly installed child
+    :return: 
+    """
     config = UserOptions()
     filename = os.path.join(user_config_dir(), 'cloudomate.cfg')
     if os.path.exists(filename):
@@ -73,6 +103,11 @@ def generate_config():
 
 
 def _remove_unicode(cp):
+    """
+    Remove unicode to avoid errors in python2
+    :param cp: 
+    :return: 
+    """
     for section in cp.sections():
         for option in cp.options(section):
             item = cp.get(section, option)
@@ -109,3 +144,23 @@ def _generate_server(cp, fake):
     cp.set('Server', 'ns1', 'ns1')
     cp.set('Server', 'ns2', 'ns2')
     cp.set('Server', 'hostname', fake.word())
+
+
+def _user_settings():
+    """
+    Load the default user config.
+    :return: 
+    """
+    settings = UserOptions()
+    settings.read_settings()
+    return settings
+
+
+def reset_browser(provider):
+    """
+    Reset browser to start with a new stateless browser.
+    :param provider: 
+    :return: 
+    """
+    cl_provider = cloudomate_providers[provider]
+    cl_provider.br = cl_provider._create_browser()
