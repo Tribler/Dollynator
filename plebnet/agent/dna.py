@@ -1,3 +1,7 @@
+"""
+Contains the DNA of the agent, which is used for the genetic decision making
+"""
+
 import copy
 import json
 import os
@@ -7,33 +11,37 @@ from appdirs import user_config_dir
 
 
 class DNA:
-    rate = 0.005
-    length = 0.0
-    dictionary = {}
-    vps = {}
+    """
+    Class for the DNA of the agent
+    """
+    rate = 0.005  # the update rate to change the genes
+    length = 0.0  # total length of DNA values
+    dictionary = {}  # contains all DNA data
+    vps = {}  # contains the probabilities for each option
 
     def __init__(self):
         pass
 
-    @staticmethod
-    def create_test_dict():
-        testdict = {'Self': '',
-                    'parent': '',
-                    'transaction_hash': '',
-                    'VPS': {'ccihosting': 0.5, 'linevast': 0.5, 'pulseservers': 0.5, 'rockhoster': 0.5}}
-        return testdict
-
-    def read_dictionary(self):
+    def read_dictionary(self, providers=None):
         config_dir = user_config_dir()
         filename = os.path.join(config_dir, 'DNA.json')
 
         if not os.path.exists(filename):
-            self.dictionary = self.create_test_dict()
+            self.dictionary = self.create_initial_dict(providers)
         else:
             with open(filename) as json_file:
                 data = json.load(json_file)
                 self.dictionary = data
         self.vps = self.dictionary['VPS']
+
+    @staticmethod
+    def create_initial_dict(providers):
+        initial_dict = {'Self': '',
+                        'parent': '',
+                        'transaction_hash': '',
+                        'VPS': {provider_class.get_metadata()[0]: 0.5 for
+                                provider_class in providers.values()}}
+        return initial_dict
 
     def write_dictionary(self):
         config_dir = user_config_dir()
@@ -41,14 +49,14 @@ class DNA:
         with open(filename, 'w') as json_file:
             json.dump(self.dictionary, json_file)
 
-    def create_child_dna(self, provider, parentname, transaction_hash):
+    def create_child_dna(self, provider, parent_name, transaction_hash):
         dictionary = copy.deepcopy(self.dictionary)
         dictionary['Self'] = provider
-        dictionary['parent'] = parentname
+        dictionary['parent'] = parent_name
         dictionary['transaction_hash'] = transaction_hash
-        #TODO
-        #raise NotImlementedError('RESET ALL VARIABLES EXCEPT VPS')
-        #TODO
+        # TODO
+        # raise NotImplementedError('RESET ALL VARIABLES EXCEPT VPS')
+        # TODO
         config_dir = user_config_dir()
         filename = os.path.join(config_dir, 'Child_DNA.json')
         with open(filename, 'w') as json_file:
@@ -67,7 +75,6 @@ class DNA:
 
     def mutate(self, provider):
         if provider not in self.vps:
-            print("{0} not in dna".format(provider))
             return False
         self.vps[provider] += self.rate
 
@@ -132,13 +139,14 @@ class DNA:
         self.write_dictionary()
 
 
-if __name__ == "__main__":
-    dna = DNA()
-    dna.read_dictionary()
-    print(dna.dictionary)
-    dictionary = dna.exclude('linevast')
-    print(dictionary)
-    for i in range(100):
-        dna.positive_evolve('rockhoster')
-    print(dna.dictionary)
-    print(dna.choose_provider(dictionary))
+# TODO: Move to DNA, this is not a static method....
+def get_own_provider(dna):
+    return dna.dictionary['Self']
+
+
+# TODO: Move to DNA, this is not a static method....
+def evolve(provider, dna, success):
+    if success:
+        dna.positive_evolve(provider)
+    else:
+        dna.negative_evolve(provider)
