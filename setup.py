@@ -16,10 +16,10 @@ setup(
     description='Working class botnet',
     long_description=long_description,
 
-    url='https://github.com/rjwvandenberg/PlebNet',
+    url='https://github.com/vwigmore/PlebNet',
 
     author='PlebNet',
-    author_email='plebnet@heijligers.me',
+    author_email='authentic8989@gmail.com',
 
     license='LGPLv3',
 
@@ -42,7 +42,7 @@ setup(
 
     packages=find_packages(exclude=['docs']),
 
-    install_requires=['requests', 'names', 'cloudomate', 'faker', 'twython'],
+    install_requires=['requests', 'names', 'faker'],
 
     extras_require={
         'dev': [],
