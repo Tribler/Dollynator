@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+<head>
+    <title>PlebNet VISION</title>
+    <!--meta http-equiv="refresh" content="30"-->
+    <link rel="stylesheet" href="https://bootswatch.com/4/cosmo/bootstrap.min.css" crossorigin="anonymous">
+	<link rel="stylesheet" href="/static/css/vis.min.css">
+<style>
+	body {
+		background-color: #1d1d1d;
+		font-family: Helvetica, Arial, sans-serif !important;
+	}
+
+	.container {
+		padding-left: 55px;
+		padding-right: 55px;
+		padding-top: 20px;
+		min-width:98% !important;
+	}
+
+	h1 {
+		color: #fff;
+		margin-top:50px !important;
+		margin-bottom:20px !important;
+		display: inline;
+		font-size: 40px;
+		font-weight:bold;
+	}
+
+	h2 {
+		color: #fff;
+		margin-top:50px !important;
+		margin-bottom:20px !important;
+		display: inline;
+		font-size: 18px;
+		font-family: Helvetica, Arial, sans-serif;
+	}
+
+	hr {
+		margin-bottom: 15px;
+		background-color: #ff4800 !important;
+	}	
+
+	.orange {
+		color: #ff4800;
+	}
+
+	.ob {
+		margin: 5px;
+		border-style: solid;
+		border-color: #ccc;
+		border-width: 1px;
+	}
+
+	.shadow {
+  		-webkit-box-shadow: 3px 3px 5px 6px #ccc;  /* Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
+  		-moz-box-shadow:    3px 3px 5px 6px #ccc;  /* Firefox 3.5 - 3.6 */
+		box-shadow:         3px 3px 5px 6px #ccc;  /* Opera 10.5, IE 9, Firefox 4+, Chrome 6+, iOS 5 */
+	}
+
+	.first {
+		display: flex;
+		flex-direction: row;
+	}
+
+	.networkview {
+		width: 500px;
+		height: 500px;
+	}
+
+	.plebgraphs {
+		width: 800px;
+		height: 500px;
+	}
+
+	.vis-time-axis .vis-text {
+		color: #ff4800 !important;
+	}
+
+	.vis-data-axis .vis-y-axis.vis-major {
+		color: #ff4800 !important;
+	}
+
+	.vis-data-axis .vis-y-axis.vis-minor {
+		color: #ff4800 !important;		
+	}
+
+	.vis-data-axis .vis-y-axis.vis-title {
+		color: #ff4800 !important;				
+	}
+
+	*[class^='vis-graph-group']{
+		stroke: #ff4800 !important;		
+		fill: #ff4800 !important;		
+	}	
+
+	.mbtn {
+		font-family: Arial;
+		background: none !important;
+		color: #ffffff;
+		font-size: 14px;
+		padding: 10px 20px 10px 20px;
+		border: none #ffffff 1px;
+		text-decoration: none;
+	}
+
+	.mbtn:hover {
+		background: #ff4800 !important;
+		text-decoration: none;
+	}
+
+	.mbtn:focus {
+		background: #ff4800 !important;
+		text-decoration: none;
+	}	
+
+</style>
+</head>
+
+<body>
+<div class="container">
+	<h1 class="orange">PLEBNET</h1></h1><h2>vision</h2>
+		<hr>
+		<div class="first">
+			<div id="networkview" class="ob networkview "></div>
+			<div id="plebgraphs" class="ob plebgraphs">
+				{% for k in data %}
+					{% if loop.index == 1 %}
+						<button class="mbtn btn" data-monitor-key="{{ k }}" autofocus>{{ k }}</button>
+					{% else %}
+						<button class="mbtn btn" data-monitor-key="{{ k }}">{{ k }}</button>
+					{% endif %}
+				{% endfor %}
+				<button class="mbtn btn" data-monitor-key="info">Info</button>
+			</div>
+		</div>
+</div>
+<script src="/static/js/vis.min.js"></script>
+<script src="/static/js/network.js"></script>
+<script src="/static/js/graphs.js"></script>
+</body>
+</html>

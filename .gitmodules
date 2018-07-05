@@ -1,4 +1,6 @@
+[submodule "cloudomate"]
+	path = cloudomate
+	url = https://github.com/Tribler/cloudomate.git
 [submodule "tribler"]
 	path = tribler
-	url = https://github.com/rjwvandenberg/tribler
-	branch = plebnet
+	url = https://github.com/Tribler/tribler.git

@@ -1,0 +1,568 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLPackage</id>
+    <coordinates>
+      <x>480</x>
+      <y>560</y>
+      <w>270</w>
+      <h>420</h>
+    </coordinates>
+    <panel_attributes>agent
+--
+bg=orange</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLPackage</id>
+    <coordinates>
+      <x>120</x>
+      <y>440</y>
+      <w>290</w>
+      <h>540</h>
+    </coordinates>
+    <panel_attributes>controllers
+--
+bg=orange</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>150</x>
+      <y>560</y>
+      <w>230</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>tribler_controller
+--
+--
++ start()
++ is_running()
++ get_balance()
++ put_ask()
++ put_bid()
+bg=white
+layer=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>480</x>
+      <y>350</y>
+      <w>270</w>
+      <h>190</h>
+    </coordinates>
+    <panel_attributes>cmdline
+--
+--
++ execute(args)
++ execute_setup(args)
++ execute_setup(args)
++ execute_check(args)
++ execute_irc(args)
+--
+-- handle bash input</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1150</x>
+      <y>660</y>
+      <w>240</w>
+      <h>120</h>
+    </coordinates>
+    <panel_attributes>irc_handler
+--
+--
++ init_irc_client()
++ start_irc_client()
++ stop_irc_client()
++ restart_irc_client()
++ status_irc_client()
+bg=white
+layer=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>510</x>
+      <y>700</y>
+      <w>210</w>
+      <h>170</h>
+    </coordinates>
+    <panel_attributes>core
+--
+--
++ check()
++ check_tribler()
++ check_tunnel_helper()
++ select_provider(config,dna)
++ update_offer(config)
++ attempt_purchase(config, dna)
++ install_vps(config, dna)
++ update_choice(config, dna)
+bg=white
+layer=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>510</x>
+      <y>890</y>
+      <w>210</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>dna
+--
+--
+normalize()
+mutate()
+bg=white
+layer=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>440</x>
+      <y>410</y>
+      <w>90</w>
+      <h>350</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>70.0;330.0;10.0;330.0;10.0;10.0;40.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLPackage</id>
+    <coordinates>
+      <x>1100</x>
+      <y>350</y>
+      <w>380</w>
+      <h>630</h>
+    </coordinates>
+    <panel_attributes>communication
+--
+
+bg=orange</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLPackage</id>
+    <coordinates>
+      <x>1120</x>
+      <y>380</y>
+      <w>340</w>
+      <h>420</h>
+    </coordinates>
+    <panel_attributes>IRC
+--
+bg=orange
+layer=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1150</x>
+      <y>610</y>
+      <w>240</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>initIRC
+bg=white
+layer=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>510</x>
+      <y>590</y>
+      <w>210</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>config
+--
+-config
+--
++ __init__()
++ save()
+bg=white
+layer=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1150</x>
+      <y>420</y>
+      <w>240</w>
+      <h>170</h>
+    </coordinates>
+    <panel_attributes>ircbot
+--
+--
++ __init__()
+- add_response(command,response)
+- run()
+- heartbeat()
+- send
+- msg_alive()
+- msg_host()
+- msg_init()
+bg=white
+layer=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1380</x>
+      <y>620</y>
+      <w>60</w>
+      <h>120</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+layer=5</panel_attributes>
+    <additional_attributes>10.0;10.0;40.0;10.0;40.0;100.0;10.0;100.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>740</x>
+      <y>410</y>
+      <w>430</w>
+      <h>310</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+layer=6</panel_attributes>
+    <additional_attributes>410.0;290.0;40.0;290.0;40.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1120</x>
+      <y>820</y>
+      <w>340</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>mailer
+--
+--
+- send()
+bg=white
+layer=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1120</x>
+      <y>900</y>
+      <w>340</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>twitter
+--
+--
+- send()
+bg=white
+layer=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>150</x>
+      <y>730</y>
+      <w>230</w>
+      <h>220</h>
+    </coordinates>
+    <panel_attributes>cloudomate_controller
+--
+--
++child_account(index: int): account
++status(provider)
++get_ip(provider)
++setrootpw(provider, password)
++get_network_fee()
++pick_provider(providers)
++pick_option(provider
++update_offer(config)
++calculate_price(provider, option)
++purchase_choice(config)
++place_0ffer(price,config)
+bg=white
+layer=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>370</x>
+      <y>590</y>
+      <w>160</w>
+      <h>190</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;60.0;10.0;60.0;170.0;140.0;170.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>150</x>
+      <y>480</y>
+      <w>230</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>electrum_controller
+--
+--
++ create_wallet()
+bg=white
+layer=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLActor</id>
+    <coordinates>
+      <x>10</x>
+      <y>700</y>
+      <w>100</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>Cloudomate</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLActor</id>
+    <coordinates>
+      <x>20</x>
+      <y>530</y>
+      <w>60</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>Tribler</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>80</x>
+      <y>730</y>
+      <w>90</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;70.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>60</x>
+      <y>560</y>
+      <w>110</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;90.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLPackage</id>
+    <coordinates>
+      <x>800</x>
+      <y>350</y>
+      <w>270</w>
+      <h>320</h>
+    </coordinates>
+    <panel_attributes>utilities
+--
+bg=orange</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>830</x>
+      <y>390</y>
+      <w>210</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>fake_generator
+--
+--
++ generate_fake_config()
+bg=white
+layer=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>830</x>
+      <y>460</y>
+      <w>210</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>logger
+--
+--
++ log(msg)
++ warning(msg)
++ error(msg)
++ success(msg)
+bg=white
+layer=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>830</x>
+      <y>580</y>
+      <w>210</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>SystemVals
+--
++ PATHS
++ VALUES
+--
+bg=white
+layer=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>370</x>
+      <y>390</y>
+      <w>130</w>
+      <h>120</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+layer=5</panel_attributes>
+    <additional_attributes>10.0;100.0;60.0;100.0;60.0;10.0;110.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>370</x>
+      <y>780</y>
+      <w>160</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;90.0;10.0;60.0;10.0;140.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1380</x>
+      <y>330</y>
+      <w>60</w>
+      <h>170</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-&gt;
+</panel_attributes>
+    <additional_attributes>40.0;10.0;40.0;150.0;10.0;150.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLActor</id>
+    <coordinates>
+      <x>1390</x>
+      <y>240</y>
+      <w>80</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>IRC Server</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1120</x>
+      <y>450</y>
+      <w>50</w>
+      <h>200</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+layer=5</panel_attributes>
+    <additional_attributes>30.0;10.0;10.0;10.0;10.0;180.0;30.0;180.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLPackage</id>
+    <coordinates>
+      <x>800</x>
+      <y>720</y>
+      <w>270</w>
+      <h>260</h>
+    </coordinates>
+    <panel_attributes>clone
+--
+bg=orange</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>830</x>
+      <y>770</y>
+      <w>210</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>server_installer
+--
+--
++ install_available_servers()
+- is_valid_ip(ip)
+- install_server(server)
+bg=white
+layer=2</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>830</x>
+      <y>880</y>
+      <w>210</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>install.sh
+bg=white
+layer=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>830</x>
+      <y>930</y>
+      <w>210</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>create-child
+bg=white
+layer=3</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>710</x>
+      <y>800</y>
+      <w>140</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+layer=5</panel_attributes>
+    <additional_attributes>120.0;10.0;60.0;10.0;60.0;40.0;10.0;40.0</additional_attributes>
+  </element>
+</diagram>
