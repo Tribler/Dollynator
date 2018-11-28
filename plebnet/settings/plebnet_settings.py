@@ -42,6 +42,10 @@ instance = None
 class Init(object):
 
     def __init__(self):
+        # if config dir does not exist --> create
+        if not os.path.exists(conf_path):
+            os.makedirs(conf_path)
+
         # file does not exist --> copy the initial file
         if not os.path.isfile(conf_file):
             copy(init_file, conf_path)
