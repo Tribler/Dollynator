@@ -145,7 +145,7 @@ pip install ./cloudomate
 
 # Install tribler
 pip install pony
-pip install python-bitcoinlib
+pip install bitcoinlib==0.4.1
 pip install ./tribler
 
 # Install electrum as it is required by cloudomate and not included in tribler anymore
