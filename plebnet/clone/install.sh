@@ -142,7 +142,19 @@ python -m pip install --upgrade ./PlebNet
 cd PlebNet
 
 pip install ./cloudomate
-pip install ./tribler/electrum
+
+# Install tribler
+pip install pony
+pip install python-bitcoinlib
+pip install ./tribler
+
+# Install electrum as it is required by cloudomate and not included in tribler anymore
+cd ..
+git clone -b 2.9.x https://github.com/spesmilo/electrum.git
+cd electrum
+python setup.py install
+sudo apt-get -y install protobuf-compiler
+protoc --proto_path=lib/ --python_out=lib/ lib/paymentrequest.proto
 
 cd /root
 
