@@ -22,7 +22,7 @@ def running():
     Checks if Tribler is running.
     :return: True if twistd.pid exists in /root/tribler
     """
-    path = os.path.join(setup.tribler_home(), setup.tribler_pid())
+    path = os.path.join(setup.plebnet_home(), 'plebnet', setup.tribler_pid())
     return os.path.isfile(path)
 
 
@@ -32,7 +32,7 @@ def start():
     :return: boolean representing the success of starting Tribler
     """
     env = os.environ.copy()
-    env['PYTHONPATH'] = setup.tribler_home()
+    env['PYTHONPATH'] = os.path.join(setup.plebnet_home(), 'plebnet')
 
     command = ['twistd', '--pidfile='+setup.tribler_pid(), 'plebnet', '-p', '8085']
 
@@ -43,7 +43,7 @@ def start():
         command.append('--exitnode')
 
     try:
-        exitcode = subprocess.call(command, cwd=setup.tribler_home(), env=env)
+        exitcode = subprocess.call(command, cwd=os.path.join(setup.plebnet_home(), 'plebnet'), env=env)
 
         if exitcode != 0:
             logger.error('Failed to start Tribler', "tribler_controller")

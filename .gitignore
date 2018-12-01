@@ -11,3 +11,4 @@ __pycache__/
 *~
 .pypirc
 .pytest_cache/
+dropin.cache
