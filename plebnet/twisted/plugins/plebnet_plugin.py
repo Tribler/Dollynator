@@ -115,6 +115,7 @@ class MarketServiceMaker(object):
         config.set_mainline_dht_enabled(True)
         config.set_dht_enabled(True)
         config.set_chant_enabled(False)
+        config.set_bitcoinlib_enabled(True)
 
         msg("Starting Tribler")
 
