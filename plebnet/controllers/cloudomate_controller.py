@@ -148,7 +148,7 @@ def update_offer(config):
     if not config.get('chosen_provider'):
         return
     (provider, option, _) = config.get('chosen_provider')
-    btc_price = calculate_price(provider, option) * 1.15
+    btc_price = calculate_price(provider, option) * 1.15  # TODO: Extract to variable
     place_offer(btc_price, config)
 
 
@@ -165,6 +165,10 @@ def calculate_price(provider, option):
     btc_price = gateway.estimate_price(
         wallet_util.get_price(vps_option.price, 'USD'))
     return btc_price
+
+
+def btc_to_satoshi(btc_amount):
+    return int(btc_amount * 100000000)
 
 
 def calculate_price_vpn(vpn_provider='azirevpn'):
@@ -261,11 +265,10 @@ def place_offer(chosen_est_price, config):
     coin = 'TBTC' if plebnet_settings.get_instance().wallets_testnet() else 'BTC'
 
     config.set('last_offer', {coin: chosen_est_price, 'MB': available_mb})
-    price_per_unit = max(0.0001, chosen_est_price / float(available_mb))
-    return market_controller.put_ask(price=price_per_unit,
-                                     price_type=coin,
-                                     quantity=available_mb,
-                                     quantity_type='MB',
+    return market_controller.put_ask(first_asset_amount=btc_to_satoshi(chosen_est_price),
+                                     first_asset_type=coin,
+                                     second_asset_amount=available_mb,
+                                     second_asset_type='MB',
                                      timeout=plebnet_settings.TIME_IN_HOUR)
 
 
