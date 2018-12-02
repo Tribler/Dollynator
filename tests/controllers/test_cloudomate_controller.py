@@ -1,10 +1,12 @@
 import os
 import unittest
+import mock
 
 import cloudomate.hoster.vps.blueangelhost as blueAngel
 import cloudomate.hoster.vps.linevast as linevast
 import cloudomate.gateway.coinbase as Coinbase
 import cloudomate.hoster.vpn.azirevpn as azirevpn
+from CaseInsensitiveDict import CaseInsensitiveDict
 from cloudomate import wallet as wallet_util
 from cloudomate.hoster.vps.clientarea import ClientArea
 from cloudomate.util.settings import Settings
@@ -12,17 +14,14 @@ from cloudomate.cmdline import providers as cloudomate_providers
 from mock.mock import MagicMock
 from plebnet.communication import git_issuer
 
-
 import plebnet.controllers.cloudomate_controller as cloudomate
 from plebnet.controllers.wallet_controller import TriblerWallet
-import plebnet.agent.dna as DNA
 from plebnet.agent.config import PlebNetConfig
 from plebnet.settings import plebnet_settings
 from plebnet.utilities import logger as Logger
 
 
 class TestCloudomateController(unittest.TestCase):
-
     class Price(object):
         def __init__(self, me):
             self.price = me
@@ -111,31 +110,29 @@ class TestCloudomateController(unittest.TestCase):
 
         wallet_util.get_network_fee = self.wallet_util
 
-    def test_pick_providers(self):
-        self.DNA = DNA.DNA.choose_provider
+    @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers', return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
+    def test_pick_providers(self, mock1):
+
         self.vps = cloudomate.get_vps_providers
         self.get_gateway = blueAngel.BlueAngelHost.get_gateway
         self.estimate_price = Coinbase.Coinbase.estimate_price
-        self.pick_options = cloudomate.pick_option
         self.get_price = wallet_util.get_price
         self.get_fee = wallet_util.get_network_fee
 
-        DNA.DNA.choose_provider = MagicMock()
-        cloudomate.get_vps_providers = MagicMock(return_value=[blueAngel.BlueAngelHost, blueAngel.BlueAngelHost])
+        # cloudomate.get_vps_providers = MagicMock(
+        #     return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
         blueAngel.BlueAngelHost.get_gateway = MagicMock()
         Coinbase.Coinbase.estimate_price = MagicMock()
         cloudomate.pick_option = MagicMock(return_value=[1, 2, 3])
         wallet_util.get_price = MagicMock()
         wallet_util.get_network_fee = MagicMock()
 
-        cloudomate.pick_provider(list)
+        cloudomate.pick_provider(cloudomate.get_vps_providers())
         blueAngel.BlueAngelHost.get_gateway.assert_called_once()
 
-        DNA.DNA.choose_provider = self.DNA
         cloudomate.get_vps_providers = self.vps
         blueAngel.BlueAngelHost.get_gateway = self.get_gateway
         Coinbase.Coinbase.estimate_price = self.estimate_price
-        cloudomate.pick_option = self.pick_options
         wallet_util.get_price = self.get_price
         wallet_util.get_network_fee = self.get_fee
 
@@ -144,7 +141,7 @@ class TestCloudomateController(unittest.TestCase):
         self.providers = cloudomate_providers.__init__
 
         cloudomate.options = MagicMock()
-        cloudomate_providers.__init__= MagicMock()
+        cloudomate_providers.__init__ = MagicMock()
         cloudomate.pick_option('BlueAngelHost')
         cloudomate.options.assert_called_once()
 

@@ -27,7 +27,6 @@ from plebnet.controllers import market_controller
 from plebnet.controllers.wallet_controller import TriblerWallet
 from plebnet.settings import plebnet_settings
 from plebnet.utilities import logger
-from plebnet.agent.dna import DNA
 from plebnet.communication import git_issuer
 
 
@@ -95,11 +94,14 @@ def get_ip(provider, account):
 def setrootpw(provider, password):
     settings = child_account()
     settings.put('server', 'root_password', password)
-    return # provider.set_rootpw(settings)
+    return  # provider.set_rootpw(settings)
 
 
 def options(provider):
-    return provider.get_options()
+    try:
+        return provider.get_options()
+    except:
+        logger.log("Cloudomate options failed")
 
 
 def get_network_fee():
@@ -112,12 +114,16 @@ def pick_provider(providers):
     :param providers:
     :return:
     """
-    provider = DNA.choose_provider(providers)
-    gateway = get_vps_providers()[provider].get_gateway()
-    option, price, currency = pick_option(provider)
-    btc_price = gateway.estimate_price(
-        wallet_util.get_price(price, currency))
-    return provider, option, btc_price
+    from plebnet.agent.qtable import QTable
+
+    qtable = QTable()
+    qtable.read_dictionary(providers)
+    chosen_option = qtable.choose_best_option(providers)
+
+    gateway = get_vps_providers()[chosen_option["provider_name"]].get_gateway()
+    btc_price = gateway.estimate_price(wallet_util.get_price(chosen_option["price"], chosen_option["currency"]))
+
+    return chosen_option["provider_name"], chosen_option["option"], btc_price
 
 
 def pick_option(provider):
@@ -187,7 +193,7 @@ def purchase_choice_vpn(config):
         logger.warning("Insufficient funds to purchase server")
         return plebnet_settings.UNKNOWN
 
-    config.get('bought').append((provider, transaction_hash, config.get('child_index')))
+    config.get('bought').append((provider, option, transaction_hash, config.get('child_index')))
     config.get('transactions').append(transaction_hash)
     config.save()
 
@@ -224,7 +230,7 @@ def purchase_choice(config):
 
     if not transaction_hash:
         return plebnet_settings.FAILURE
-    config.get('bought').append((provider, transaction_hash, config.get('child_index')))
+    config.get('bought').append((provider, option, transaction_hash, config.get('child_index')))
     config.get('transactions').append(transaction_hash)
     config.set('chosen_provider', None)
     config.save()
@@ -242,11 +248,10 @@ def save_info_vpn(child_index):
     info = vpn.get_configuration()
     prefix = plebnet_settings.get_instance().vpn_child_prefix()
 
-
     dir = path.expanduser(plebnet_settings.get_instance().vpn_config_path())
-    credentials = prefix + str(child_index) +plebnet_settings.get_instance().vpn_credentials_name()
-        
-    ovpn = prefix + str(child_index) +plebnet_settings.get_instance().vpn_config_name()
+    credentials = prefix + str(child_index) + plebnet_settings.get_instance().vpn_credentials_name()
+
+    ovpn = prefix + str(child_index) + plebnet_settings.get_instance().vpn_config_name()
 
     # the .ovpn file contains the line auth-user-pass so that it knows which credentials file to use
     # when the child config and credentials are passed to create-child, it is placed on the server as "own" 

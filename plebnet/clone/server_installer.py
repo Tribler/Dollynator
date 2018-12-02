@@ -14,21 +14,21 @@ from plebnet.settings import plebnet_settings as setup
 from plebnet.utilities import logger
 
 
-def install_available_servers(config, dna):
+def install_available_servers(config, qtable):
     """
     This function checks if any of the bought servers are ready to be installed and installs
     PlebNet on them.
     :param config: The configuration of this Plebbot
     :type config: dict
-    :param dna: The DNA of this Plebbot
-    :type dna: DNA
+    :param qtable: The qtable of this Plebbot
+    :type qtable: QTable
     :return: None
     :rtype: None
     """
     bought = config.get('bought')
     logger.log("install: %s" % bought, "install_available_servers")
 
-    for provider, transaction_hash, child_index in list(bought):
+    for provider, option, transaction_hash, child_index in list(bought):
 
         # skip vpn providers as they show up as 'bought' as well
         if provider in cloudomate_controller.get_vpn_providers():
@@ -59,9 +59,7 @@ def install_available_servers(config, dna):
             provider_class(cloudomate_controller.child_account(child_index)).change_root_password(rootpw)
             time.sleep(5)
 
-            child_tree = dna.get_own_tree() + '.' + str(child_index)
-
-            dna.create_child_dna(provider, child_tree, transaction_hash)
+            qtable.create_child_qtable(provider, option, transaction_hash)
 
             # Save config before entering possibly long lasting process
             config.save()
@@ -71,8 +69,8 @@ def install_available_servers(config, dna):
             # Reload config in case install takes a long time
             config.load()
             config.get('installed').append({provider: success})
-            if [provider, transaction_hash, child_index] in config.get('bought'):
-                config.get('bought').remove([provider, transaction_hash, child_index])
+            if [provider, option, transaction_hash, child_index] in config.get('bought'):
+                config.get('bought').remove([provider, option, transaction_hash, child_index])
             config.save()
         else:
             logger.log("Server not ready")

@@ -13,7 +13,8 @@ import re
 import subprocess
 import shutil
 
-from plebnet.agent.dna import DNA
+from plebnet.agent.qtable import QTable
+
 from plebnet.agent.config import PlebNetConfig
 from plebnet.clone import server_installer
 from plebnet.controllers import tribler_controller, cloudomate_controller, market_controller, wallet_controller
@@ -24,15 +25,14 @@ from plebnet.utilities import logger, fake_generator
 from plebnet.agent.strategies.last_day_sell import LastDaySell
 from plebnet.agent.strategies.constant_sell import ConstantSell
 
-
 settings = plebnet_settings.get_instance()
 log_name = "agent.core"  # Used for identifying the origin of the log message.
 config = None  # Used to store the configuration and only load once.
-dna = None  # Used to store the DNA of the agent and only load once.
 strategies = {
     'last_day_sell': LastDaySell,
     'constant_sell': ConstantSell
 }
+qtable = None  # Used to store the QTable of the agent and only load once.
 
 
 def setup(args):
@@ -41,21 +41,28 @@ def setup(args):
     agent. All necessary configuration files are created and IRC communication is started.
     :param args: If running in Testnet mode.
     """
-    global dna, config
+    global qtable, config
     logger.log("Setting up PlebNet")
 
-    # Prepare the DNA configuration
-    dna = DNA()
+    # Prepare the QTable configuration
+    qtable = QTable()
 
     if args.test_net:
         settings.wallets_testnet("1")
         settings.settings.write()
-        dna.read_dictionary({'proxhost': cloudomate_controller.get_vps_providers()['proxhost']})
+        qtable.read_dictionary({'proxhost': cloudomate_controller.get_vps_providers()['proxhost']})
     else:
-        dna.read_dictionary(cloudomate_controller.get_vps_providers())
-        if 'proxhost' in dna.vps.keys():
-            dna.remove_provider('proxhost')
-    dna.write_dictionary()
+        providers = cloudomate_controller.get_vps_providers()
+
+        if providers.has_key('proxhost'):
+            del providers["proxhost"]
+
+        # Read the Qtable after deleting proxhost (URL doesn't work)
+        qtable.read_dictionary(providers)
+
+        qtable.init_qtable_and_environment(providers)
+
+    qtable.write_dictionary()
 
     if args.exit_node:
         logger.log("Running as exitnode")
@@ -73,10 +80,6 @@ def setup(args):
     irc_handler.init_irc_client()
     irc_handler.start_irc_client()
 
-    if dna.get_own_tree() == '':
-        logger.log("tree set to %s" % settings.irc_nick())
-        dna.set_own_tree(settings.irc_nick())
-
     config.save()
 
     logger.success("PlebNet is ready to roll!")
@@ -87,16 +90,15 @@ def check():
     The method is the main function which should run periodically. It controls the behaviour of the agent,
     starting Tribler and buying servers.
     """
-    global config, dna
+    global config, qtable
     logger.log("Checking PlebNet", log_name)
 
     # Read general configuration
     if settings.wallets_testnet_created():
         os.environ['TESTNET'] = '1'
     config = PlebNetConfig()
-    dna = DNA()
-    dna.read_dictionary()
-
+    qtable = QTable()
+    qtable.read_dictionary()
     # check if own vpn is installed before continuing
     if not check_vpn_install():
         logger.error("!!! VPN is not installed, child may get banned !!!", "Plebnet Check")
@@ -179,9 +181,9 @@ def check_vpn_install():
 
     # check OWN configuration files.
     credentials = os.path.join(os.path.expanduser(settings.vpn_config_path()),
-                               settings.vpn_own_prefix()+settings.vpn_credentials_name())
+                               settings.vpn_own_prefix() + settings.vpn_credentials_name())
     vpnconfig = os.path.join(os.path.expanduser(settings.vpn_config_path()),
-                             settings.vpn_own_prefix()+settings.vpn_config_name())
+                             settings.vpn_own_prefix() + settings.vpn_config_name())
 
     if os.path.isfile(credentials) and os.path.isfile(vpnconfig):
         # try to install
@@ -225,6 +227,7 @@ def attempt_purchase():
     Check if enough money to buy a server, and if so, do so,
     """
     (provider, option, _) = config.get('chosen_provider')
+    provider_offer_ID = str(provider).lower() + "_" + str(option).lower()
     if settings.wallets_testnet():
         domain = 'TBTC'
     else:
@@ -234,15 +237,14 @@ def attempt_purchase():
         logger.log("Try to buy a new server from %s" % provider, log_name)
         success = cloudomate_controller.purchase_choice(config)
         if success == plebnet_settings.SUCCESS:
-            # Evolve yourself positively if you are successful
-            dna.evolve(True)
-            logger.log("Purchasing vps for child %s successful"%(dna.get_own_tree()+'.'+str(config.get('child_index'))))
+            # Update qtable yourself positively if you are successful
+            qtable.update_values(provider_offer_ID,True)
             # purchase VPN with same config if server allows for it
             if cloudomate_controller.get_vps_providers()[provider].TUN_TAP_SETTINGS:
                 attempt_purchase_vpn()
         elif success == plebnet_settings.FAILURE:
-            # Evolve provider negatively if not successful
-            dna.evolve(False, provider)
+            # Update qtable provider negatively if not successful
+            qtable.update_values(provider_offer_ID,False)
 
         config.increment_child_index()
         fake_generator.generate_child_account()
@@ -254,7 +256,7 @@ def install_vps():
     """
     Calls the server install for installing all purchased servers.
     """
-    server_installer.install_available_servers(config, dna)
+    server_installer.install_available_servers(config, qtable)
 
 
 def install_vpn():
@@ -318,13 +320,12 @@ def select_provider():
     """
     if not config.get('chosen_provider'):
         logger.log("No provider chosen yet", log_name)
-        all_providers = dna.vps
+        all_providers = cloudomate_controller.get_vps_providers().keys()
         excluded_providers = config.get('excluded_providers')
         available_providers = list(set(all_providers.keys()) - set(excluded_providers))
         providers = {k: all_providers[k] for k in all_providers if k in available_providers}
 
         if providers >= 1 and sum(providers.values()) > 0:
-            providers = DNA.normalize_excluded(providers)
             choice = cloudomate_controller.pick_provider(providers)
             config.set('chosen_provider', choice)
         logger.log("Provider chosen: %s" % str(config.get('chosen_provider')), log_name)
