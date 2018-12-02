@@ -62,18 +62,21 @@ class TriblerWallet(object):
         else:
             self.coin = 'BTC'
 
-    def get_balance(self):
+    def get_balance(self, coin=None):
         """
         Returns the balance of the current wallet.
         :return: the balance
         """
-        return marketcontroller.get_balance(self.coin)
+        if coin is None:
+            coin = self.coin
+        return marketcontroller.get_balance(coin)
 
-    def pay(self, address, amount, fee=None):
+    def pay(self, address, amount, coin=None, fee=None):
         """
         Send a post request to the Tribler web API for making a transaction.
         :param address: the address of the receiver
         :param amount: the amount to be sent excluding fee
+        :param coin: the coin to be sent, (T)BTC if None
         :param fee: the fee to be used, 0 if None
         :return: the transaction hash
         """
@@ -81,15 +84,18 @@ class TriblerWallet(object):
             logger.log('Not enough funds', 'wallet_controller.pay')
             return False
 
+        if coin is None:
+            coin = self.coin
+
         try:
-            data = {'amount': amount*1.1, 'destination': address}
-            r = requests.post('http://localhost:8085/wallets/' + self.coin + '/transfer', data=data)
+            data = {'amount': amount*1.1, 'destination': address} # TODO: WHY IS THIS 1.1 here?
+            r = requests.post('http://localhost:8085/wallets/' + coin + '/transfer', data=data)
             transaction_hash = r.json()['txid']
 
             if transaction_hash:
                 logger.log('Transaction successful. transaction_hash: %s' % transaction_hash, 'wallet_controller.pay')
             else:
-                if self.coin == 'TBTC':
+                if coin == 'TBTC':
                     # in case the testnet servers are acting funky, but transaction actually
                     # was successful, retrieve the transaction_has from the /transactions route
                     btx = requests.get('http://localhost:8085/wallets/tbtc/transactions')

@@ -102,6 +102,10 @@ def check():
         create_wallet()
     select_provider()
 
+    # if is going to die, move all currency to a wallet
+    if config.time_to_expiration() < plebnet_settings.TIME_IN_HOUR:
+        save_all_currency()
+
     # These need a matchmaker, otherwise agent will be stuck waiting.
     if market_controller.has_matchmakers():
         update_offer()
@@ -318,3 +322,11 @@ def select_provider():
             config.set('chosen_provider', choice)
         logger.log("Provider chosen: %s" % str(config.get('chosen_provider')), log_name)
         config.save()
+
+def save_all_currency():
+    """
+    Sends leftover MB and (T)BTC to the predefined global wallet
+    """
+    wallet = wallet_controller.TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
+    wallet.pay(settings.wallets_global(), wallet.get_balance())
+    wallet.pay(settings.wallets_global(), wallet.get_balance('MB'), coin='MB')

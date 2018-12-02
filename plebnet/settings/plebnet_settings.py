@@ -124,6 +124,8 @@ class Init(object):
 
     def wallets_password(self, value=None): return self.settings.handle("wallets", "password", value)
 
+    def wallets_global(self, value=None): return self.settings.handle("wallets", "global", value)
+
     """THE ATTRIBUTE METHODS FOR THE ACTIVE SECTION"""
 
     def active_verbose(self, value=None): return self.settings.handle("active", "verbose", value) == "1"
