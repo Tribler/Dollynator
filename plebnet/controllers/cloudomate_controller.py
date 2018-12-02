@@ -30,6 +30,8 @@ from plebnet.utilities import logger
 from plebnet.agent.dna import DNA
 from plebnet.communication import git_issuer
 
+BTC_FLUCTUATION_MARGIN = 1.15
+
 
 def get_vps_providers():
     """
@@ -148,7 +150,7 @@ def update_offer(config):
     if not config.get('chosen_provider'):
         return
     (provider, option, _) = config.get('chosen_provider')
-    btc_price = calculate_price(provider, option) * 1.15  # TODO: Extract to variable
+    btc_price = calculate_price(provider, option) * BTC_FLUCTUATION_MARGIN
     place_offer(btc_price, config)
 
 
