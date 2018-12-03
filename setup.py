@@ -46,7 +46,7 @@ setup(
 
     extras_require={
         'dev': [],
-        'test': [],
+        'test': ['mock', 'pytest', 'responses'],
     },
 
     package_data={
