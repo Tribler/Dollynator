@@ -328,5 +328,5 @@ def save_all_currency():
     Sends leftover MB and (T)BTC to the predefined global wallet
     """
     wallet = wallet_controller.TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
-    wallet.pay(settings.wallets_global(), wallet.get_balance())
-    wallet.pay(settings.wallets_global(), wallet.get_balance('MB'), coin='MB')
+    wallet.pay(settings.wallets_btc_global(), wallet.get_balance())
+    wallet.pay(settings.wallets_mb_global(), wallet.get_balance('MB'), coin='MB')
