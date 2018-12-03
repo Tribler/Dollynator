@@ -132,7 +132,7 @@ then
     echo "default-keyring=keyrings.alt.file.PlaintextKeyring" >> $KRCFG
 fi
 
-[ ! -d "PlebNet" ] && git clone -b $BRANCH --recurse-submodules https://github.com/MattSkala/PlebNet
+[ ! -d "PlebNet" ] && git clone -b $BRANCH --recurse-submodules https://github.com/Tribler/PlebNet
 
 # when branch is given, this create-child.sh's default branch value will be updated
 #   this is because the child's cloned repo also needs these values updated
