@@ -104,8 +104,9 @@ def check():
 
     # These need a matchmaker, otherwise agent will be stuck waiting.
     if market_controller.has_matchmakers():
-        update_offer()
-        attempt_purchase()
+        if config.time_to_expiration() <= plebnet_settings.TIME_IN_DAY:
+            update_offer()
+            attempt_purchase()
     install_vps()
 
 
