@@ -242,11 +242,11 @@ class TestCloudomateController(unittest.TestCase):
 
         Logger.log = MagicMock()
         market.get_balance = MagicMock(return_value=56)
-        market.put_ask = MagicMock()
+        market.put_bid = MagicMock()
         plebnet_settings.Init.wallets_testnet = MagicMock(return_value=False)
 
         cloudomate.place_offer(5, PlebNetConfig())
-        market.put_ask.assert_called_once()
+        market.put_bid.assert_called_once()
 
         market.get_balance = self.mb
         Logger.log = self.logger
