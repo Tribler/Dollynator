@@ -20,13 +20,17 @@ from plebnet.controllers import tribler_controller, cloudomate_controller, marke
 from plebnet.communication.irc import irc_handler
 from plebnet.settings import plebnet_settings
 from plebnet.utilities import logger, fake_generator
+from plebnet.agent.strategies import last_day_sell, constant_sell
 
 
 settings = plebnet_settings.get_instance()
 log_name = "agent.core"  # Used for identifying the origin of the log message.
 config = None  # Used to store the configuration and only load once.
 dna = None  # Used to store the DNA of the agent and only load once.
-
+strategies = {
+    'last_day_sell': last_day_sell.LastDaySell,
+    'constant_sell': constant_sell.ConstantSell
+}
 
 def setup(args):
     """
@@ -108,9 +112,10 @@ def check():
 
     # These need a matchmaker, otherwise agent will be stuck waiting.
     if market_controller.has_matchmakers():
-        if config.time_to_expiration() <= plebnet_settings.TIME_IN_DAY:
-            update_offer()
-            attempt_purchase()
+        strategies[plebnet_settings.get_instance().strategy_name()]().apply()
+        # if config.time_to_expiration() <= plebnet_settings.TIME_IN_DAY:
+            # update_offer()
+            # attempt_purchase()
     install_vps()
 
 
@@ -202,16 +207,6 @@ def attempt_purchase_vpn():
             logger.success("Purchasing VPN succesful!", log_name)
         elif success == plebnet_settings.FAILURE:
             logger.error("Error purchasing vpn", log_name)
-
-
-def update_offer():
-    """
-    Check if an hour as passed since the last offer made, if passed calculate a new offer.
-    """
-    if config.time_since_offer() > plebnet_settings.TIME_IN_HOUR:
-        logger.log("Calculating new offer", log_name)
-        cloudomate_controller.update_offer(config)
-        config.save()
 
 
 def attempt_purchase():
@@ -324,6 +319,7 @@ def select_provider():
         logger.log("Provider chosen: %s" % str(config.get('chosen_provider')), log_name)
         config.save()
 
+
 def save_all_currency():
     """
     Sends leftover MB and (T)BTC to the predefined global wallet
@@ -331,3 +327,31 @@ def save_all_currency():
     wallet = wallet_controller.TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
     wallet.pay(settings.wallets_btc_global(), wallet.get_balance())
     wallet.pay(settings.wallets_mb_global(), wallet.get_balance('MB'), coin='MB')
+
+
+def btc_to_satoshi(btc_amount):
+    return int(btc_amount * 100000000)
+
+
+def place_offer(chosen_est_price, timeout, config):
+    """
+    Sell all available MB for the chosen estimated price on the Tribler market.
+    :param config: config
+    :param timeout: timeout of the offer to place
+    :param chosen_est_price: Target amount of BTC to receive
+    :return: success of offer placement
+    """
+    available_mb = market_controller.get_balance('MB')
+    if available_mb == 0:
+        logger.log("No MB available")
+        return False
+    config.bump_offer_date()
+
+    coin = 'TBTC' if plebnet_settings.get_instance().wallets_testnet() else 'BTC'
+
+    config.set('last_offer', {coin: chosen_est_price, 'MB': available_mb})
+    return market_controller.put_bid(first_asset_amount=btc_to_satoshi(chosen_est_price),
+                                     first_asset_type=coin,
+                                     second_asset_amount=available_mb,
+                                     second_asset_type='MB',
+                                     timeout=timeout)

@@ -157,6 +157,12 @@ class Init(object):
     """THE ATTRIBUTE METHODS FOR THE TRIBLER SECTION"""
     def tribler_exitnode(self, value=None): return self.settings.handle("tribler", "exitnode", value)  == '1'
 
+    """THE ATTRIBUTE METHODS FOR THE STRATEGY SECTION"""
+
+    def strategy_name(self, value=None): return self.settings.handle("strategy", "name", value)
+
+    def strategy_no_vps(self, value=None): return self.settings.handle("strategy", "no_vps", value)
+
 
 def write():
     get_instance()
