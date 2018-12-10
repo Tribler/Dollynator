@@ -20,10 +20,22 @@ setup = plebnet_settings.get_instance()
 def running():
     """
     Checks if Tribler is running.
-    :return: True if twistd.pid exists in /root/tribler
+    :return: True if twistd.pid exists in /root/tribler and a process with the same pid is running.
     """
     path = os.path.join(setup.plebnet_home(), 'plebnet', setup.tribler_pid())
-    return os.path.isfile(path)
+
+    if not os.path.isfile(path):
+        return False
+
+    pid = open(path, "r").read()
+    exitcode = os.system("ps -p " + pid + " > /dev/null")
+    process_running = (exitcode == 0)
+
+    # If the process is not running, remove the twistd.pid file
+    if not process_running:
+        os.remove(path)
+
+    return process_running
 
 
 def start():
