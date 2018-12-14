@@ -14,7 +14,6 @@ from plebnet.communication import git_issuer
 
 
 import plebnet.controllers.cloudomate_controller as cloudomate
-import plebnet.controllers.market_controller as market
 from plebnet.controllers.wallet_controller import TriblerWallet
 import plebnet.agent.dna as DNA
 from plebnet.agent.config import PlebNetConfig
@@ -140,7 +139,7 @@ class TestCloudomateController(unittest.TestCase):
         wallet_util.get_price = self.get_price
         wallet_util.get_network_fee = self.get_fee
 
-    def test_pick_otpions_zero(self):
+    def test_pick_options_zero(self):
         self.options = cloudomate.options
         self.providers = cloudomate_providers.__init__
 
@@ -170,26 +169,6 @@ class TestCloudomateController(unittest.TestCase):
         linevast.LineVast = self.linevast
         Logger.log = self.logger
 
-    def test_update_offer(self):
-        self.config = PlebNetConfig.get
-        self.calculate_price = cloudomate.calculate_price
-        self.placeoffer = cloudomate.place_offer
-
-        PlebNetConfig.get = MagicMock(return_value=False)
-        cloudomate.place_offer = MagicMock(return_value=True)
-
-        cloudomate.update_offer(PlebNetConfig())
-        cloudomate.place_offer.assert_not_called()
-
-        cloudomate.calculate_price = MagicMock(return_value=9)
-        PlebNetConfig.get = MagicMock(return_value=(blueAngel.BlueAngelHost, 'test', 'test'))
-        cloudomate.update_offer(PlebNetConfig())
-        cloudomate.place_offer.assert_called_once()
-
-        PlebNetConfig.get = self.config
-        cloudomate.calculate_price = self.calculate_price
-        cloudomate.place_offer = self.placeoffer
-
     def test_calculate_price(self):
         self.options = cloudomate.options
         self.logger = Logger.log
@@ -206,7 +185,6 @@ class TestCloudomateController(unittest.TestCase):
         Logger.log = self.logger
         cloudomate_providers.__init__ = self.providers
 
-
     def test_calculate_price_vpn(self):
         self.options = cloudomate.options
         self.logger = Logger.log
@@ -222,35 +200,6 @@ class TestCloudomateController(unittest.TestCase):
         self.options = cloudomate.options = self.options
         Logger.log = self.logger
         cloudomate_providers.__init__ = self.providers
-
-    def test_place_offer_zero_mb(self):
-        self.mb = market.get_balance
-        self.logger = Logger.log
-
-        Logger.log = MagicMock()
-        market.get_balance = MagicMock(return_value=0)
-        self.assertFalse(cloudomate.place_offer(5, PlebNetConfig()))
-
-        market.get_balance = self.mb
-        Logger.log = self.logger
-
-    def test_place_offer(self):
-        self.mb = market.get_balance
-        self.logger = Logger.log
-        self.put = market.put_ask
-        self.true_settings = plebnet_settings.Init.wallets_testnet
-
-        Logger.log = MagicMock()
-        market.get_balance = MagicMock(return_value=56)
-        market.put_bid = MagicMock()
-        plebnet_settings.Init.wallets_testnet = MagicMock(return_value=False)
-
-        cloudomate.place_offer(5, PlebNetConfig())
-        market.put_bid.assert_called_once()
-
-        market.get_balance = self.mb
-        Logger.log = self.logger
-        market.put_ask = self.put
 
     def test_purchase_choice_failure(self):
         self.config = PlebNetConfig.get
@@ -351,6 +300,7 @@ class TestCloudomateController(unittest.TestCase):
             return 2
         else:
             return ['BlueAngelHost', 0, 'test']
+
 
 if __name__ == '__main__':
     unittest.main()
