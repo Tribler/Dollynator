@@ -12,7 +12,7 @@ class TestConstantSell(unittest.TestCase):
 
     def test_apply(self):
         self.strategy = ConstantSell()
-        self.strategy.target_no_vps = 3
+        self.strategy.target_vps_count = 3
         self.sr = self.strategy.sell_reputation
         self.ap = core.attempt_purchase
 
@@ -22,7 +22,7 @@ class TestConstantSell(unittest.TestCase):
         self.strategy.apply()
 
         self.strategy.sell_reputation.assert_called_once()
-        self.assertTrue(core.attempt_purchase.call_count == self.strategy.target_no_vps)
+        self.assertTrue(core.attempt_purchase.call_count == self.strategy.target_vps_count)
 
         self.strategy.sell_reputation = self.sr
         core.attempt_purchase = self.ap

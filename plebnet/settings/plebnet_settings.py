@@ -161,7 +161,7 @@ class Init(object):
 
     def strategy_name(self, value=None): return self.settings.handle("strategy", "name", value)
 
-    def strategy_no_vps(self, value=None): return self.settings.handle("strategy", "no_vps", value)
+    def strategy_vps_count(self, value=None): return self.settings.handle("strategy", "vps_count", value)
 
 
 def write():

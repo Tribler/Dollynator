@@ -7,12 +7,12 @@ from plebnet.settings import plebnet_settings
 class LastDaySell(Strategy):
     def __init__(self):
         Strategy.__init__(self)
-        self.target_no_vps = int(plebnet_settings.get_instance().strategy_no_vps())
+        self.target_vps_count = int(plebnet_settings.get_instance().strategy_vps_count())
 
     def apply(self):
         from plebnet.agent.core import attempt_purchase
         self.sell_reputation()
-        for i in range(0, self.target_no_vps):
+        for i in range(0, self.target_vps_count):
             attempt_purchase()
 
     def sell_reputation(self):
@@ -29,5 +29,5 @@ class LastDaySell(Strategy):
             return
         wallet = wallet_controller.TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
         (provider, option, _) = self.config.get('chosen_provider')
-        btc_price = self.get_replication_price(provider, option) * self.target_no_vps - wallet.get_balance()
+        btc_price = self.get_replication_price(provider, option) * self.target_vps_count - wallet.get_balance()
         self.place_offer(btc_price, timeout, self.config)
