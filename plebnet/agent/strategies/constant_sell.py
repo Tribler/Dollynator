@@ -1,19 +1,16 @@
-from strategy import Strategy, BTC_FLUCTUATION_MARGIN
+from plebnet.controllers import wallet_controller
+from strategy import Strategy
 
-from plebnet.controllers import cloudomate_controller
 from plebnet.settings import plebnet_settings
-from plebnet.agent.core import place_offer, attempt_purchase
 
 
-# TODO: THIS WAS IMPLEMENTED ASSUMING TRIBLER MARKET ORDERS ARENT PARTIALLY MATCHED.
-
-
-class LastDaySell(Strategy):
+class ConstantSell(Strategy):
     def __init__(self):
         Strategy.__init__(self)
         self.target_no_vps = int(plebnet_settings.get_instance().strategy_no_vps())
 
     def apply(self):
+        from plebnet.agent.core import attempt_purchase
         self.sell_reputation()
         for i in range(0, self.target_no_vps):
             attempt_purchase()
@@ -29,7 +26,7 @@ class LastDaySell(Strategy):
         """
         if not self.config.get('chosen_provider'):
             return
+        wallet = wallet_controller.TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
         (provider, option, _) = self.config.get('chosen_provider')
-        btc_price = cloudomate_controller.calculate_price(provider, option) * self.target_no_vps \
-            * BTC_FLUCTUATION_MARGIN
-        place_offer(btc_price, timeout, self.config)
+        btc_price = self.get_replication_price(provider, option) * self.target_no_vps - wallet.get_balance()
+        self.place_offer(btc_price, timeout, self.config)
