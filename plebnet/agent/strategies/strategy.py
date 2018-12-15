@@ -42,7 +42,7 @@ class Strategy():
         pass
 
     @staticmethod
-    def get_replication_price(vps_provider, option, vpn_provider='azire_vpn'):
+    def get_replication_price(vps_provider, option, vpn_provider='azirevpn'):
         return (calculate_price(vps_provider, option) + calculate_price_vpn(vpn_provider)) * BTC_FLUCTUATION_MARGIN
 
     def update_offer(self, timeout=plebnet_settings.TIME_IN_HOUR):
