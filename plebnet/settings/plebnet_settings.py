@@ -28,8 +28,8 @@ init_file = os.path.join(init_path, file_name)
 conf_file = os.path.join(conf_path, file_name)
 
 """ DATE AND TIME VARIABLES """
-TIME_IN_HOUR = 60.0 * 60.0
-TIME_IN_DAY = TIME_IN_HOUR * 24.0
+TIME_IN_HOUR = 60 * 60
+TIME_IN_DAY = TIME_IN_HOUR * 24
 MAX_DAYS = 5
 """ EXIT CODES """
 FAILURE = 0
