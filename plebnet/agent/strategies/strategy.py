@@ -67,7 +67,7 @@ class Strategy():
         """
         available_mb = market_controller.get_balance('MB')
         if available_mb == 0:
-            logger.log("No MB available")
+            logger.log("No MB available", log_name)
             return False
         config.bump_offer_date()
 
