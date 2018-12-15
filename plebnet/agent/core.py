@@ -98,6 +98,8 @@ def check():
     if not check_tribler():
         return
 
+    check_irc()
+
     if not settings.wallets_initiate_once():
         create_wallet()
     select_provider()
@@ -148,6 +150,14 @@ def check_tribler():
     else:
         tribler_controller.start()
         return False
+
+
+def check_irc():
+    """
+    Checks whether IRC client is running and starts it if needed.
+    """
+    if irc_handler.status_irc_client() != 0:
+        irc_handler.start_irc_client()
 
 
 def check_vpn_install():
