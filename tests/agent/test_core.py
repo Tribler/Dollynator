@@ -159,8 +159,6 @@ class TestCore(unittest.TestCase):
         self.cw = Core.create_wallet
         self.sp = Core.select_provider
         self.hm = market_controller.has_matchmakers
-        self.uo = Core.update_offer
-        self.ap = Core.attempt_purchase
         self.iv = Core.install_vps
         self.load = PlebNetConfig.load
         self.vpn_running = Core.vpn_is_running
@@ -176,7 +174,8 @@ class TestCore(unittest.TestCase):
         Core.create_wallet = MagicMock()
         Core.select_provider = MagicMock()
         market_controller.has_matchmakers = MagicMock(return_value=True)
-        Core.update_offer = MagicMock()
+        Core.strategies = MagicMock()
+        Core.strategies['test']().apply = MagicMock()
         Core.attempt_purchase = MagicMock()
         Core.install_vps = MagicMock()
 
@@ -188,7 +187,7 @@ class TestCore(unittest.TestCase):
 
         Core.check()
         Core.install_vps.assert_called_once()
-        Core.attempt_purchase.assert_called_once()
+        Core.strategies['test']().apply.assert_called_once()
         Core.create_wallet.assert_called_once()
 
         logger.log = self.logger
@@ -200,33 +199,8 @@ class TestCore(unittest.TestCase):
         Core.create_wallet = self.cw
         Core.select_provider = self.sp
         market_controller.has_matchmakers = self.hm
-        Core.update_offer = self.uo
-        Core.attempt_purchase = self.ap
         Core.install_vps = self.iv
         PlebNetConfig.load = self.load
-
-    def test_update_offer(self):
-        self.time = PlebNetConfig.time_since_offer
-        self.timep = plebnet_settings.TIME_IN_HOUR
-        self.logger = logger.log
-        self.uo = cloudomate_controller.update_offer
-        self.save = PlebNetConfig.save
-
-        PlebNetConfig.time_since_offer = MagicMock(return_value=300)
-        plebnet_settings.TIME_IN_HOUR = 200
-        logger.log = MagicMock()
-        cloudomate_controller.update_offer = MagicMock()
-        PlebNetConfig.save = MagicMock()
-
-        Core.config = PlebNetConfig
-        Core.update_offer()
-        PlebNetConfig.save.assert_called_once()
-
-        PlebNetConfig.time_since_offer = self.time
-        plebnet_settings.TIME_IN_HOUR = self.timep
-        logger.log = self.logger
-        cloudomate_controller.update_offer = self.uo
-        PlebNetConfig.save = self.save
 
     def test_attempt_purchase(self):
         self.log = logger.log

@@ -28,8 +28,8 @@ init_file = os.path.join(init_path, file_name)
 conf_file = os.path.join(conf_path, file_name)
 
 """ DATE AND TIME VARIABLES """
-TIME_IN_HOUR = 60.0 * 60.0
-TIME_IN_DAY = TIME_IN_HOUR * 24.0
+TIME_IN_HOUR = 60 * 60
+TIME_IN_DAY = TIME_IN_HOUR * 24
 MAX_DAYS = 5
 """ EXIT CODES """
 FAILURE = 0
@@ -156,6 +156,12 @@ class Init(object):
 
     """THE ATTRIBUTE METHODS FOR THE TRIBLER SECTION"""
     def tribler_exitnode(self, value=None): return self.settings.handle("tribler", "exitnode", value)  == '1'
+
+    """THE ATTRIBUTE METHODS FOR THE STRATEGY SECTION"""
+
+    def strategy_name(self, value=None): return self.settings.handle("strategy", "name", value)
+
+    def strategy_vps_count(self, value=None): return self.settings.handle("strategy", "vps_count", value)
 
 
 def write():

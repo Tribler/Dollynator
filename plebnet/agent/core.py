@@ -21,11 +21,18 @@ from plebnet.communication.irc import irc_handler
 from plebnet.settings import plebnet_settings
 from plebnet.utilities import logger, fake_generator
 
+from plebnet.agent.strategies.last_day_sell import LastDaySell
+from plebnet.agent.strategies.constant_sell import ConstantSell
+
 
 settings = plebnet_settings.get_instance()
 log_name = "agent.core"  # Used for identifying the origin of the log message.
 config = None  # Used to store the configuration and only load once.
 dna = None  # Used to store the DNA of the agent and only load once.
+strategies = {
+    'last_day_sell': LastDaySell,
+    'constant_sell': ConstantSell
+}
 
 
 def setup(args):
@@ -108,9 +115,8 @@ def check():
 
     # These need a matchmaker, otherwise agent will be stuck waiting.
     if market_controller.has_matchmakers():
-        if config.time_to_expiration() <= plebnet_settings.TIME_IN_DAY:
-            update_offer()
-            attempt_purchase()
+        strategies[plebnet_settings.get_instance().strategy_name()]().apply()
+
     install_vps()
 
 
@@ -202,16 +208,6 @@ def attempt_purchase_vpn():
             logger.success("Purchasing VPN succesful!", log_name)
         elif success == plebnet_settings.FAILURE:
             logger.error("Error purchasing vpn", log_name)
-
-
-def update_offer():
-    """
-    Check if an hour as passed since the last offer made, if passed calculate a new offer.
-    """
-    if config.time_since_offer() > plebnet_settings.TIME_IN_HOUR:
-        logger.log("Calculating new offer", log_name)
-        cloudomate_controller.update_offer(config)
-        config.save()
 
 
 def attempt_purchase():
@@ -324,6 +320,7 @@ def select_provider():
         logger.log("Provider chosen: %s" % str(config.get('chosen_provider')), log_name)
         config.save()
 
+
 def save_all_currency():
     """
     Sends leftover MB and (T)BTC to the predefined global wallet
@@ -331,3 +328,6 @@ def save_all_currency():
     wallet = wallet_controller.TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
     wallet.pay(settings.wallets_btc_global(), wallet.get_balance())
     wallet.pay(settings.wallets_mb_global(), wallet.get_balance('MB'), coin='MB')
+
+
+

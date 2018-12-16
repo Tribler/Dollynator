@@ -12,6 +12,9 @@ from requests.exceptions import ConnectionError
 from plebnet.utilities import logger
 
 
+log_name = "market_controller"
+
+
 def is_market_running():
     """
     Check if the Tribler market is running.
@@ -34,7 +37,7 @@ def get_balance(domain):
     :param domain: the wallet type BTC, TBTC or MB
     :return: the balance
     """
-    logger.log('The market is running' + str(is_market_running()), "get " + domain + " balance")
+    logger.log('market running? ' + str(is_market_running()) + " get " + domain + " balance", log_name)
     try:
         r = requests.get('http://localhost:8085/wallets/' + domain + '/balance')
         balance = r.json()
