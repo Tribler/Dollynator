@@ -5,6 +5,7 @@ Other files should never have a direct import from the Tribler marketplace, as t
 reduces the maintainability of this code. If Tribler Market alters its call methods,
 this should be the only file which needs to be updated in PlebNet.
 """
+from __future__ import print_function
 
 import requests
 
@@ -77,7 +78,7 @@ def _put_request(first_asset_amount, first_asset_type, second_asset_amount, seco
     if 'created' in json:
         return json['created']
     else:
-        print json['error']['message']
+        print(json['error']['message'])
         return False
 
 

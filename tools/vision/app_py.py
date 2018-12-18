@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import os
 sys.path.append(os.path.abspath('../tracker'))
@@ -214,10 +215,10 @@ def handle_data(bot_nick, key, value):
         root_bot = root_bot_nodes[root]
      
         if len(tree) == 1:
-            print "bot %s is root" % bot_nick
+            print("bot %s is root" % bot_nick)
             root_bot.set_status(bot_nick, d['exitnode'], d['host'], d['vpn'], last_seen=time.time(), dead=False)
         else:
-            print "add %s to: %s" %('.'.join(tree), root)
+            print("add %s to: %s" %('.'.join(tree), root))
             child = root_bot.add_child(tree)
             child.set_status(bot_nick, d['exitnode'], d['host'], d['vpn'], last_seen=time.time(), dead=False)
             bot_node_by_nicks[bot_nick] = child

@@ -99,7 +99,7 @@ class Create(object):
         self.heartbeat()
 
         buffer = ""
-        while 1:
+        while True:
             buffer = self.keep_running(buffer)
 
     def keep_running(self, buffer):

@@ -80,7 +80,7 @@ class TrackerBot(object):
             st = "QUIT :I have to go for now!"
             self.irc.send(st)
             sys.exit()
-        except Exception, e:
+        except Exception as e:
             self.log("failed to start running an tracker bot  on " + self.server + " " + self.channel)
             self.log(e)
 
@@ -95,12 +95,12 @@ class TrackerBot(object):
     def listen(self):
         try:
             buffer = ""
-            while 1:
+            while True:
                 buffer = self.keep_listening(buffer)
         except KeyboardInterrupt:
             st = "QUIT :I have to go for now!"
             self.irc.send(st)
-        except Exception, e:
+        except Exception as e:
             self.log("failed to start running an tracker bot  on " + self.server + " " + self.channel)
             self.log(e)
 
@@ -143,7 +143,7 @@ class TrackerBot(object):
             self.store(line)
 
     def ask(self):
-        while 1:
+        while True:
             try:
                 for command in commands:
                     self.send_msg(command)
@@ -152,7 +152,7 @@ class TrackerBot(object):
             except KeyboardInterrupt:
                 st = "QUIT :I have to go for now!"
                 self.irc.send(st)
-            except Exception, e:
+            except Exception as e:
                 self.log("failed to ask tracker bot  on " + self.server + " " + self.channel)
                 self.log(e)
 
