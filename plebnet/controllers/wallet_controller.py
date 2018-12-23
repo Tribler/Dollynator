@@ -80,17 +80,23 @@ class TriblerWallet(object):
         :param fee: the fee to be used, 0 if None
         :return: the transaction hash
         """
-        if self.get_balance() < amount:
-            logger.log('Not enough funds', 'wallet_controller.pay')
-            return False
-
         if coin is None:
             coin = self.coin
 
+        if self.get_balance(coin) < amount:
+            logger.log('Not enough funds', 'wallet_controller.pay')
+            return False
+
         try:
-            data = {'amount': amount*1.1, 'destination': address} # TODO: WHY IS THIS 1.1 here?
+            data = {'amount': amount, 'destination': address}
             r = requests.post('http://localhost:8085/wallets/' + coin + '/transfer', data=data)
-            transaction_hash = r.json()['txid']
+            json = r.json()
+
+            if 'error' in json:
+                logger.log(json['error'], 'wallet_controller.pay')
+                return False
+
+            transaction_hash = json['txid']
 
             if transaction_hash:
                 logger.log('Transaction successful. transaction_hash: %s' % transaction_hash, 'wallet_controller.pay')

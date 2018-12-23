@@ -337,7 +337,7 @@ def save_all_currency():
     """
     wallet = wallet_controller.TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
     wallet.pay(settings.wallets_btc_global(), wallet.get_balance())
+
+    # Currently, currency transfers using the Tribler API are only supported for Bitcoin,
+    # but could be useful in future
     wallet.pay(settings.wallets_mb_global(), wallet.get_balance('MB'), coin='MB')
-
-
-
