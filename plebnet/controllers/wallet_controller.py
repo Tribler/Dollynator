@@ -71,13 +71,13 @@ class TriblerWallet(object):
             coin = self.coin
         return marketcontroller.get_balance(coin)
 
-    def pay(self, address, amount, coin=None, fee=None):
+    def pay(self, address, amount, fee=None, coin=None):
         """
         Send a post request to the Tribler web API for making a transaction.
         :param address: the address of the receiver
         :param amount: the amount to be sent excluding fee
-        :param coin: the coin to be sent, (T)BTC if None
         :param fee: the fee to be used, 0 if None
+        :param coin: the coin to be sent, (T)BTC if None
         :return: the transaction hash
         """
         if coin is None:
