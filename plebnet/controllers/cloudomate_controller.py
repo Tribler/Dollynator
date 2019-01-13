@@ -98,10 +98,12 @@ def setrootpw(provider, password):
 
 
 def options(provider):
+    opts = []
     try:
-        return provider.get_options()
+        opts = provider.get_options()
     except:
-        logger.log("Cloudomate options failed")
+        logger.log(provider.get_metadata()[0] + " options failed", "cloudomate_controller")
+    return opts
 
 
 def get_network_fee():
