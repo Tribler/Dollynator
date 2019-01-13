@@ -150,7 +150,6 @@ class QTable:
             "providers_offers": self.providers_offers,
             "self_state": next_state,
             "transaction_hash": transaction_hash
-
         }
         filename = os.path.join(user_config_dir(), 'Child_QTable.json')
         with open(filename, 'w') as json_file:

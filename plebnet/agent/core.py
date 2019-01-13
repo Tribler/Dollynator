@@ -57,12 +57,8 @@ def setup(args):
         if providers.has_key('proxhost'):
             del providers["proxhost"]
 
-        # Read the Qtable after deleting proxhost (URL doesn't work)
+        # Create QTable if it does not exist
         qtable.read_dictionary(providers)
-
-        qtable.init_qtable_and_environment(providers)
-
-    qtable.write_dictionary()
 
     if args.exit_node:
         logger.log("Running as exitnode")
