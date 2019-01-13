@@ -316,16 +316,16 @@ def vpn_is_running():
 # TODO: dit moet naar agent.DNA, maar die is nu al te groot
 def select_provider():
     """
-    Check whether a provider is already selected, otherwise select one based on the DNA.
+    Check whether a provider is already selected, otherwise select one based on the Qtable.
     """
     if not config.get('chosen_provider'):
         logger.log("No provider chosen yet", log_name)
-        all_providers = cloudomate_controller.get_vps_providers().keys()
+        all_providers = cloudomate_controller.get_vps_providers()
         excluded_providers = config.get('excluded_providers')
         available_providers = list(set(all_providers.keys()) - set(excluded_providers))
-        providers = {k: all_providers[k] for k in all_providers if k in available_providers}
+        providers = {k: all_providers[k] for k in all_providers.keys() if k in available_providers}
 
-        if providers >= 1 and sum(providers.values()) > 0:
+        if len(providers) >= 1:
             choice = cloudomate_controller.pick_provider(providers)
             config.set('chosen_provider', choice)
         logger.log("Provider chosen: %s" % str(config.get('chosen_provider')), log_name)

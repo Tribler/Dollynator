@@ -123,7 +123,7 @@ def pick_provider(providers):
     gateway = get_vps_providers()[chosen_option["provider_name"]].get_gateway()
     btc_price = gateway.estimate_price(wallet_util.get_price(chosen_option["price"], chosen_option["currency"]))
 
-    return chosen_option["provider_name"], chosen_option["option"], btc_price
+    return chosen_option["provider_name"], chosen_option["option_name"], btc_price
 
 
 def pick_option(provider):
@@ -153,11 +153,19 @@ def calculate_price(provider, option):
     :return: the price
     """
     logger.log('provider: %s option: %s' % (provider, option), "cloudomate_controller")
-    vps_option = options(cloudomate_providers['vps'][provider])[option]
+    vps_option = get_vps_option(provider, option)
     gateway = cloudomate_providers['vps'][provider].get_gateway()
     btc_price = gateway.estimate_price(
         wallet_util.get_price(vps_option.price, 'USD'))
     return btc_price
+
+
+def get_vps_option(provider, vps_option_name):
+    vps_option = {}
+    for option in options(cloudomate_providers['vps'][provider]):
+        if option.name == vps_option_name:
+            vps_option = option
+    return vps_option
 
 
 def calculate_price_vpn(vpn_provider='azirevpn'):
@@ -212,11 +220,8 @@ def purchase_choice(config):
     provider_instance = cloudomate_providers['vps'][provider](child_account())
 
     wallet = TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
-    c = cloudomate_providers['vps'][provider]
 
-    configurations = c.get_options()
-    option = configurations[option]
-
+    option = get_vps_option(provider,option)
     try:
         transaction_hash = provider_instance.purchase(wallet, option)
     except:

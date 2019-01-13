@@ -171,12 +171,12 @@ class TestCloudomateController(unittest.TestCase):
         self.logger = Logger.log
         self.providers = cloudomate_providers.__init__
 
-        cloudomate.options = MagicMock()
+        cloudomate.get_vps_option = MagicMock()
         Logger.log = MagicMock()
         cloudomate_providers.__init__ = MagicMock()
 
-        cloudomate.calculate_price('BlueAngelHost', 0)
-        cloudomate.options.assert_called_once()
+        cloudomate.calculate_price('BlueAngelHost', 'option')
+        cloudomate.get_vps_option.assert_called_once()
 
         self.options = cloudomate.options = self.options
         Logger.log = self.logger
