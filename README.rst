@@ -296,6 +296,6 @@ VPN is currently only possible on LineVast. In Cloudomate, the functionalities t
 
 To check if a machine suports vpn: :code:`cat /dev/net/tun`, the output should read 'File desciptor in bad state'. If the output reads 'No such file or directory', :code:`TUN/TAP` should be enabled from the control panel (which for Linevast happens automatically through Cloudomate).
 
-.. |jenkins_build| image:: https://jenkins.tribler.org/job/GH_PlebNet/badge/icon
-    :target: https://jenkins.tribler.org/job/GH_PlebNet
+.. |jenkins_build| image:: https://jenkins-ci.tribler.org/job/GH_PlebNet/badge/icon
+    :target: https://jenkins-ci.tribler.org/job/GH_PlebNet
     :alt: Build status on Jenkins
