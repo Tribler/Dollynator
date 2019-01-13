@@ -13,6 +13,7 @@ import sys
 # as the file is loaded separately, the imports have to be adjusted.
 sys.path.append('./PlebNet')
 from plebnet.agent import dna
+#from plebnet.agent import qtable
 from plebnet.agent.core import vpn_is_running
 from plebnet.agent.config import PlebNetConfig
 from plebnet.communication import git_issuer
@@ -59,6 +60,7 @@ class Create(object):
         self.add_response("uploaded",     self.msg_uploaded)
         self.add_response("downloaded",   self.msg_downloaded)
         self.add_response("dna",          self.msg_dna)
+        #self.add_response("qtable", 		  self.msg_qtable)
         self.add_response("general",      self.msg_general)
         self.add_response("helped",       self.msg_helped)
         self.add_response("helped_by",    self.msg_helped_by)
@@ -226,6 +228,8 @@ class Create(object):
     def msg_helped_by(self):    self.send_msg("I am currently helped by: %s peers" % tribler_controller.get_helped_by())
 
     def msg_dna(self):          self.send_msg("My DNA is: %s" % dna.get_dna())
+
+#	def msg_qtable(self):		self.send_msg("My QTable is: %s" % qtable.get_qtable())
 
     def msg_general(self):
         data = {

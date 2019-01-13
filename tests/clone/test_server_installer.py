@@ -7,7 +7,7 @@ from appdirs import user_config_dir
 
 from plebnet.clone import server_installer
 from plebnet.agent.config import PlebNetConfig
-from plebnet.agent.dna import DNA
+from plebnet.agent.qtable import QTable
 from plebnet.utilities import fake_generator
 from cloudomate.util.settings import Settings
 from plebnet.settings import plebnet_settings as setup
@@ -17,8 +17,8 @@ from plebnet.utilities import logger as Logger
 test_log_path = os.path.join(user_config_dir(), 'tests_logs')
 test_log_file = os.path.join(user_config_dir(), 'tests_logs/plebnet.logs')
 test_child_file = os.path.join(user_config_dir(), 'test_child_config.cfg')
-test_child_DNA_file = os.path.join(user_config_dir(), 'Child_DNA.json')
-test_bought = ('linevast', 666, 0)
+test_child_QTable_file = os.path.join(user_config_dir(), 'Child_QTable.json')
+test_bought = ('linevast', 'Advanced', 666, 0)
 plebnet_file = os.path.join(user_config_dir(), 'plebnet.json')
 
 test_account = Settings()
@@ -27,7 +27,7 @@ test_account = Settings()
 class TestServerInstaller(unittest.TestCase):
 
     # test_account = None
-    test_dna = None
+    test_qtable = None
 
     @mock.patch('plebnet.utilities.fake_generator._child_file', return_value=test_child_file)
     def setUp(self, mock):
@@ -36,7 +36,7 @@ class TestServerInstaller(unittest.TestCase):
             os.remove(test_log_file)
         if os.path.isfile(test_child_file):
             os.remove(test_child_file)
-        self.test_dna = DNA()
+        self.test_qtable = QTable()
 
         fake_generator.generate_child_account()
 
@@ -48,8 +48,8 @@ class TestServerInstaller(unittest.TestCase):
             os.remove(test_log_file)
         if os.path.isfile(test_child_file):
             os.remove(test_child_file)
-        if os.path.isfile(test_child_DNA_file):
-            os.remove(test_child_DNA_file)
+        if os.path.isfile(test_child_QTable_file):
+            os.remove(test_child_QTable_file)
         if os.path.isfile(plebnet_file):
             os.remove(plebnet_file)
 
@@ -74,13 +74,12 @@ class TestServerInstaller(unittest.TestCase):
     @mock.patch('plebnet.settings.plebnet_settings.Init.active_logger', return_value=False)
     @mock.patch('plebnet.settings.plebnet_settings.Init.active_verbose', return_value=False)
     @mock.patch('cloudomate.hoster.vps.linevast.LineVast.change_root_password', return_value=True)
-    @mock.patch('plebnet.agent.dna.DNA.get_own_tree', return_value='tree')
-    def test_install_available_servers(self, mock1, mock2, mock3, mock4, mock5, mock6, mock7, mock8, mock9, mock10, mock11, mock12):
+    def test_install_available_servers(self, mock1, mock2, mock3, mock4, mock5, mock6, mock7, mock8, mock9, mock10, mock11):
         config = PlebNetConfig()
         config.get('bought').append(test_bought)
         config.save()
 
-        server_installer.install_available_servers(config, self.test_dna)
+        server_installer.install_available_servers(config, self.test_qtable)
 
         self.assertEqual(config.get('installed'), [{'linevast': False}])
         self.assertEqual(config.get('bought'), [])
