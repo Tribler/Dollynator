@@ -187,6 +187,6 @@ fi
 echo "Installing PlebNet"
 echo "Installing from branch: $BRANCH";
 
-sshpass -p${PASSWORD} ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@${IP} "wget https://raw.githubusercontent.com/Plebnet/plebnet/$BRANCH/plebnet/clone/install.sh && \
+sshpass -p${PASSWORD} ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@${IP} "wget https://raw.githubusercontent.com/Tribler/plebnet/$BRANCH/plebnet/clone/install.sh && \
     chmod +x install.sh && \
     ./install.sh $BRANCH $EXITNODE $TESTNET | tee plebnet_installation.log"
