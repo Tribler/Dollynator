@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 
 import jsonpickle
 
@@ -35,7 +36,7 @@ class QTable:
 
     @staticmethod
     def calculate_measure(provider_offer):
-        return 1 / (100 * float(provider_offer.price)) * float(provider_offer.bandwidth) * float(provider_offer.memory)
+        return 1 / (100 * float(provider_offer.price)) * float(provider_offer.bandwidth)
 
     def init_providers_offers(self, providers):
         for i, id in enumerate(providers):
@@ -182,7 +183,11 @@ class ProviderOffer:
         self.price = price
         self.memory = memory
         try:
-            self.bandwidth = float(bandwidth)
+            bandwidth = float(bandwidth)
+            if bandwidth < sys.maxsize:
+                self.bandwidth = bandwidth
+            else:
+                self.bandwidth = self.UNLIMITED_BANDWIDTH
         except:
             self.bandwidth = self.UNLIMITED_BANDWIDTH
 
