@@ -1,6 +1,8 @@
 import json
+import math
 import os
 import sys
+import random
 
 import jsonpickle
 
@@ -20,6 +22,7 @@ class QTable:
         self.environment = {}
         self.providers_offers = []
         self.self_state = VPSState()
+        self.no_replication = 0
         pass
 
     def init_qtable_and_environment(self, providers):
@@ -94,13 +97,27 @@ class QTable:
                 self.qtable = data['qtable']
                 self.providers_offers = data['providers_offers']
                 self.self_state = data['self_state']
+                self.no_replication = data['no_replication']
 
-    def choose_best_option(self, providers):
+    def choose_option(self, providers):
+        lambd = 1 - 1 / (self.no_replication + 3)
+        num = random.expovariate(lambd)
+        num = int(math.floor(num))
+
+        if num > len(self.qtable[self.get_ID_from_state()]) - 1:
+            num = len(self.qtable[self.get_ID_from_state()]) - 1
+
+        return self.choose_k_option(providers, num)
+
+    def choose_k_option(self, providers, num):
         candidate = {"option": {}, "option_name": "", "provider_name": "", "score": -self.INFINITY,
                      "price": self.INFINITY,
                      "currency": "USD"}
+
+        score = self.get_kth_score(providers, num)
+
         for i, offer_name in enumerate(self.qtable):
-            if candidate["score"] < self.qtable[self.get_ID_from_state()][offer_name] and self.find_provider(
+            if self.qtable[self.get_ID_from_state()][offer_name] == score and self.find_provider(
                     offer_name) in providers:
                 candidate["score"] = self.qtable[self.get_ID_from_state()][offer_name]
                 provider = self.find_provider(offer_name)
@@ -116,16 +133,25 @@ class QTable:
 
         return candidate
 
+    def get_kth_score(self, providers, num):
+        to_choose_scores = []
+        for i, offername in enumerate(self.qtable):
+            if self.find_provider(offername) in providers:
+                elem = {"score": self.qtable[self.get_ID_from_state()][offername], "id": offername}
+                to_choose_scores.append(elem)
+        to_choose_scores.sort(key=lambda x: x["score"])
+        return to_choose_scores[num]["score"]
+
     def find_provider(self, offer_name):
-        for offers in self.providers_offers:
-            if self.get_ID(offers) == offer_name:
-                return offers.provider_name.lower()
+        for offer in self.providers_offers:
+            if self.get_ID(offer) == offer_name:
+                return offer.provider_name.lower()
         raise ValueError("Can't find provider for " + offer_name)
 
     def find_offer(self, offer_name, provider):
-        for offers in self.providers_offers:
-            if self.get_ID(offers) == offer_name and provider.lower() == offers.provider_name.lower():
-                return offers.name
+        for offer in self.providers_offers:
+            if self.get_ID(offer) == offer_name and provider.lower() == offer.provider_name.lower():
+                return offer.name
         raise ValueError("Can't find offer for " + offer_name)
 
     def set_self_state(self, self_state):
@@ -144,13 +170,16 @@ class QTable:
         :param provider: the name the child tree name.
         :param transaction_hash: the transaction hash the child is bought with.
         """
+        self.no_replication += 1
         next_state = VPSState(provider=provider, option=option)
         dictionary = {
             "environment": self.environment,
             "qtable": self.qtable,
             "providers_offers": self.providers_offers,
             "self_state": next_state,
-            "transaction_hash": transaction_hash
+            "transaction_hash": transaction_hash,
+            "no_replication": self.no_replication
+
         }
         filename = os.path.join(user_config_dir(), 'Child_QTable.json')
         with open(filename, 'w') as json_file:
@@ -167,7 +196,8 @@ class QTable:
             "environment": self.environment,
             "qtable": self.qtable,
             "providers_offers": self.providers_offers,
-            "self_state": self.self_state
+            "self_state": self.self_state,
+            "no_replication": self.no_replication
         }
         with open(filename, 'w') as json_file:
             encoded_to_save_var = jsonpickle.encode(to_save_var)

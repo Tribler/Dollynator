@@ -120,7 +120,7 @@ def pick_provider(providers):
 
     qtable = QTable()
     qtable.read_dictionary(providers)
-    chosen_option = qtable.choose_best_option(providers)
+    chosen_option = qtable.choose_option(providers)
 
     gateway = get_vps_providers()[chosen_option["provider_name"]].get_gateway()
     btc_price = gateway.estimate_price(wallet_util.get_price(chosen_option["price"], chosen_option["currency"]))
