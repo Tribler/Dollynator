@@ -1,23 +1,24 @@
 #!/usr/bin/python2
 #coding=utf8
 
-import threading, time
+import time
 import logging
 import os
-import json
 import requests
+import sys
 __offer_check_time__ = 10
 
 coin = None
 
 
-def check_bids():
+def check_bids(limit):
     '''
     Periodically checks for bids in the market, and places an ask against it.
     Currently, accepts all bids regardless of bidder.
     '''
     
     logging.info('Coin type is: %s' % coin)
+    logging.info('Limit price is: %s BTC/MB' % limit)
         
     r = requests.get('http://localhost:8085/market/bids')
 
@@ -27,25 +28,37 @@ def check_bids():
     # we focus only on MB-for-BTC bids
     for ask in asks:
         if ask['asset1'] == coin and ask['asset2'] == 'MB':
-            ticks = ask['ticks']
+            ticks = sorted(ask['ticks'], key=tick_price)
 
             for tick in ticks:
                 first_amount = tick['assets']['first']['amount']  # should be in BTC
                 first_type = tick['assets']['first']['type']
                 second_amount = tick['assets']['second']['amount']  # should be in MB
                 second_type = tick['assets']['second']['type']
+                price = tick_price(tick)
 
-                logging.info('[Bid]: %s %s %s %s' % (first_amount, first_type, second_amount, second_type))
+                logging.info('[Bid]: %s %s / %s %s (%s)' % (sat_to_btc(first_amount), first_type, second_amount,
+                                                            second_type, price))
 
-                make_ask(first_amount, first_type, second_amount, second_type)
-                time.sleep(10)
+                if price < limit:
+                    make_ask(first_amount, first_type, second_amount, second_type)
+                    time.sleep(10)
+
+
+def sat_to_btc(sat):
+    return sat/100000000.0
+
+
+def tick_price(tick):
+    return sat_to_btc(tick['assets']['first']['amount'])/tick['assets']['second']['amount']
 
 
 def make_ask(first_amount, first_type, second_amount, second_type):
     '''
     Makes an ask with the same arguments as a bid.
     '''
-    logging.info("[Making an ask]:  %s %s %s %s" % (str(first_amount), first_type, str(second_amount), second_type))
+    logging.info("[Making an ask]:  %s %s / %s %s" % (str(sat_to_btc(first_amount)), first_type, str(second_amount),
+                                                    second_type))
 
     # make a bid
     data = {
@@ -70,6 +83,13 @@ if __name__ == "__main__":
     else:
         coin = 'BTC'
 
+    limit = 0
+    if len(sys.argv) == 2:
+        limit = float(sys.argv[1])
+    else:
+        print("Usage: python buybot.py <limit price>")
+        exit(0)
+
     while True:
-        check_bids()
+        check_bids(limit)
         time.sleep(300)
