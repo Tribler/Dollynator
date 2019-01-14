@@ -215,13 +215,13 @@ class TestCore(unittest.TestCase):
         self.qtable.set_self_state(VPSState("blueangelhost", "Basic Plan"))
 
         logger.log = MagicMock()
-        plebnet_settings.Init.wallets_testnet = MagicMock(return_value=True)
+        plebnet_settings.Init.wallets_testnet = MagicMock(return_value=False)
         PlebNetConfig.get = MagicMock(return_value=['blueangelhost', 'Basic Plan', 0])
-        market_controller.get_balance = MagicMock(return_value=300)
+        market_controller.get_balance = MagicMock(return_value=100000000)
 
         Core.qtable = self.qtable
         Core.attempt_purchase_vpn = MagicMock(return_value=False)
-        cloudomate_controller.calculate_price = MagicMock(return_value=500)
+        cloudomate_controller.calculate_price = MagicMock(return_value=0.01)
         cloudomate_controller.purchase_choice = MagicMock(return_value=plebnet_settings.SUCCESS)
         PlebNetConfig.set = MagicMock()
         PlebNetConfig.save = MagicMock()
@@ -230,22 +230,19 @@ class TestCore(unittest.TestCase):
         fake_generator.generate_child_account = MagicMock()
 
         Core.config = PlebNetConfig
-        Core.attempt_purchase()
-
-        plebnet_settings.Init.wallets_testnet = MagicMock(return_value=False)
-        market_controller.get_balance = MagicMock(return_value=700)
         qtable_copy = copy.deepcopy(Core.qtable.qtable)
 
         Core.attempt_purchase()
 
-        assert (qtable_copy['blueangelhost_basic plan']['blueangelhost_basic plan'] <
-                Core.qtable.qtable['blueangelhost_basic plan']['blueangelhost_basic plan'])
+        self.assertLess(qtable_copy['blueangelhost_basic plan']['blueangelhost_basic plan'],
+                        Core.qtable.qtable['blueangelhost_basic plan']['blueangelhost_basic plan'])
 
         qtable_copy = copy.deepcopy(Core.qtable.qtable)
         cloudomate_controller.purchase_choice = MagicMock(return_value=plebnet_settings.FAILURE)
         Core.attempt_purchase()
-        assert (qtable_copy['blueangelhost_basic plan']['blueangelhost_basic plan'] >
-                Core.qtable.qtable['blueangelhost_basic plan']['blueangelhost_basic plan'])
+
+        self.assertGreater(qtable_copy['blueangelhost_basic plan']['blueangelhost_basic plan'],
+                           Core.qtable.qtable['blueangelhost_basic plan']['blueangelhost_basic plan'])
 
         logger.log = self.log
         plebnet_settings.Init.wallets_testnet = self.testnet

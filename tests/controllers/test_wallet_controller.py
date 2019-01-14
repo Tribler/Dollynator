@@ -156,7 +156,7 @@ class TestWalletController(unittest.TestCase):
         r.__init__()
 
         responses.add(responses.POST, 'http://localhost:8085/wallets/' + r.coin + '/transfer', json={'txid': 'testID'})
-        self.assertEquals(r.pay('address', 30), 'testID')
+        self.assertEquals(r.pay('address', 0.000003), 'testID')
         walletcontroller.TriblerWallet.get_balance = self.true_balance
 
     @responses.activate
@@ -173,7 +173,7 @@ class TestWalletController(unittest.TestCase):
                         "id": "testID",
                         "to": 'address'}]})
 
-        self.assertEquals(r.pay('address', 30), 'testID')
+        self.assertEquals(r.pay('address', 0.000003), 'testID')
         walletcontroller.TriblerWallet.get_balance = self.true_balance
 
 if __name__ == '__main__':

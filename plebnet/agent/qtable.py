@@ -119,12 +119,12 @@ class QTable:
     def find_provider(self, offer_name):
         for offers in self.providers_offers:
             if self.get_ID(offers) == offer_name:
-                return offers.provider_name
+                return offers.provider_name.lower()
         raise ValueError("Can't find provider for " + offer_name)
 
     def find_offer(self, offer_name, provider):
         for offers in self.providers_offers:
-            if self.get_ID(offers) == offer_name and provider == offers.provider_name:
+            if self.get_ID(offers) == offer_name and provider.lower() == offers.provider_name.lower():
                 return offers.name
         raise ValueError("Can't find offer for " + offer_name)
 

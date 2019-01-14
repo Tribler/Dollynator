@@ -76,7 +76,7 @@ class TriblerWallet(object):
         """
         Send a post request to the Tribler web API for making a transaction.
         :param address: the address of the receiver
-        :param amount: the amount in BTC to be sent excluding fee
+        :param amount: the amount in BTC to be sent, excluding fee
         :param fee: the fee to be used, 0 if None
         :param coin: the coin to be sent, (T)BTC if None
         :return: the transaction hash

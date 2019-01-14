@@ -322,9 +322,9 @@ class TestQTable(unittest.TestCase):
         self.qtable.init_qtable_and_environment(self.providers)
         self.qtable.set_self_state(VPSState("blueangelhost", "Advanced"))
         best_option = self.qtable.choose_best_option(self.providers)
-        print(best_option)
-        assert (best_option["provider_name"] == "BlueAngelHost")
-        assert (best_option["option_name"] == "Basic Plan")
+
+        self.assertEqual(best_option["provider_name"], "blueangelhost")
+        self.assertEqual(best_option["option_name"], "Basic Plan")
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
@@ -351,7 +351,7 @@ class TestQTable(unittest.TestCase):
         self.qtable.set_self_state(VPSState("blueangelhost", "Advanced"))
 
         provider_name = self.qtable.find_provider("blueangelhost_basic plan")
-        assert (provider_name == "BlueAngelHost")
+        self.assertEqual(provider_name, "blueangelhost")
 
 
 if __name__ == '__main__':
