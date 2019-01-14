@@ -11,6 +11,7 @@ import plebnet.settings.plebnet_settings as plebnet_settings
 import requests
 from requests.exceptions import ConnectionError
 from plebnet.utilities import logger
+from plebnet.utilities.btc import btc_to_satoshi
 
 settings = plebnet_settings.get_instance()
 
@@ -75,13 +76,16 @@ class TriblerWallet(object):
         """
         Send a post request to the Tribler web API for making a transaction.
         :param address: the address of the receiver
-        :param amount: the amount to be sent excluding fee
+        :param amount: the amount in BTC to be sent excluding fee
         :param fee: the fee to be used, 0 if None
         :param coin: the coin to be sent, (T)BTC if None
         :return: the transaction hash
         """
         if coin is None:
             coin = self.coin
+
+        if coin == 'BTC' or coin == 'TBTC':
+            amount = btc_to_satoshi(amount)
 
         if self.get_balance(coin) < amount:
             logger.log('Not enough funds', 'wallet_controller.pay')

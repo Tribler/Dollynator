@@ -6,6 +6,9 @@ import logging
 import os
 import requests
 import sys
+
+from plebnet.utilities.btc import satoshi_to_btc
+
 __offer_check_time__ = 10
 
 coin = None
@@ -37,7 +40,7 @@ def check_bids(limit):
                 second_type = tick['assets']['second']['type']
                 price = tick_price(tick)
 
-                logging.info('[Bid]: %s %s / %s %s (%s)' % (sat_to_btc(first_amount), first_type, second_amount,
+                logging.info('[Bid]: %s %s / %s %s (%s)' % (satoshi_to_btc(first_amount), first_type, second_amount,
                                                             second_type, price))
 
                 if price < limit:
@@ -45,20 +48,16 @@ def check_bids(limit):
                     time.sleep(10)
 
 
-def sat_to_btc(sat):
-    return sat/100000000.0
-
-
 def tick_price(tick):
-    return sat_to_btc(tick['assets']['first']['amount'])/tick['assets']['second']['amount']
+    return satoshi_to_btc(tick['assets']['first']['amount']) / tick['assets']['second']['amount']
 
 
 def make_ask(first_amount, first_type, second_amount, second_type):
     '''
     Makes an ask with the same arguments as a bid.
     '''
-    logging.info("[Making an ask]:  %s %s / %s %s" % (str(sat_to_btc(first_amount)), first_type, str(second_amount),
-                                                    second_type))
+    logging.info("[Making an ask]:  %s %s / %s %s" % (str(satoshi_to_btc(first_amount)), first_type, str(second_amount),
+                                                      second_type))
 
     # make a bid
     data = {

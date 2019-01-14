@@ -5,7 +5,7 @@ from plebnet.controllers import market_controller
 from plebnet.controllers.cloudomate_controller import calculate_price, calculate_price_vpn
 from plebnet.settings import plebnet_settings
 from plebnet.utilities import logger
-
+from plebnet.utilities.btc import btc_to_satoshi
 
 log_name = "agent.strategies.strategy"
 BTC_FLUCTUATION_MARGIN = 1.15
@@ -54,9 +54,6 @@ class Strategy():
             self.create_offer(timeout)
             self.config.save()
 
-    def btc_to_satoshi(self, btc_amount):
-        return int(btc_amount * 100000000)
-
     def place_offer(self, chosen_est_price, timeout, config):
         """
         Sell all available MB for the chosen estimated price on the Tribler market.
@@ -74,7 +71,7 @@ class Strategy():
         coin = 'TBTC' if plebnet_settings.get_instance().wallets_testnet() else 'BTC'
 
         config.set('last_offer', {coin: chosen_est_price, 'MB': available_mb})
-        return market_controller.put_bid(first_asset_amount=self.btc_to_satoshi(chosen_est_price),
+        return market_controller.put_bid(first_asset_amount=btc_to_satoshi(chosen_est_price),
                                          first_asset_type=coin,
                                          second_asset_amount=available_mb,
                                          second_asset_type='MB',

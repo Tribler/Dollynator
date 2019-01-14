@@ -24,6 +24,7 @@ from plebnet.utilities import logger, fake_generator
 
 from plebnet.agent.strategies.last_day_sell import LastDaySell
 from plebnet.agent.strategies.constant_sell import ConstantSell
+from plebnet.utilities.btc import satoshi_to_btc
 
 settings = plebnet_settings.get_instance()
 log_name = "agent.core"  # Used for identifying the origin of the log message.
@@ -228,8 +229,10 @@ def attempt_purchase():
         domain = 'TBTC'
     else:
         domain = 'BTC'
-    if market_controller.get_balance(domain) >= (cloudomate_controller.calculate_price(provider, option) +
-                                                 cloudomate_controller.calculate_price_vpn()):
+    btc_balance = satoshi_to_btc(market_controller.get_balance(domain))
+    vps_price = cloudomate_controller.calculate_price(provider, option)
+    vpn_price = cloudomate_controller.calculate_price_vpn()
+    if btc_balance >= vps_price + vpn_price:
         logger.log("Try to buy a new server from %s" % provider, log_name)
         success = cloudomate_controller.purchase_choice(config)
         if success == plebnet_settings.SUCCESS:
@@ -242,6 +245,7 @@ def attempt_purchase():
             # Update qtable provider negatively if not successful
             qtable.update_values(provider_offer_ID,False)
 
+        qtable.write_dictionary()
         config.increment_child_index()
         fake_generator.generate_child_account()
         config.set('chosen_provider', None)
@@ -333,8 +337,8 @@ def save_all_currency():
     Sends leftover MB and (T)BTC to the predefined global wallet
     """
     wallet = wallet_controller.TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
-    wallet.pay(settings.wallets_btc_global(), wallet.get_balance())
+    wallet.pay(settings.wallets_btc_global(), satoshi_to_btc(wallet.get_balance()))
 
     # Currently, currency transfers using the Tribler API are only supported for Bitcoin,
     # but could be useful in future
-    wallet.pay(settings.wallets_mb_global(), wallet.get_balance('MB'), coin='MB')
+    # wallet.pay(settings.wallets_mb_global(), wallet.get_balance('MB'), coin='MB')
