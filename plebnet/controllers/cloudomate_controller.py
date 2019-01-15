@@ -176,7 +176,7 @@ def calculate_price_vpn(vpn_provider='azirevpn'):
     vpn_option = options(get_vpn_providers()[vpn_provider])[0]
     gateway = get_vpn_providers()[vpn_provider].get_gateway()
     btc_price = gateway.estimate_price(
-        wallet_util.get_price(vpn_option.price, 'EUR'))
+        wallet_util.get_price(vpn_option.price, 'USD'))
     return btc_price
 
 
