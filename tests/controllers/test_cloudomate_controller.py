@@ -1,4 +1,5 @@
 import os
+import random
 import unittest
 import mock
 
@@ -110,8 +111,11 @@ class TestCloudomateController(unittest.TestCase):
 
         wallet_util.get_network_fee = self.wallet_util
 
-    @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers', return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
-    def test_pick_providers(self, mock1):
+    @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
+                return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
+    @mock.patch('plebnet.utilities.custom_tree.get_no_replications', return_value=1)
+    @mock.patch('plebnet.utilities.custom_tree.get_curr_state')
+    def test_pick_providers(self, mock1, mock2, mock3):
 
         self.vps = cloudomate.get_vps_providers
         self.get_gateway = blueAngel.BlueAngelHost.get_gateway
@@ -121,6 +125,7 @@ class TestCloudomateController(unittest.TestCase):
 
         # cloudomate.get_vps_providers = MagicMock(
         #     return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
+        random.expovariate = MagicMock(return_value=0.55)
         blueAngel.BlueAngelHost.get_gateway = MagicMock()
         Coinbase.Coinbase.estimate_price = MagicMock()
         cloudomate.pick_option = MagicMock(return_value=[1, 2, 3])
