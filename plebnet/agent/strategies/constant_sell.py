@@ -1,4 +1,5 @@
 from plebnet.controllers import wallet_controller
+from plebnet.utilities.btc import satoshi_to_btc
 from strategy import Strategy
 
 from plebnet.settings import plebnet_settings
@@ -28,5 +29,6 @@ class ConstantSell(Strategy):
             return
         wallet = wallet_controller.TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
         (provider, option, _) = self.config.get('chosen_provider')
-        btc_price = self.get_replication_price(provider, option) * self.target_vps_count - wallet.get_balance()
+        btc_balance = satoshi_to_btc(wallet.get_balance())
+        btc_price = self.get_replication_price(provider, option) * self.target_vps_count - btc_balance
         self.place_offer(btc_price, timeout, self.config)
