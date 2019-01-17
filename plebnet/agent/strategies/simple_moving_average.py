@@ -6,6 +6,7 @@ from appdirs import user_config_dir
 from plebnet.agent.strategies.last_day_sell import LastDaySell
 from plebnet.controllers import market_controller
 from plebnet.utilities import logger
+from plebnet.utilities.btc import satoshi_to_btc
 from strategy import Strategy
 from datetime import datetime, timedelta
 from math import sqrt
@@ -150,5 +151,5 @@ class SimpleMovingAverage(Strategy):
             return
         (provider, option, _) = self.config.get('chosen_provider')
         last_price = self.calculate_price(self.transactions[-1])
-        btc_price = int(last_price * amount_mb)
+        btc_price = satoshi_to_btc(last_price * amount_mb)
         return self.place_offer(amount_mb, btc_price, timeout, self.config)
