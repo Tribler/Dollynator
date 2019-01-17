@@ -40,18 +40,23 @@ class TestLastDaySell(unittest.TestCase):
         self.strategy.update_offer = self.uo
 
     def test_sell_reputation_on_last_day(self):
+        amount_mb = 123
         self.strategy = LastDaySell()
         self.uo = self.strategy.update_offer
+        self.available = self.strategy.get_available_mb
 
         self.strategy.config.time_to_expiration = MagicMock(return_value=plebnet_settings.TIME_IN_DAY - 1)
         self.strategy.update_offer = MagicMock()
+        self.strategy.get_available_mb = MagicMock(return_value=amount_mb)
 
         self.strategy.sell_reputation()
-        self.strategy.update_offer.assert_called_once()
+        self.strategy.update_offer.assert_called_once_with(amount_mb)
 
         self.strategy.update_offer = self.uo
+        self.strategy.get_available_mb = self.available
 
     def test_create_offer_no_provider(self):
+        amount_mb = 100
         self.strategy = LastDaySell()
         self.po = self.strategy.place_offer
         self.grp = self.strategy.get_replication_price
@@ -60,13 +65,14 @@ class TestLastDaySell(unittest.TestCase):
         self.strategy.get_replication_price = MagicMock()
         self.strategy.config.get = MagicMock(return_value=None)
 
-        self.strategy.create_offer(plebnet_settings.TIME_IN_HOUR)
+        self.strategy.create_offer(amount_mb, plebnet_settings.TIME_IN_HOUR)
         self.strategy.place_offer.assert_not_called()
 
         self.strategy.place_offer = self.po
         self.strategy.get_replication_price = self.grp
 
     def test_create_offer_with_provider(self):
+        amount_mb = 100
         self.strategy = LastDaySell()
         self.po = self.strategy.place_offer
         self.grp = self.strategy.get_replication_price
@@ -75,7 +81,7 @@ class TestLastDaySell(unittest.TestCase):
         self.strategy.get_replication_price = MagicMock(return_value=3)
         self.strategy.config.get = MagicMock(return_value=('prov', 'opt', 'test'))
 
-        self.strategy.create_offer(plebnet_settings.TIME_IN_HOUR)
+        self.strategy.create_offer(amount_mb, plebnet_settings.TIME_IN_HOUR)
         self.strategy.place_offer.assert_called_once()
 
         self.strategy.place_offer = self.po

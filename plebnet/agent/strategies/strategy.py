@@ -59,13 +59,14 @@ class Strategy():
 
     def place_offer(self, mb_amount, chosen_est_price, timeout, config):
         """
-        Sell all available MB for the chosen estimated price on the Tribler market.
+        Sells the received MB amount for the chosen estimated price on the Tribler market.
+        :param mb_amount: Amount of MB to sell
         :param config: config
         :param timeout: timeout of the offer to place
         :param chosen_est_price: Target amount of BTC to receive
         :return: success of offer placement
         """
-        if chosen_est_price == 0:
+        if chosen_est_price == 0 or mb_amount == 0:
             return False
         config.bump_offer_date()
 
