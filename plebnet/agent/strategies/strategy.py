@@ -54,8 +54,8 @@ class Strategy():
         """
         if self.config.time_since_offer() > timeout:
             logger.log("Calculating new offer", log_name)
-            self.create_offer(mb_amount, timeout)
             self.config.save()
+            return self.create_offer(mb_amount, timeout)
 
     def place_offer(self, mb_amount, chosen_est_price, timeout, config):
         """
