@@ -42,7 +42,7 @@ class QTable:
 
     @staticmethod
     def calculate_measure(provider_offer):
-        return 1 / (100 * float(provider_offer.price)) * float(provider_offer.bandwidth)
+        return 1 / (math.pow(float(provider_offer.price), 3)) * float(provider_offer.bandwidth)
 
     def init_providers_offers(self, providers):
         for i, id in enumerate(providers):

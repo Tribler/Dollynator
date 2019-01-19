@@ -120,7 +120,7 @@ class TestQTable(unittest.TestCase):
                                                                                              )])
     def test_calculate_measure(self, mock1, mock2):
         provider_offer = ProviderOffer(provider_name="mock provider", name="mock name", bandwidth=3, price=5, memory=2)
-        assert (self.qtable.calculate_measure(provider_offer) == 0.006)
+        assert (self.qtable.calculate_measure(provider_offer) == 0.024)
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
@@ -144,7 +144,7 @@ class TestQTable(unittest.TestCase):
                                                                                              )])
     def test_calculate_measure_unmetric_bandwidth(self, mock1, mock2):
         self.qtable.init_qtable_and_environment(self.providers)
-        assert (self.qtable.calculate_measure(self.qtable.providers_offers[0]) == 0.001)
+        assert (self.qtable.calculate_measure(self.qtable.providers_offers[1]) == 0.01)
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
@@ -259,7 +259,7 @@ class TestQTable(unittest.TestCase):
         assert (qtable_copy != self.qtable.qtable)
         assert (qtable_copy[provider_offer_ID_other][provider_offer_ID] <
                 self.qtable.qtable[provider_offer_ID_other][provider_offer_ID])
-        assert(round(self.qtable.qtable[provider_offer_ID_other][provider_offer_ID],7) == 0.0029975)
+        assert(round(self.qtable.qtable[provider_offer_ID_other][provider_offer_ID],7) == 0.0020125)
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
@@ -287,16 +287,16 @@ class TestQTable(unittest.TestCase):
         self.qtable.init_qtable_and_environment(self.providers)
         qtable_copy = copy.deepcopy(self.qtable.qtable)
         vps_options_list = cloudomate_controller.options(self.providers)
-        vps_option = vps_options_list[0]
+        vps_option = vps_options_list[1]
 
         provider_offer_ID = str(self.providers.keys()[0]).lower() + "_" + str(vps_option.name).lower()
         provider_offer_ID_other = str(self.providers.keys()[0]).lower() + "_" + str(vps_options_list[1].name).lower()
 
         self.qtable.update_values(provider_offer_ID, False)
         assert (qtable_copy != self.qtable.qtable)
-        assert (qtable_copy[provider_offer_ID_other][provider_offer_ID] >
-                self.qtable.qtable[provider_offer_ID_other][provider_offer_ID])
-        assert(round(self.qtable.qtable[provider_offer_ID_other][provider_offer_ID], 7) == 0.0009975)
+        assert (qtable_copy[provider_offer_ID][provider_offer_ID] >
+                self.qtable.qtable[provider_offer_ID][provider_offer_ID])
+        assert(round(self.qtable.qtable[provider_offer_ID_other][provider_offer_ID], 7) == 0.0099525)
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
