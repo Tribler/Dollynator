@@ -1,12 +1,16 @@
 import json
+import math
 import os
 import sys
+import random
 
 import jsonpickle
 
 from appdirs import user_config_dir
 
 from plebnet.controllers import cloudomate_controller
+from plebnet.settings import plebnet_settings
+from plebnet.utilities import custom_tree
 
 
 class QTable:
@@ -20,6 +24,8 @@ class QTable:
         self.environment = {}
         self.providers_offers = []
         self.self_state = VPSState()
+        self.name = ""
+        self.tree = []
         pass
 
     def init_qtable_and_environment(self, providers):
@@ -36,7 +42,7 @@ class QTable:
 
     @staticmethod
     def calculate_measure(provider_offer):
-        return 1 / (100 * float(provider_offer.price)) * float(provider_offer.bandwidth)
+        return 1 / (math.pow(float(provider_offer.price), 3)) * float(provider_offer.bandwidth)
 
     def init_providers_offers(self, providers):
         for i, id in enumerate(providers):
@@ -85,6 +91,7 @@ class QTable:
             # TODO: check if it will not affect anything
             self.self_state = VPSState(provider="blueangelhost", option="Basic Plan")
             self.init_qtable_and_environment(providers)
+            self.create_initial_tree()
             self.write_dictionary()
         else:
             with open(filename) as json_file:
@@ -94,13 +101,29 @@ class QTable:
                 self.qtable = data['qtable']
                 self.providers_offers = data['providers_offers']
                 self.self_state = data['self_state']
+                self.tree = data['tree']
+                self.name = data['name']
 
-    def choose_best_option(self, providers):
+    def choose_option(self, providers):
+        curr_state = custom_tree.get_curr_state(self.tree, self.name)
+        lambd = 1 - 1 / (custom_tree.get_no_replications(curr_state) + 3)
+        num = random.expovariate(lambd)
+        num = int(math.floor(num))
+
+        if num > len(self.qtable[self.get_ID_from_state()]) - 1:
+            num = len(self.qtable[self.get_ID_from_state()]) - 1
+
+        return self.choose_k_option(providers, num)
+
+    def choose_k_option(self, providers, num):
         candidate = {"option": {}, "option_name": "", "provider_name": "", "score": -self.INFINITY,
                      "price": self.INFINITY,
                      "currency": "USD"}
+
+        score = self.get_kth_score(providers, num)
+
         for i, offer_name in enumerate(self.qtable):
-            if candidate["score"] < self.qtable[self.get_ID_from_state()][offer_name] and self.find_provider(
+            if self.qtable[self.get_ID_from_state()][offer_name] == score and self.find_provider(
                     offer_name) in providers:
                 candidate["score"] = self.qtable[self.get_ID_from_state()][offer_name]
                 provider = self.find_provider(offer_name)
@@ -116,16 +139,25 @@ class QTable:
 
         return candidate
 
+    def get_kth_score(self, providers, num):
+        to_choose_scores = []
+        for i, offername in enumerate(self.qtable):
+            if self.find_provider(offername) in providers:
+                elem = {"score": self.qtable[self.get_ID_from_state()][offername], "id": offername}
+                to_choose_scores.append(elem)
+        to_choose_scores.sort(key=lambda x: x["score"], reverse=True)
+        return to_choose_scores[num]["score"]
+
     def find_provider(self, offer_name):
-        for offers in self.providers_offers:
-            if self.get_ID(offers) == offer_name:
-                return offers.provider_name.lower()
+        for offer in self.providers_offers:
+            if self.get_ID(offer) == offer_name:
+                return offer.provider_name.lower()
         raise ValueError("Can't find provider for " + offer_name)
 
     def find_offer(self, offer_name, provider):
-        for offers in self.providers_offers:
-            if self.get_ID(offers) == offer_name and provider.lower() == offers.provider_name.lower():
-                return offers.name
+        for offer in self.providers_offers:
+            if self.get_ID(offer) == offer_name and provider.lower() == offer.provider_name.lower():
+                return offer.name
         raise ValueError("Can't find offer for " + offer_name)
 
     def set_self_state(self, self_state):
@@ -144,18 +176,28 @@ class QTable:
         :param provider: the name the child tree name.
         :param transaction_hash: the transaction hash the child is bought with.
         """
+        name = custom_tree.create_child_name(provider, option, transaction_hash)
+        self.tree = custom_tree.add_child(self.tree, name, custom_tree.get_curr_state(self.tree, self.name))
+
         next_state = VPSState(provider=provider, option=option)
         dictionary = {
             "environment": self.environment,
             "qtable": self.qtable,
             "providers_offers": self.providers_offers,
             "self_state": next_state,
-            "transaction_hash": transaction_hash
+            "transaction_hash": transaction_hash,
+            "tree": self.tree,
+            "name": name
+
         }
         filename = os.path.join(user_config_dir(), 'Child_QTable.json')
         with open(filename, 'w') as json_file:
             encoded_dictionary = jsonpickle.encode(dictionary)
             json.dump(encoded_dictionary, json_file)
+
+    def create_initial_tree(self):
+        self.name = custom_tree.create_child_name(self.self_state.provider, self.self_state.option, "1")
+        self.tree = custom_tree.add_child([], self.name)
 
     def write_dictionary(self):
         """
@@ -167,7 +209,9 @@ class QTable:
             "environment": self.environment,
             "qtable": self.qtable,
             "providers_offers": self.providers_offers,
-            "self_state": self.self_state
+            "self_state": self.self_state,
+            "tree": self.tree,
+            "name": self.name
         }
         with open(filename, 'w') as json_file:
             encoded_to_save_var = jsonpickle.encode(to_save_var)

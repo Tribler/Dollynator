@@ -1,4 +1,5 @@
 import copy
+import random
 import unittest
 import mock
 import cloudomate.hoster.vps.blueangelhost as blueAngel
@@ -9,6 +10,7 @@ from mock import MagicMock
 
 from plebnet.agent.qtable import QTable, VPSState, ProviderOffer
 from plebnet.controllers import cloudomate_controller
+from plebnet.utilities.custom_tree import get_no_replications
 
 
 class TestQTable(unittest.TestCase):
@@ -118,7 +120,7 @@ class TestQTable(unittest.TestCase):
                                                                                              )])
     def test_calculate_measure(self, mock1, mock2):
         provider_offer = ProviderOffer(provider_name="mock provider", name="mock name", bandwidth=3, price=5, memory=2)
-        assert (self.qtable.calculate_measure(provider_offer) == 0.006)
+        assert (self.qtable.calculate_measure(provider_offer) == 0.024)
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
@@ -142,7 +144,7 @@ class TestQTable(unittest.TestCase):
                                                                                              )])
     def test_calculate_measure_unmetric_bandwidth(self, mock1, mock2):
         self.qtable.init_qtable_and_environment(self.providers)
-        assert (self.qtable.calculate_measure(self.qtable.providers_offers[0]) == 0.001)
+        assert (self.qtable.calculate_measure(self.qtable.providers_offers[1]) == 0.01)
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
@@ -181,7 +183,7 @@ class TestQTable(unittest.TestCase):
                 self.qtable.environment[provider_offer_ID_other][provider_offer_ID_other])
         assert (environment_copy[provider_offer_ID][provider_offer_ID] <
                 self.qtable.environment[provider_offer_ID][provider_offer_ID])
-        assert(self.qtable.environment[provider_offer_ID][provider_offer_ID] == 0.4)
+        assert (self.qtable.environment[provider_offer_ID][provider_offer_ID] == 0.4)
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
@@ -220,7 +222,7 @@ class TestQTable(unittest.TestCase):
                 self.qtable.environment[provider_offer_ID][provider_offer_ID])
         assert (environment_copy[provider_offer_ID][provider_offer_ID_other] ==
                 self.qtable.environment[provider_offer_ID][provider_offer_ID_other])
-        assert(self.qtable.environment[provider_offer_ID][provider_offer_ID] == -0.4)
+        assert (self.qtable.environment[provider_offer_ID][provider_offer_ID] == -0.4)
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
@@ -257,8 +259,7 @@ class TestQTable(unittest.TestCase):
         assert (qtable_copy != self.qtable.qtable)
         assert (qtable_copy[provider_offer_ID_other][provider_offer_ID] <
                 self.qtable.qtable[provider_offer_ID_other][provider_offer_ID])
-        assert(round(self.qtable.qtable[provider_offer_ID_other][provider_offer_ID],7) == 0.0029975)
-
+        assert(round(self.qtable.qtable[provider_offer_ID_other][provider_offer_ID],7) == 0.0020125)
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
@@ -286,45 +287,16 @@ class TestQTable(unittest.TestCase):
         self.qtable.init_qtable_and_environment(self.providers)
         qtable_copy = copy.deepcopy(self.qtable.qtable)
         vps_options_list = cloudomate_controller.options(self.providers)
-        vps_option = vps_options_list[0]
+        vps_option = vps_options_list[1]
 
         provider_offer_ID = str(self.providers.keys()[0]).lower() + "_" + str(vps_option.name).lower()
         provider_offer_ID_other = str(self.providers.keys()[0]).lower() + "_" + str(vps_options_list[1].name).lower()
 
         self.qtable.update_values(provider_offer_ID, False)
         assert (qtable_copy != self.qtable.qtable)
-        assert (qtable_copy[provider_offer_ID_other][provider_offer_ID] >
-                self.qtable.qtable[provider_offer_ID_other][provider_offer_ID])
-        assert(round(self.qtable.qtable[provider_offer_ID_other][provider_offer_ID],7) == 0.0009975)
-
-
-    @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
-                return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
-    @mock.patch('plebnet.controllers.cloudomate_controller.options', return_value=[VpsOption(name='Advanced',
-                                                                                             storage=2,
-                                                                                             cores=2,
-                                                                                             memory=2,
-                                                                                             bandwidth="mock",
-                                                                                             connection="1",
-                                                                                             price=100.0,
-                                                                                             purchase_url="mock"
-                                                                                             ),
-                                                                                   VpsOption(name='Basic Plan',
-                                                                                             storage=2,
-                                                                                             cores=2,
-                                                                                             memory=2,
-                                                                                             bandwidth="mock",
-                                                                                             connection="1",
-                                                                                             price=10.0,
-                                                                                             purchase_url="mock"
-                                                                                             )])
-    def test_choose_best_option(self, mock1, mock2):
-        self.qtable.init_qtable_and_environment(self.providers)
-        self.qtable.set_self_state(VPSState("blueangelhost", "Advanced"))
-        best_option = self.qtable.choose_best_option(self.providers)
-
-        self.assertEqual(best_option["provider_name"], "blueangelhost")
-        self.assertEqual(best_option["option_name"], "Basic Plan")
+        assert (qtable_copy[provider_offer_ID][provider_offer_ID] >
+                self.qtable.qtable[provider_offer_ID][provider_offer_ID])
+        assert(round(self.qtable.qtable[provider_offer_ID_other][provider_offer_ID], 7) == 0.0099525)
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
@@ -351,7 +323,96 @@ class TestQTable(unittest.TestCase):
         self.qtable.set_self_state(VPSState("blueangelhost", "Advanced"))
 
         provider_name = self.qtable.find_provider("blueangelhost_basic plan")
-        self.assertEqual(provider_name, "blueangelhost")
+        assert (provider_name == "blueangelhost")
+
+    @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
+                return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
+    @mock.patch('plebnet.controllers.cloudomate_controller.options', return_value=[VpsOption(name='Advanced',
+                                                                                             storage=2,
+                                                                                             cores=2,
+                                                                                             memory=2,
+                                                                                             bandwidth="mock",
+                                                                                             connection="1",
+                                                                                             price=100.0,
+                                                                                             purchase_url="mock"
+                                                                                             ),
+                                                                                   VpsOption(name='Basic Plan',
+                                                                                             storage=2,
+                                                                                             cores=2,
+                                                                                             memory=2,
+                                                                                             bandwidth="mock",
+                                                                                             connection="1",
+                                                                                             price=10.0,
+                                                                                             purchase_url="mock"
+                                                                                             )])
+    def test_kth_score(self, mock1, mock2):
+        self.qtable.init_qtable_and_environment(self.providers)
+        self.qtable.set_self_state(VPSState("blueangelhost", "Advanced"))
+        assert (self.qtable.get_kth_score(self.providers, 0) == 0.01)
+
+    @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
+                return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
+    @mock.patch('plebnet.controllers.cloudomate_controller.options', return_value=[VpsOption(name='Advanced',
+                                                                                             storage=2,
+                                                                                             cores=2,
+                                                                                             memory=2,
+                                                                                             bandwidth="mock",
+                                                                                             connection="1",
+                                                                                             price=100.0,
+                                                                                             purchase_url="mock"
+                                                                                             ),
+                                                                                   VpsOption(name='Basic Plan',
+                                                                                             storage=2,
+                                                                                             cores=2,
+                                                                                             memory=2,
+                                                                                             bandwidth="mock",
+                                                                                             connection="1",
+                                                                                             price=10.0,
+                                                                                             purchase_url="mock"
+                                                                                             )])
+    def test_choose_k_option(self, mock1, mock2):
+        self.qtable.init_qtable_and_environment(self.providers)
+        self.qtable.set_self_state(VPSState("blueangelhost", "Advanced"))
+        option = self.qtable.choose_k_option(self.providers, 1)
+        assert (option["option_name"] == "Advanced")
+        assert (option["price"] == 100.0)
+
+    @mock.patch('plebnet.utilities.custom_tree.get_no_replications', return_value=1)
+    @mock.patch('plebnet.utilities.custom_tree.get_curr_state')
+    @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
+                return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
+    @mock.patch('plebnet.controllers.cloudomate_controller.options', return_value=[VpsOption(name='Advanced',
+                                                                                             storage=2,
+                                                                                             cores=2,
+                                                                                             memory=2,
+                                                                                             bandwidth="mock",
+                                                                                             connection="1",
+                                                                                             price=100.0,
+                                                                                             purchase_url="mock"
+                                                                                             ),
+                                                                                   VpsOption(name='Basic Plan',
+                                                                                             storage=2,
+                                                                                             cores=2,
+                                                                                             memory=2,
+                                                                                             bandwidth="mock",
+                                                                                             connection="1",
+                                                                                             price=10.0,
+                                                                                             purchase_url="mock"
+                                                                                             )])
+    def test_choose_option(self, mock1, mock2, mock3, mock4):
+        self.qtable.init_qtable_and_environment(self.providers)
+        self.qtable.set_self_state(VPSState("blueangelhost", "Advanced"))
+        random.expovariate = MagicMock(return_value=0.55)
+        option = self.qtable.choose_option(self.providers)
+        assert (option["option_name"] == "Basic Plan")
+        assert (option["price"] == 10.0)
+
+    def test_create_initial_tree(self):
+        self.qtable.set_self_state(VPSState("blueangelhost", "Advanced"))
+        tree_copy = copy.deepcopy(self.qtable.tree)
+        self.qtable.create_initial_tree()
+        assert (self.qtable.tree != tree_copy)
+        assert (self.qtable.tree[0].name == "blueangelhost|Advanced|1")
 
 
 if __name__ == '__main__':
