@@ -18,6 +18,9 @@ log_name = "agent.strategies.simple_moving_average"
 
 
 class SimpleMovingAverage(Strategy):
+    """
+    Strategy explanation: https://github.com/Tribler/PlebNet/issues/44#issuecomment-446222944
+    """
     def __init__(self):
         Strategy.__init__(self)
         self.time_accumulated = 0
@@ -61,6 +64,10 @@ class SimpleMovingAverage(Strategy):
             }, json_file)
 
     def apply(self):
+        """
+        If there are no transaction history the strategy is useless so it defaults to LastDaySell
+        :return:
+        """
         if len(self.transactions) == 0:  # Fallback to last_day_sell if can't apply strategy
             logger.log("No transactions saved. Defaulting to Last Day Sell strategy", log_name)
             return LastDaySell().apply()
@@ -71,6 +78,10 @@ class SimpleMovingAverage(Strategy):
         attempt_purchase()
 
     def get_closing_transactions(self):
+        """
+        Gets the closing (last) transactions for each period (using a day as a period), max last 30 periods
+        :return: dictionary with the transactions with date YYYY-MM-DD as key
+        """
         closing_transactions = {}
 
         for transaction in self.transactions:
@@ -89,9 +100,18 @@ class SimpleMovingAverage(Strategy):
         return closing_transactions
 
     def calculate_price(self, transaction):
+        """
+        Given a transaction on the market, calculates its price BTC/MB
+        :param transaction: Transaction to get price
+        :return: price in BTC/MB
+        """
         return float(transaction['assets']['first']['amount'])/transaction['assets']['second']['amount']
 
     def calculate_moving_average_data(self):
+        """
+        Calculates the moving average data: mean and standard deviation from the closing transactions
+        :return: moving_average (or mean) and standard_deviation
+        """
         closing_transactions = self.get_closing_transactions()
 
         moving_average = 0.0
@@ -111,13 +131,29 @@ class SimpleMovingAverage(Strategy):
         return moving_average, std_deviation
 
     def get_reputation_gain_rate(self, time_unit_minutes=ITERATION_TIME_DIFF):
+        """
+        Calculates how much MB, in average, is produced per unit of time
+        :param time_unit_minutes: Unit of time to measure - default check time, 5 minutes
+        :return: average of gain of reputation
+        """
         return self.get_available_mb() * time_unit_minutes / self.time_accumulated
 
     def update_accumulated_time(self, parts_sold):
+        """
+        Updates the time changed by a bid and the time accumulated, based on how many parts of MB are being sold
+        A part is the basic unit for our MB sells, it is equivalent to the MB of the reputation gain rate
+        :param parts_sold: number of parts to be sold on the market
+        :return:
+        """
         self.time_change = min(self.time_accumulated, ITERATION_TIME_DIFF*parts_sold)
         self.time_accumulated -= self.time_change
 
     def sell_reputation(self):
+        """
+        Based on the strategy, calculate if it's accumulation time or how many parts are going to be sold
+        Then update the market offer selling the adequate number of MBs
+        :return:
+        """
         moving_average, std_deviation = self.calculate_moving_average_data()
 
         available_mb = self.get_available_mb()
