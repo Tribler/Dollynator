@@ -32,7 +32,8 @@ class SimpleMovingAverage(Strategy):
         if os.path.exists(filename):
             with open(filename, 'r') as json_file:
                 data = json.load(json_file)
-                self.process_last_bid(data['bid'], data['time_accumulated'])
+                self.time_accumulated = data['time_accumulated']
+                self.process_last_bid(data['bid'], data['time_change'])
 
     def process_last_bid(self, bid, bid_time):
         if bid is None:
@@ -55,6 +56,7 @@ class SimpleMovingAverage(Strategy):
         with open(filename, 'w') as json_file:
             json.dump({
                 'time_accumulated': self.time_accumulated,
+                'time_change': self.time_change,
                 'bid': self.bid
             }, json_file)
 
