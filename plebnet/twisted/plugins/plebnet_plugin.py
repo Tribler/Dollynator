@@ -106,6 +106,10 @@ class MarketServiceMaker(object):
             msg("Enabling dummy wallets")
             config.set_dummy_wallets_enabled(True)
 
+        # Enable record transactions
+        msg("Enabling record transactions")
+        config.set_record_transactions(True)
+
         # Minimize functionality enabled for plebnet
         # For now, config taken from market_plugin in devos tribler repo
         config.set_http_api_enabled(True)
