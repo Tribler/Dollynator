@@ -145,7 +145,7 @@ class QTable:
             if self.find_provider(offername) in providers:
                 elem = {"score": self.qtable[self.get_ID_from_state()][offername], "id": offername}
                 to_choose_scores.append(elem)
-        to_choose_scores.sort(key=lambda x: x["score"])
+        to_choose_scores.sort(key=lambda x: x["score"], reverse=True)
         return to_choose_scores[num]["score"]
 
     def find_provider(self, offer_name):

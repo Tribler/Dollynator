@@ -348,7 +348,7 @@ class TestQTable(unittest.TestCase):
     def test_kth_score(self, mock1, mock2):
         self.qtable.init_qtable_and_environment(self.providers)
         self.qtable.set_self_state(VPSState("blueangelhost", "Advanced"))
-        assert (self.qtable.get_kth_score(self.providers, 1) == 0.01)
+        assert (self.qtable.get_kth_score(self.providers, 0) == 0.01)
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
@@ -374,8 +374,8 @@ class TestQTable(unittest.TestCase):
         self.qtable.init_qtable_and_environment(self.providers)
         self.qtable.set_self_state(VPSState("blueangelhost", "Advanced"))
         option = self.qtable.choose_k_option(self.providers, 1)
-        assert (option["option_name"] == "Basic Plan")
-        assert (option["price"] == 10.0)
+        assert (option["option_name"] == "Advanced")
+        assert (option["price"] == 100.0)
 
     @mock.patch('plebnet.utilities.custom_tree.get_no_replications', return_value=1)
     @mock.patch('plebnet.utilities.custom_tree.get_curr_state')
@@ -404,8 +404,8 @@ class TestQTable(unittest.TestCase):
         self.qtable.set_self_state(VPSState("blueangelhost", "Advanced"))
         random.expovariate = MagicMock(return_value=0.55)
         option = self.qtable.choose_option(self.providers)
-        assert (option["option_name"] == "Advanced")
-        assert (option["price"] == 100.0)
+        assert (option["option_name"] == "Basic Plan")
+        assert (option["price"] == 10.0)
 
     def test_create_initial_tree(self):
         self.qtable.set_self_state(VPSState("blueangelhost", "Advanced"))
