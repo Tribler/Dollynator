@@ -232,6 +232,8 @@ def attempt_purchase():
     btc_balance = satoshi_to_btc(market_controller.get_balance(domain))
     vps_price = cloudomate_controller.calculate_price(provider, option)
     vpn_price = cloudomate_controller.calculate_price_vpn()
+    logger.log("Balance = %s %s, VPS = %s, VPN = %s" %
+               (btc_balance, domain, vps_price, vpn_price), log_name)
     if btc_balance >= vps_price + vpn_price:
         logger.log("Try to buy a new server from %s" % provider, log_name)
         success = cloudomate_controller.purchase_choice(config)

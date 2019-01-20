@@ -38,7 +38,6 @@ def get_balance(domain):
     :param domain: the wallet type BTC, TBTC or MB
     :return: the balance
     """
-    logger.log('market running? ' + str(is_market_running()) + " get " + domain + " balance", log_name)
     try:
         r = requests.get('http://localhost:8085/wallets/' + domain + '/balance')
         balance = r.json()
