@@ -42,7 +42,7 @@ setup(
 
     packages=find_packages(exclude=['docs']),
 
-    install_requires=['requests', 'names', 'faker', 'jsonpickle', 'anytree'],
+    install_requires=['requests', 'names', 'faker', 'jsonpickle'],
 
     extras_require={
         'dev': [],

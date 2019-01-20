@@ -59,7 +59,7 @@ def install_available_servers(config, qtable):
             provider_class(cloudomate_controller.child_account(child_index)).change_root_password(rootpw)
             time.sleep(5)
 
-            qtable.create_child_qtable(provider, option, transaction_hash)
+            qtable.create_child_qtable(provider, option, transaction_hash, child_index)
 
             # Save config before entering possibly long lasting process
             config.save()

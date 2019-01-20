@@ -11,6 +11,7 @@ import time
 import sys
 
 # as the file is loaded separately, the imports have to be adjusted.
+
 sys.path.append('./PlebNet')
 from plebnet.agent.qtable import QTable
 from plebnet.agent.core import vpn_is_running
@@ -230,7 +231,7 @@ class Create(object):
             'host': qtable.self_state.provider,
             'option': qtable.self_state.option,
             'vpn': vpn_is_running(),
-            'tree': qtable.name,
+            'tree': qtable.tree,
             'exitnode': plebnet_settings.get_instance().tribler_exitnode()
         }
         self.send_msg("general: %s" % data)
