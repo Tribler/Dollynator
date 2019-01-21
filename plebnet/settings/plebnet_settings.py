@@ -154,6 +154,8 @@ class Init(object):
 
     def vpn_credentials_name(self, value=None): return self.settings.handle("vpn", "credentials_name", value)
 
+    def anticaptcha_accountkey(self, value=None): return self.settings.handle("vpn", "anticaptcha_accountkey", value)
+
     """THE ATTRIBUTE METHODS FOR THE TRIBLER SECTION"""
     def tribler_exitnode(self, value=None): return self.settings.handle("tribler", "exitnode", value)  == '1'
 
