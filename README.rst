@@ -54,6 +54,44 @@ Finally, it connects to the purchased server over SSH, downloads the latest Pleb
 
 Reinforcement Learning
 ======================
+The choice of next VPS is dictated by QTable.
+
+We define few mappings which are used in Reinforcement Learning:
+
+-``states`` - VPS offers
+
+-``environment`` – transition matrix between states. This kind of dictates what reinforcement we will get by choosing certain transition. Initially all 0s.
+
+-``current_state`` – current VPS option
+
+Initial values for QTable are calculated according to the formula bellow:
+
+``1/(price^3) * bandwidth``
+
+Environment is getting updated by each try of replication:
+
+-when node manages to buy new option and replicate environment is updated positively (all transitions leading to ``current_state``)
+
+-when nodes fails to buy option environment is getting updated negatively (transition between ``current_state`` and chosen failed state)
+While we update the environment QTable entries are getting updated consequently.
+
+What is passed to the child?
+
+-his state (provider name + option name)
+
+-name (to have some id)
+
+-tree of replications
+
+-``providers_offers`` (all VPSs offer for all providers)
+
+-current ``qtable``
+
+
+Currently VPSs are chosen using QTable , VPNs not.
+
+To choose option from QTable we use exponential distribution with lambda converging decreasingly to 1. As lambda is changing with number of replications process seems to be similar to ``simulated annealing``.
+
 
 Market Strategies
 =================
