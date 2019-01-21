@@ -21,9 +21,11 @@ from faker.factory import Factory
 # Local imports
 from plebnet.utilities import logger
 from plebnet.agent.config import PlebNetConfig
+from plebnet.settings import plebnet_settings
 
 # File parameters
 
+settings = plebnet_settings.get_instance()
 
 def generate_child_account():
     filename = _child_file()
@@ -33,6 +35,7 @@ def generate_child_account():
     _generate_address(cp, fake)
     _generate_server(cp, fake)
     _generate_user(cp, fake)
+    _add_anticaptcha(cp)
     _remove_unicode(cp)
     with codecs.open(filename, 'w', 'utf8') as config_file:
         cp.write(config_file)
@@ -81,7 +84,7 @@ def _generate_server(cp, fake):
     cp.set('server', 'root_password', fake.password(length=10, special_chars=False))
     cp.set('server', 'ns1', 'ns1')
     cp.set('server', 'ns2', 'ns2')
-    cp.set('server', 'hostname', fake.word())
+    cp.set('server', 'hostname', fake.word() + ".nl")
 
 
 def _generate_email(firstname, lastname):
@@ -92,6 +95,11 @@ def _generate_email(firstname, lastname):
     middle_word = middle_word.replace(' ', '')
 
     return parts[0] + '+' + middle_word + '@' + parts[1]
+
+
+def _add_anticaptcha(cp):
+    cp.add_section('anticaptcha')
+    cp.set('anticaptcha', 'accountkey', settings.anticaptcha_accountkey())
 
 
 def _choose_email():

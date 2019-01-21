@@ -154,7 +154,6 @@ def calculate_price(provider, option):
     :param option: the option at the provider chosen
     :return: the price
     """
-    logger.log('provider: %s option: %s' % (provider, option), "cloudomate_controller")
     vps_option = get_vps_option(provider, option)
     gateway = cloudomate_providers['vps'][provider].get_gateway()
     btc_price = gateway.estimate_price(
@@ -170,8 +169,7 @@ def get_vps_option(provider, vps_option_name):
     return vps_option
 
 
-def calculate_price_vpn(vpn_provider='azirevpn'):
-    logger.log('vpn provider: %s' % vpn_provider, "cloudomate_controller")
+def calculate_price_vpn(vpn_provider='mullvad'):
     # option is assumed to be the first one
     vpn_option = options(get_vpn_providers()[vpn_provider])[0]
     gateway = get_vpn_providers()[vpn_provider].get_gateway()
@@ -260,26 +258,34 @@ def save_info_vpn(child_index):
     :return:
     """
     vpn = get_vpn_providers()[plebnet_settings.get_instance().vpn_host()](child_account())
-    info = vpn.get_configuration()
-    prefix = plebnet_settings.get_instance().vpn_child_prefix()
 
-    dir = path.expanduser(plebnet_settings.get_instance().vpn_config_path())
-    credentials = prefix + str(child_index) + plebnet_settings.get_instance().vpn_credentials_name()
+    try:
+        info = vpn.get_configuration()
+        prefix = plebnet_settings.get_instance().vpn_child_prefix()
 
-    ovpn = prefix + str(child_index) + plebnet_settings.get_instance().vpn_config_name()
+        dir = path.expanduser(plebnet_settings.get_instance().vpn_config_path())
+        credentials = prefix + str(child_index) + plebnet_settings.get_instance().vpn_credentials_name()
 
-    # the .ovpn file contains the line auth-user-pass so that it knows which credentials file to use
-    # when the child config and credentials are passed to create-child, it is placed on the server as "own" 
-    # so the reference to "own" is put in the .ovpn file.
-    own_credentials = plebnet_settings.get_instance().vpn_own_prefix() \
-                      + plebnet_settings.get_instance().vpn_credentials_name()
-    with io.open(path.join(dir, ovpn), 'w', encoding='utf-8') as ovpn_file:
-        ovpn_file.write(info.ovpn + '\nauth-user-pass ' + own_credentials)
+        ovpn = prefix + str(child_index) + plebnet_settings.get_instance().vpn_config_name()
 
-    # write the ovpn file to vpn dir
-    with io.open(path.join(dir, credentials), 'w', encoding='utf-8') as credentials_file:
-        credentials_file.writelines([info.username + '\n', info.password])
+        # the .ovpn file contains the line auth-user-pass so that it knows which credentials file to use
+        # when the child config and credentials are passed to create-child, it is placed on the server as "own"
+        # so the reference to "own" is put in the .ovpn file.
+        own_credentials = plebnet_settings.get_instance().vpn_own_prefix() \
+                          + plebnet_settings.get_instance().vpn_credentials_name()
+        with io.open(path.join(dir, ovpn), 'w', encoding='utf-8') as ovpn_file:
+            ovpn_file.write(info.ovpn + '\nauth-user-pass ' + own_credentials)
 
-    print("Saved VPN configuration to " + dir)
+        # write the ovpn file to vpn dir
+        with io.open(path.join(dir, credentials), 'w', encoding='utf-8') as credentials_file:
+            credentials_file.writelines([info.username + '\n', info.password])
 
-    return True
+        logger.log("Saved VPN configuration to " + dir, "cloudomate_controller")
+
+        return True
+    except:
+        title = "Failed to save VPN info: %s" % sys.exc_info()[0]
+        body = traceback.format_exc()
+        logger.error(title)
+        logger.error(body)
+        return False
