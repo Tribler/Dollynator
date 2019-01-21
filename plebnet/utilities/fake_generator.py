@@ -84,7 +84,7 @@ def _generate_server(cp, fake):
     cp.set('server', 'root_password', fake.password(length=10, special_chars=False))
     cp.set('server', 'ns1', 'ns1')
     cp.set('server', 'ns2', 'ns2')
-    cp.set('server', 'hostname', fake.word())
+    cp.set('server', 'hostname', fake.word() + ".nl")
 
 
 def _generate_email(firstname, lastname):
