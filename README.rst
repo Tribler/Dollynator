@@ -96,6 +96,33 @@ To choose option from QTable we use exponential distribution with lambda converg
 Market Strategies
 =================
 
+Plebnet has different options market strategies, they can be configured in the configuration file ``~/.config/plebnet_setup.cfg``, under the strategies section. The strategy to be configured can be changed in the name configuration (possible options are ``last_day_sell``, ``constant_sell`` and ``simple_moving_average``), if it's not configured, last_day_sell will by applied by default.
+
+There are two main types of strategies to sell the gained reputation for bitcoin: 
+
+- Blind Strategies focus only on replication independently of the current value of reputation.
+- Orderbook-based Strategies focus on getting the most value of the gained reputation, using the history of transactions and having endless options of possible algorithms to use to decide when to sell and when to hold on to the reputation.
+
+Blind Strategies
+----------------
+
+Plebnet currently has two options for Blind Strategies: LastDaySell and ConstantSell. Both of the strategies try to obtain enough bitcoin to lease a certain amount of VPS to replicate to. This number can be configured in the ``vps_count`` parameter in the strategy section of the configuration file, if it is not configured, 1 will be used by default.
+
+LastDaySell waits until there is one day left until the expiration of the current VPS lease and then places an order on the market selling all available reputation for the amount of bitcoin needed for the configured number of replications. This order is updated hourly with the new income.
+
+ConstantSell, as soon as it is first called, places an order on the market selling all available reputation for the amount of bitcoin needed for the configured number of replications. This order is updated hourly with the new income.
+
+Orderbok-based Strategies
+-------------------------
+
+Plebnet has one Orderbook-based Strategy: SimpleMovingAverage. This strategy tries to get the most of the market by evaluating the current price (the price of the last transaction) against a simple moving average of 30 periods, using days as periods.
+This strategy accumulates reputation while the market is not favorable to selling - when the current price is lower than the moving average. It will accumulate up until a maximum of 3 days worth of reputation. When this maximum is reached, even if the market is not favorable, reputation is sold at production rate - the bot waits until the end of the 4th day of accumulation and then places an order selling a full day's worth of reputation.
+If the market is favorable - the current price is higher than the moving average - it will evaluate how much higher it is. To do this the strategy uses the standard deviation of the moving average. If it is not above the moving average plus twice the standard deviation, only a full day's worth of reputation is sold. If it is between this value and the moving plus three times the standard deviation, it will sell two days' worth of reputation, if it is higher than the moving average plus three times the standard deviation it will sell three days' worth of reputation.
+
+This strategy doesn't assume market liquidity - even though all placed orders are market orders (orders placed at the last price), it confirms if the last token sell was completely fulfilled, only partially or not at all and takes that into account for the next iteration. 
+
+If Plebnet could not gather any history of market transactions, this strategy will replace itself with LastDaySell. 
+
 Continuous Procurement Bot
 ==========================
 
@@ -137,6 +164,7 @@ Future Work
 
 - Gossip learning protocol using IPv8 overlay: enable collective learning by sharing QTable updates with a secure message authentication
 - QTable for VPN selection: learn which VPN works the best and which VPS providers ignore DMCA notices and thus do not require VPN
+- Market strategies based on other financial analysis' (i.e: other moving averages may be interesting)
 - Market strategy based on deep learning
 - Explore additional sources of income: Bitcoin donations, torrent seeding...
 
