@@ -65,6 +65,10 @@ While the network is fully autonomous, there is a desire to observe its evolutio
 
 **Plebnet Vision** is a tool allowing to track the state of the botnet over time and visualize the family tree of the whole network. The ``tracker`` module periodically requests the state of all bots and stores it into a file. The ``vision`` module is then a Flask web server which constructs a network graph and generates charts showing how the amount of uploaded and downloaded data, number of Tribler market matchmakers, and MB balance changed over time.
 
+
+.. image:: https://user-images.githubusercontent.com/1707075/48701343-8d4a4a00-ebee-11e8-87d6-0aecb94caf76.gif
+    :width: 60%
+
 After installing the required dependencies, the Flask server and the tracker bot can be started by:
 
 ``python tools/vision/app_py.py``
@@ -78,7 +82,7 @@ The HTTP server is running on the port ``5500``.
 Future Work
 ===========
 
-- Gossip learning protocol using IPv8 overlay: enable collective learning by sharing QTable updates, secure message authentication
+- Gossip learning protocol using IPv8 overlay: enable collective learning by sharing QTable updates with a secure message authentication
 - QTable for VPN selection: learn which VPN works the best and which VPS providers ignore DMCA notices and thus do not require VPN
 - Market strategy based on deep learning
 - Explore additional sources of income: Bitcoin donations, torrent seeding...
