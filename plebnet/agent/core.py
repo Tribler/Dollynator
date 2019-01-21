@@ -210,7 +210,9 @@ def attempt_purchase_vpn():
         domain = 'TBTC'
     else:
         domain = 'BTC'
-    if market_controller.get_balance(domain) >= cloudomate_controller.calculate_price_vpn(provider):
+    btc_balance = satoshi_to_btc(market_controller.get_balance(domain))
+    vpn_price = cloudomate_controller.calculate_price_vpn(provider)
+    if btc_balance >= vpn_price:
         logger.log("Try to buy a new VPN from %s" % provider, log_name)
         success = cloudomate_controller.purchase_choice_vpn(config)
         if success == plebnet_settings.SUCCESS:
