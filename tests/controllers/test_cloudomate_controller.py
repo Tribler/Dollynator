@@ -211,7 +211,7 @@ class TestCloudomateController(unittest.TestCase):
         PlebNetConfig.get = MagicMock(side_effect=self.side_effect)
         plebnet_settings.Init.wallets_testnet_created = MagicMock(return_value=None)
         TriblerWallet.__init__ = MagicMock(return_value=None)
-        blueAngel.BlueAngelHost.purchase = MagicMock(return_value=None)
+        blueAngel.BlueAngelHost.purchase = MagicMock(side_effect=Exception("Purchase failed"))
         Logger.warning = MagicMock()
 
         self.assertEquals(cloudomate.purchase_choice(PlebNetConfig()), plebnet_settings.FAILURE)
