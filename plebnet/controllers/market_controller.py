@@ -74,8 +74,8 @@ def _put_request(first_asset_amount, first_asset_type, second_asset_amount, seco
         'timeout': timeout
     }
     json = requests.put(url, data=data).json()
-    if 'created' in json:
-        return json['created']
+    if 'order_number' in json:
+        return json['order_number']
     else:
         print(json['error']['message'])
         return False
