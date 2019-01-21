@@ -20,16 +20,13 @@
 
 OWN="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/create-child.sh"
 
-CHILD_QTABLE_FILE=~/.config/Child_QTable.json
-QTABLE_FILE=~/.config/QTable.json
-# WALLET_FILE="~/.electrum/wallets/default_wallet"
-
 export DEBIAN_FRONTEND=noninteractive
 
 cd
 
 CHILD_QTABLE_FILE=~/.config/Child_QTable.json
 QTABLE_FILE=~/.config/QTable.json
+CONFIG_FILE=~/.config/plebnet_setup.cfg
 WALLET_FILE=~/.electrum/wallets/default_wallet
 TESTNET_WALLET_FILE=~/.electrum/testnet/wallets/default_wallet
 
@@ -167,6 +164,13 @@ if [ ! -e ${CHILD_QTABLE_FILE} ]; then
     echo "File $CHILD_QTABLE_FILE not found"
 else
     sshpass -p${PASSWORD} scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${CHILD_QTABLE_FILE} root@${IP}:${QTABLE_FILE}
+fi
+
+echo "Copying configuration"
+if [ ! -e ${CONFIG_FILE} ]; then
+    echo "File $CONFIG_FILE not found"
+else
+    sshpass -p${PASSWORD} scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${CONFIG_FILE} root@${IP}:${CONFIG_FILE}
 fi
 
 # copying VPN configs if they exist

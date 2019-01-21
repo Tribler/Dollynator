@@ -49,7 +49,7 @@ def install_available_servers(config, qtable):
                 logger.log("Enabling %s tun/tap: %s"%(provider, tun_success))
                 if not cloudomate_controller.save_info_vpn(child_index):
                     logger.log("VPN not ready yet, can't save ovpn config")
-                    return
+                    # return
 
             logger.log("Installing child on %s with ip %s" % (provider, str(ip)))
 
