@@ -118,8 +118,9 @@ def _install_server(ip, rootpw, vpn_child_index=None, testnet=False):
     home = settings.plebnet_home()
     script_path = os.path.join(home, "plebnet/clone/create-child.sh")
     logger.log('tot_path: %s' % script_path)
+    branch = "develop"
 
-    command = ["bash", script_path, "-i", ip.strip(), "-p", rootpw.strip()]
+    command = ["bash", script_path, "-i", ip.strip(), "-p", rootpw.strip(), "-b", branch]
 
     # additional VPN arguments
     if vpn_child_index > -1:
