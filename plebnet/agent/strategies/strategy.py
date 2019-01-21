@@ -70,6 +70,8 @@ class Strategy():
 
         coin = 'TBTC' if plebnet_settings.get_instance().wallets_testnet() else 'BTC'
 
+        logger.log("Placing offer for %s MB / %s %s" % (available_mb, chosen_est_price, coin), log_name)
+
         config.set('last_offer', {coin: chosen_est_price, 'MB': available_mb})
         return market_controller.put_bid(first_asset_amount=btc_to_satoshi(chosen_est_price),
                                          first_asset_type=coin,

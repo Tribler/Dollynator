@@ -150,7 +150,7 @@ cd ..
 
 # Install bitcoinlib
 # pip install bitcoinlib==0.4.4
-git clone https://github.com/MattSkala/bitcoinlib.git
+git clone https://github.com/1200wd/bitcoinlib.git
 pip install ./bitcoinlib
 
 # Install electrum as it is required by cloudomate and not included in tribler anymore

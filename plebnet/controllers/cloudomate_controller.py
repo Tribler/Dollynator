@@ -194,14 +194,19 @@ def purchase_choice_vpn(config):
     # option is assumbed to be the first vpn provider option
     option = configurations[0]
 
-    transaction_hash = provider_instance.purchase(wallet, option)
+    try:
+        transaction_hash = provider_instance.purchase(wallet, option)
+    except:
+        title = "Failed to purchase vpn: %s" % sys.exc_info()[0]
+        body = traceback.format_exc()
+        logger.error(title)
+        logger.error(body)
+        git_issuer.handle_error(title, body)
+        git_issuer.handle_error("Failed to purchase server", sys.exc_info()[0], ['crash'])
+        return plebnet_settings.FAILURE
 
     if not transaction_hash:
-        logger.warning("Failed to purchase vpn")
-        return plebnet_settings.FAILURE
-    if False:
-        logger.warning("Insufficient funds to purchase server")
-        return plebnet_settings.UNKNOWN
+        logger.warning("VPN probably purchased, but transaction hash not returned")
 
     config.get('bought').append((provider, option, transaction_hash, config.get('child_index')))
     config.get('transactions').append(transaction_hash)
@@ -235,8 +240,11 @@ def purchase_choice(config):
         git_issuer.handle_error("Failed to purchase server", sys.exc_info()[0], ['crash'])
         return plebnet_settings.FAILURE
 
+    # Cloudomate should throw an exception when purchase fails. The transaction hash is not in fact required,
+    # and even when cloudomate fails to return it, the purchase itself could have been successful.
     if not transaction_hash:
-        return plebnet_settings.FAILURE
+        logger.warning("Server probably purchased, but transaction hash not returned")
+
     config.get('bought').append((provider, option, transaction_hash, config.get('child_index')))
     config.get('transactions').append(transaction_hash)
     config.set('chosen_provider', None)

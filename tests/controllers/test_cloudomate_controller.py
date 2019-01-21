@@ -113,9 +113,7 @@ class TestCloudomateController(unittest.TestCase):
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
-    @mock.patch('plebnet.utilities.custom_tree.get_no_replications', return_value=1)
-    @mock.patch('plebnet.utilities.custom_tree.get_curr_state')
-    def test_pick_providers(self, mock1, mock2, mock3):
+    def test_pick_providers(self, mock1):
 
         self.vps = cloudomate.get_vps_providers
         self.get_gateway = blueAngel.BlueAngelHost.get_gateway
@@ -213,7 +211,7 @@ class TestCloudomateController(unittest.TestCase):
         PlebNetConfig.get = MagicMock(side_effect=self.side_effect)
         plebnet_settings.Init.wallets_testnet_created = MagicMock(return_value=None)
         TriblerWallet.__init__ = MagicMock(return_value=None)
-        blueAngel.BlueAngelHost.purchase = MagicMock(return_value=None)
+        blueAngel.BlueAngelHost.purchase = MagicMock(side_effect=Exception("Purchase failed"))
         Logger.warning = MagicMock()
 
         self.assertEquals(cloudomate.purchase_choice(PlebNetConfig()), plebnet_settings.FAILURE)

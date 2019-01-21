@@ -38,7 +38,6 @@ def get_balance(domain):
     :param domain: the wallet type BTC, TBTC or MB
     :return: the balance
     """
-    logger.log('market running? ' + str(is_market_running()) + " get " + domain + " balance", log_name)
     try:
         r = requests.get('http://localhost:8085/wallets/' + domain + '/balance')
         balance = r.json()
@@ -75,8 +74,8 @@ def _put_request(first_asset_amount, first_asset_type, second_asset_amount, seco
         'timeout': timeout
     }
     json = requests.put(url, data=data).json()
-    if 'created' in json:
-        return json['created']
+    if 'order_number' in json:
+        return json['order_number']
     else:
         print(json['error']['message'])
         return False

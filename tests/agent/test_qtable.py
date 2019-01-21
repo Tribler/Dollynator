@@ -10,7 +10,6 @@ from mock import MagicMock
 
 from plebnet.agent.qtable import QTable, VPSState, ProviderOffer
 from plebnet.controllers import cloudomate_controller
-from plebnet.utilities.custom_tree import get_no_replications
 
 
 class TestQTable(unittest.TestCase):
@@ -377,8 +376,7 @@ class TestQTable(unittest.TestCase):
         assert (option["option_name"] == "Advanced")
         assert (option["price"] == 100.0)
 
-    @mock.patch('plebnet.utilities.custom_tree.get_no_replications', return_value=1)
-    @mock.patch('plebnet.utilities.custom_tree.get_curr_state')
+    @mock.patch('plebnet.settings.plebnet_settings.Init.irc_nick', return_value="plebbot1")
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
     @mock.patch('plebnet.controllers.cloudomate_controller.options', return_value=[VpsOption(name='Advanced',
@@ -399,7 +397,7 @@ class TestQTable(unittest.TestCase):
                                                                                              price=10.0,
                                                                                              purchase_url="mock"
                                                                                              )])
-    def test_choose_option(self, mock1, mock2, mock3, mock4):
+    def test_choose_option(self, mock1, mock2, mock3):
         self.qtable.init_qtable_and_environment(self.providers)
         self.qtable.set_self_state(VPSState("blueangelhost", "Advanced"))
         random.expovariate = MagicMock(return_value=0.55)
@@ -407,12 +405,15 @@ class TestQTable(unittest.TestCase):
         assert (option["option_name"] == "Basic Plan")
         assert (option["price"] == 10.0)
 
-    def test_create_initial_tree(self):
+    @mock.patch('plebnet.settings.plebnet_settings.Init.irc_nick', return_value="plebbot1")
+    def test_create_initial_tree(self, mock1):
         self.qtable.set_self_state(VPSState("blueangelhost", "Advanced"))
-        tree_copy = copy.deepcopy(self.qtable.tree)
         self.qtable.create_initial_tree()
-        assert (self.qtable.tree != tree_copy)
-        assert (self.qtable.tree[0].name == "blueangelhost|Advanced|1")
+        assert (self.qtable.tree == "plebbot1")
+
+    def test_get_no_replications(self):
+        self.qtable.tree = "plebbot1.2.3"
+        self.assertEqual(self.qtable.get_no_replications(), 3)
 
 
 if __name__ == '__main__':

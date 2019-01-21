@@ -67,7 +67,7 @@ class TestMarketController(unittest.TestCase):
 
  @responses.activate
  def test_put_request(self):
-     responses.add(responses.PUT, 'http://localhost:8085/market/bids', json={'created': True})
+     responses.add(responses.PUT, 'http://localhost:8085/market/bids', json={'order_number': "1"})
      assert(Market._put_request(10, 'BTC', 10, 'MB', 1000, 'bids'))
 
  @responses.activate

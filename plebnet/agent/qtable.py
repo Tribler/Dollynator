@@ -10,7 +10,6 @@ from appdirs import user_config_dir
 
 from plebnet.controllers import cloudomate_controller
 from plebnet.settings import plebnet_settings
-from plebnet.utilities import custom_tree
 
 
 class QTable:
@@ -24,8 +23,7 @@ class QTable:
         self.environment = {}
         self.providers_offers = []
         self.self_state = VPSState()
-        self.name = ""
-        self.tree = []
+        self.tree = ""
         pass
 
     def init_qtable_and_environment(self, providers):
@@ -102,11 +100,9 @@ class QTable:
                 self.providers_offers = data['providers_offers']
                 self.self_state = data['self_state']
                 self.tree = data['tree']
-                self.name = data['name']
 
     def choose_option(self, providers):
-        curr_state = custom_tree.get_curr_state(self.tree, self.name)
-        lambd = 1 - 1 / (custom_tree.get_no_replications(curr_state) + 3)
+        lambd = 1 - 1 / (self.get_no_replications() + 3)
         num = random.expovariate(lambd)
         num = int(math.floor(num))
 
@@ -170,34 +166,34 @@ class QTable:
     def get_ID_from_state(self):
         return str(self.self_state.provider).lower() + "_" + str(self.self_state.option).lower()
 
-    def create_child_qtable(self, provider, option, transaction_hash):
+    def create_child_qtable(self, provider, option, transaction_hash, child_index):
         """
         Creates the QTable configuration for the child agent. This is done by copying the own QTable configuration and including the new host provider, the parent name and the transaction hash.
         :param provider: the name the child tree name.
         :param transaction_hash: the transaction hash the child is bought with.
         """
-        name = custom_tree.create_child_name(provider, option, transaction_hash)
-        self.tree = custom_tree.add_child(self.tree, name, custom_tree.get_curr_state(self.tree, self.name))
 
         next_state = VPSState(provider=provider, option=option)
+        tree = self.tree + "." + str(child_index)
         dictionary = {
             "environment": self.environment,
             "qtable": self.qtable,
             "providers_offers": self.providers_offers,
             "self_state": next_state,
             "transaction_hash": transaction_hash,
-            "tree": self.tree,
-            "name": name
-
+            "tree": tree
         }
+
         filename = os.path.join(user_config_dir(), 'Child_QTable.json')
         with open(filename, 'w') as json_file:
             encoded_dictionary = jsonpickle.encode(dictionary)
             json.dump(encoded_dictionary, json_file)
 
     def create_initial_tree(self):
-        self.name = custom_tree.create_child_name(self.self_state.provider, self.self_state.option, "1")
-        self.tree = custom_tree.add_child([], self.name)
+        self.tree = plebnet_settings.get_instance().irc_nick()
+
+    def get_no_replications(self):
+        return len(self.tree.split("."))
 
     def write_dictionary(self):
         """
@@ -210,8 +206,7 @@ class QTable:
             "qtable": self.qtable,
             "providers_offers": self.providers_offers,
             "self_state": self.self_state,
-            "tree": self.tree,
-            "name": self.name
+            "tree": self.tree
         }
         with open(filename, 'w') as json_file:
             encoded_to_save_var = jsonpickle.encode(to_save_var)
