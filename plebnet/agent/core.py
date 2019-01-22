@@ -55,7 +55,6 @@ def setup(args):
 
     if args.test_net:
         settings.wallets_testnet("1")
-        settings.settings.write()
         qtable.read_dictionary({'proxhost': cloudomate_controller.get_vps_providers()['proxhost']})
     else:
         providers = cloudomate_controller.get_vps_providers()
@@ -69,6 +68,8 @@ def setup(args):
     if args.exit_node:
         logger.log("Running as exitnode")
         settings.tribler_exitnode('1')
+
+    settings.settings.write()
 
     # Prepare first child configuration
     fake_generator.generate_child_account()
