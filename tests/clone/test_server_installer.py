@@ -81,7 +81,7 @@ class TestServerInstaller(unittest.TestCase):
 
         server_installer.install_available_servers(config, self.test_qtable)
 
-        self.assertEqual(config.get('installed'), [{'linevast': False}])
+        self.assertEqual(config.get('installed'), [test_bought])
         self.assertEqual(config.get('bought'), [])
 
     def test_install_server(self):

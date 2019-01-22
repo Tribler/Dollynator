@@ -68,7 +68,7 @@ def install_available_servers(config, qtable):
 
             # Reload config in case install takes a long time
             config.load()
-            config.get('installed').append({provider: success})
+            config.get('installed').append([provider, option, transaction_hash, child_index])
             if [provider, option, transaction_hash, child_index] in config.get('bought'):
                 config.get('bought').remove([provider, option, transaction_hash, child_index])
             config.save()
