@@ -45,6 +45,11 @@ def setup(args):
     global qtable, config
     logger.log("Setting up PlebNet")
 
+    # Set general info about the PlebNet agent
+    settings.irc_nick(settings.irc_nick_def() + str(random.randint(1000, 10000)))
+    config = PlebNetConfig()
+    config.set('expiration_date', time.time() + 30 * plebnet_settings.TIME_IN_DAY)
+
     # Prepare the QTable configuration
     qtable = QTable()
 
@@ -67,11 +72,6 @@ def setup(args):
 
     # Prepare first child configuration
     fake_generator.generate_child_account()
-
-    # Set general info about the PlebNet agent
-    settings.irc_nick(settings.irc_nick_def() + str(random.randint(1000, 10000)))
-    config = PlebNetConfig()
-    config.set('expiration_date', time.time() + 30 * plebnet_settings.TIME_IN_DAY)
 
     # Prepare the IRC Client
     irc_handler.init_irc_client()
