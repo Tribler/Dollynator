@@ -226,9 +226,9 @@ def purchase_choice(config):
 
     wallet = TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
 
-    option = get_vps_option(provider,option)
+    vps_option = get_vps_option(provider,option)
     try:
-        transaction_hash = provider_instance.purchase(wallet, option)
+        transaction_hash = provider_instance.purchase(wallet, vps_option)
     except:
         title = "Failed to purchase server: %s" % sys.exc_info()[0]
         body = traceback.format_exc()

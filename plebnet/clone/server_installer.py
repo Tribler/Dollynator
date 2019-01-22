@@ -53,6 +53,10 @@ def install_available_servers(config, qtable):
 
             logger.log("Installing child on %s with ip %s" % (provider, str(ip)))
 
+            # TODO: If installation process takes too long, it can happen that it will be launched again
+            #  in the next run. Solution: Move the instance from bought to installing and then to installed, or back
+            #  to bought if the server is not ready yet.
+
             account_settings = cloudomate_controller.child_account(child_index)
             rootpw = account_settings.get('server', 'root_password')
 
