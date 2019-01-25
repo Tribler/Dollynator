@@ -12,8 +12,11 @@ from datetime import datetime, timedelta
 from math import sqrt
 
 
-MAX_ACCUMULATION_TIME = 3*24*60
+MINUTES_IN_DAY = 24*60
+MAX_ACCUMULATION_TIME = 3*MINUTES_IN_DAY
 ITERATION_TIME_DIFF = 5
+
+
 log_name = "agent.strategies.simple_moving_average"
 
 
@@ -26,6 +29,9 @@ class SimpleMovingAverage(Strategy):
         self.time_accumulated = 0
         self.bid = None
         self.time_change = 0
+        self.parts_sold_today = 0
+        self.bid_size = 0
+        self.current_hour = datetime.today().hour
         self.transactions = market_controller.transactions()
         self.read_last_iteration_info()
 
@@ -36,9 +42,13 @@ class SimpleMovingAverage(Strategy):
             with open(filename, 'r') as json_file:
                 data = json.load(json_file)
                 self.time_accumulated = data['time_accumulated']
-                self.process_last_bid(data['bid'], data['time_change'])
+                self.parts_sold_today = data['parts_sold_today']
+                self.process_last_bid(data['bid'], data['bid_size'], data['time_change'])
+                day = data['date']
+                if day != datetime.today().strftime('%Y-%m-%d'):
+                    self.parts_sold_today = 0
 
-    def process_last_bid(self, bid, bid_time):
+    def process_last_bid(self, bid, bid_size, bid_time):
         if bid is None:
             return
 
@@ -50,6 +60,7 @@ class SimpleMovingAverage(Strategy):
                     fulfilled_part = float(transaction['transferred']['second']['amount']) / \
                                      transaction['assets']['second']['amount']
 
+        self.parts_sold_today += bid_size*fulfilled_part
         self.time_accumulated += int(bid_time*(1.0-fulfilled_part))
 
     def write_iteration_info(self):
@@ -60,7 +71,9 @@ class SimpleMovingAverage(Strategy):
             json.dump({
                 'time_accumulated': self.time_accumulated,
                 'time_change': self.time_change,
-                'bid': self.bid
+                'day': datetime.today().strftime('%Y-%m-%d'),
+                'bid': self.bid,
+                'bid_size': self.bid_size
             }, json_file)
 
     def apply(self):
@@ -130,7 +143,7 @@ class SimpleMovingAverage(Strategy):
 
         return moving_average, std_deviation
 
-    def get_reputation_gain_rate(self, time_unit_minutes=ITERATION_TIME_DIFF):
+    def get_reputation_gain_rate(self, time_unit_minutes=MINUTES_IN_DAY):
         """
         Calculates how much MB, in average, is produced per unit of time
         :param time_unit_minutes: Unit of time to measure - default check time, 5 minutes
@@ -138,14 +151,14 @@ class SimpleMovingAverage(Strategy):
         """
         return self.get_available_mb() * time_unit_minutes / self.time_accumulated
 
-    def update_accumulated_time(self, parts_sold):
+    def update_accumulated_time(self):
         """
         Updates the time changed by a bid and the time accumulated, based on how many parts of MB are being sold
         A part is the basic unit for our MB sells, it is equivalent to the MB of the reputation gain rate
-        :param parts_sold: number of parts to be sold on the market
+        :param
         :return:
         """
-        self.time_change = min(self.time_accumulated, ITERATION_TIME_DIFF*parts_sold)
+        self.time_change = min(self.time_accumulated, MINUTES_IN_DAY*self.bid_size)
         self.time_accumulated -= self.time_change
 
     def sell_reputation(self):
@@ -156,25 +169,25 @@ class SimpleMovingAverage(Strategy):
         """
         moving_average, std_deviation = self.calculate_moving_average_data()
 
-        available_mb = self.get_available_mb()
-        mb_to_sell = self.get_reputation_gain_rate()
         last_price = self.calculate_price(self.transactions[-1])
         if last_price < moving_average:
-            if self.time_accumulated <= MAX_ACCUMULATION_TIME:  # Accumulation zone
+            # Accumulation zone. If it has been passed, wait until the last hour of the day to make a bid
+            if self.time_accumulated <= MAX_ACCUMULATION_TIME or self.current_hour < 23:
                 return None
-            self.update_accumulated_time(1)
+            self.bid_size = 1 - self.parts_sold_today
         else:
-            if last_price >= moving_average + 5 * std_deviation:  # HUGE SPIKE - sell everything
-                mb_to_sell = available_mb
-                self.update_accumulated_time(self.time_accumulated)
-            elif last_price >= moving_average + 3*std_deviation:  # Really Big spike - sell 3 times production rate
-                mb_to_sell = min(mb_to_sell * 3, available_mb)
-                self.update_accumulated_time(3)
+            if last_price >= moving_average + 3*std_deviation:  # Really Big spike - sell 3 times production rate
+                self.bid_size = 3 - self.parts_sold_today
             elif last_price >= moving_average + 2 * std_deviation:  # Big spike - sell 2 times production rate
-                mb_to_sell = min(mb_to_sell * 2, available_mb)
-                self.update_accumulated_time(2)
+                self.bid_size = 2 - self.parts_sold_today
             else:
-                self.update_accumulated_time(1)
+                self.bid_size = 1 - self.parts_sold_today
+
+        if self.bid_size <= 0:
+            return None
+
+        mb_to_sell = min(self.get_available_mb(), self.get_reputation_gain_rate() * self.bid_size)
+        self.update_accumulated_time()
 
         return self.update_offer(mb_to_sell, ITERATION_TIME_DIFF*60)
 
