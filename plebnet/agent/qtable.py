@@ -126,6 +126,7 @@ class QTable:
                 candidate["provider_name"] = provider
                 candidate["option_name"] = self.find_offer(offer_name, provider)
 
+        # TODO: Handle an edge case when cloudomate fails and options returns an empty array
         options = cloudomate_controller.options(providers[candidate["provider_name"]])
 
         for i, option in enumerate(options):
