@@ -18,7 +18,7 @@ test_log_path = os.path.join(user_config_dir(), 'tests_logs')
 test_log_file = os.path.join(user_config_dir(), 'tests_logs/plebnet.logs')
 test_child_file = os.path.join(user_config_dir(), 'test_child_config.cfg')
 test_child_QTable_file = os.path.join(user_config_dir(), 'Child_QTable.json')
-test_bought = ('linevast', 'Advanced', 666, 0)
+test_bought = ['linevast', 'Advanced', 666, 0]
 plebnet_file = os.path.join(user_config_dir(), 'plebnet.json')
 
 test_account = Settings()

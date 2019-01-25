@@ -3,6 +3,7 @@ import time
 import unittest
 
 from mock.mock import MagicMock
+from sqlalchemy.testing import mock
 
 from plebnet.agent import core
 from plebnet.agent.strategies.last_day_sell import LastDaySell
@@ -88,19 +89,19 @@ class TestSimpleMovingAverage(unittest.TestCase):
         self.strategy.apply()
         LastDaySell.apply.assert_called_once()
 
-    def test_apply(self):
+    @mock.patch("plebnet.agent.core.attempt_purchase")
+    def test_apply(self, attempt_purchase):
         initial_time = 10
         self.strategy.time_accumulated = initial_time
         self.strategy.sell_reputation = MagicMock()
         self.strategy.write_iteration_info = MagicMock()
-        core.attempt_purchase = MagicMock()
 
         self.strategy.apply()
 
         self.assertEqual(self.strategy.time_accumulated, initial_time + ITERATION_TIME_DIFF)
         self.strategy.sell_reputation.assert_called_once()
         self.strategy.write_iteration_info.assert_called_once()
-        core.attempt_purchase.assert_called_once()
+        attempt_purchase.assert_called_once()
 
     def create_transaction(self, timestamp, price=1):
         return {
