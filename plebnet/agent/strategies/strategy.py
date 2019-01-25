@@ -34,47 +34,47 @@ class Strategy():
         pass
 
     @abstractmethod
-    def create_offer(self, timeout):
+    def create_offer(self, amount_mb, timeout):
         """
         Creates a new order in the market, with parameters depending on the implementing strategy
         :return:
         """
         pass
 
+    def get_available_mb(self):
+        return market_controller.get_balance('MB')
+
     @staticmethod
     def get_replication_price(vps_provider, option, vpn_provider='azirevpn'):
         return (calculate_price(vps_provider, option) + calculate_price_vpn(vpn_provider)) * BTC_FLUCTUATION_MARGIN
 
-    def update_offer(self, timeout=plebnet_settings.TIME_IN_HOUR):
+    def update_offer(self, mb_amount, timeout=plebnet_settings.TIME_IN_HOUR):
         """
-        Check if an hour as passed since the last offer made, if passed create a new offer.
+        Check if "timeout" has passed since the last offer made, if passed create a new offer.
         """
         if self.config.time_since_offer() > timeout:
             logger.log("Calculating new offer", log_name)
-            self.create_offer(timeout)
             self.config.save()
+            return self.create_offer(mb_amount, timeout)
 
-    def place_offer(self, chosen_est_price, timeout, config):
+    def place_offer(self, mb_amount, chosen_est_price, timeout, config):
         """
-        Sell all available MB for the chosen estimated price on the Tribler market.
+        Sells the received MB amount for the chosen estimated price on the Tribler market.
+        :param mb_amount: Amount of MB to sell
         :param config: config
         :param timeout: timeout of the offer to place
         :param chosen_est_price: Target amount of BTC to receive
         :return: success of offer placement
         """
-        available_mb = market_controller.get_balance('MB')
-        if available_mb == 0:
-            logger.log("No MB available", log_name)
+        if chosen_est_price == 0 or mb_amount == 0:
             return False
         config.bump_offer_date()
 
         coin = 'TBTC' if plebnet_settings.get_instance().wallets_testnet() else 'BTC'
 
-        logger.log("Placing offer for %s MB / %s %s" % (available_mb, chosen_est_price, coin), log_name)
-
-        config.set('last_offer', {coin: chosen_est_price, 'MB': available_mb})
+        config.set('last_offer', {coin: chosen_est_price, 'MB': mb_amount})
         return market_controller.put_bid(first_asset_amount=btc_to_satoshi(chosen_est_price),
                                          first_asset_type=coin,
-                                         second_asset_amount=available_mb,
+                                         second_asset_amount=mb_amount,
                                          second_asset_type='MB',
                                          timeout=timeout)

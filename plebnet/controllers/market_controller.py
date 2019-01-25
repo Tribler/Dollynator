@@ -104,6 +104,12 @@ def bids():
     return r.json()['bids']
 
 
+def transactions():
+    url = 'http://localhost:8085/market/transactions'
+    r = requests.get(url)
+    return r.json()['transactions']
+
+
 def has_matchmakers():
     """
     Checks if there are any matchmakers.
