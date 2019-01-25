@@ -3,7 +3,7 @@ import time
 import unittest
 
 from mock.mock import MagicMock
-from sqlalchemy.testing import mock
+import mock
 
 from plebnet.agent import core
 from plebnet.agent.strategies.last_day_sell import LastDaySell
