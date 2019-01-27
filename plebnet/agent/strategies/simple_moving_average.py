@@ -5,6 +5,7 @@ from appdirs import user_config_dir
 
 from plebnet.agent.strategies.last_day_sell import LastDaySell
 from plebnet.controllers import market_controller
+from plebnet.settings import plebnet_settings
 from plebnet.utilities import logger
 from plebnet.utilities.btc import satoshi_to_btc
 from strategy import Strategy
@@ -118,6 +119,8 @@ class SimpleMovingAverage(Strategy):
         :param transaction: Transaction to get price
         :return: price in BTC/MB
         """
+        if plebnet_settings.get_instance().wallets_testnet():
+            return float(transaction['assets']['second']['amount']) / transaction['assets']['first']['amount']
         return float(transaction['assets']['first']['amount'])/transaction['assets']['second']['amount']
 
     def calculate_moving_average_data(self):
@@ -204,3 +207,4 @@ class SimpleMovingAverage(Strategy):
         last_price = self.calculate_price(self.transactions[-1])
         btc_price = satoshi_to_btc(last_price * amount_mb)
         return self.place_offer(amount_mb, btc_price, timeout, self.config)
+    
