@@ -39,6 +39,7 @@ def get_balance(domain):
     :return: the balance
     """
     try:
+        # TODO: Find out how to get balance using only confirmed transactions
         r = requests.get('http://localhost:8085/wallets/' + domain + '/balance')
         balance = r.json()
         return balance['balance']['available']

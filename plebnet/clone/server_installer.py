@@ -28,54 +28,63 @@ def install_available_servers(config, qtable):
     bought = config.get('bought')
     logger.log("install: %s" % bought, "install_available_servers")
 
-    for provider, option, transaction_hash, child_index in list(bought):
+    for bought_item in list(bought):
+        [provider, option, transaction_hash, child_index] = bought_item
 
         # skip vpn providers as they show up as 'bought' as well
         if provider in cloudomate_controller.get_vpn_providers():
-            return
+            continue
 
         try:
             provider_class = cloudomate_controller.get_vps_providers()[provider]
             ip = cloudomate_controller.get_ip(provider_class, cloudomate_controller.child_account(child_index))
         except Exception as e:
             logger.log(str(e) + "%s not ready yet" % str(provider), "install_available_servers")
-            return
-            
-        if is_valid_ip(ip):
+            continue
 
+        if is_valid_ip(ip):
             # VPN configuration, enable tun/tap settings
             if provider_class.TUN_TAP_SETTINGS:
                 tun_success = provider_class(cloudomate_controller.child_account(child_index)).enable_tun_tap()
                 logger.log("Enabling %s tun/tap: %s"%(provider, tun_success))
                 if not cloudomate_controller.save_info_vpn(child_index):
                     logger.log("VPN not ready yet, can't save ovpn config")
-                    # return
+                    # continue
 
-            logger.log("Installing child on %s with ip %s" % (provider, str(ip)))
-
-            # TODO: If installation process takes too long, it can happen that it will be launched again
-            #  in the next run. Solution: Move the instance from bought to installing and then to installed, or back
-            #  to bought if the server is not ready yet.
+            logger.log("Installing child #%s on %s with ip %s" % (child_index, provider, str(ip)))
 
             account_settings = cloudomate_controller.child_account(child_index)
             rootpw = account_settings.get('server', 'root_password')
 
-            provider_class(cloudomate_controller.child_account(child_index)).change_root_password(rootpw)
+            try:
+                provider_class(cloudomate_controller.child_account(child_index)).change_root_password(rootpw)
+            except Exception as e:
+                logger.error("Cannot change root password: %s" % str(e), "install_available_servers")
+                continue
+
             time.sleep(5)
 
             qtable.create_child_qtable(provider, option, transaction_hash, child_index)
 
             # Save config before entering possibly long lasting process
+            config.get('bought').remove(bought_item)
+            config.get('installing').append(bought_item)
             config.save()
 
             success = _install_server(ip, rootpw, child_index, setup.get_instance().wallets_testnet())
 
             # Reload config in case install takes a long time
             config.load()
-            config.get('installed').append([provider, option, transaction_hash, child_index])
-            if [provider, option, transaction_hash, child_index] in config.get('bought'):
-                config.get('bought').remove([provider, option, transaction_hash, child_index])
+            config.get('installing').remove(bought_item)
+            if success:
+                config.get('installed').append(bought_item)
+            else:
+                # Try again next time
+                config.get('bought').append(bought_item)
             config.save()
+
+            # Only install one server at a time
+            return
         else:
             logger.log("Server not ready")
 

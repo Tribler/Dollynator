@@ -28,6 +28,7 @@ class PlebNetConfig(object):
                        "excluded_providers": ["linevast"],
                        "chosen_provider": None,
                        "bought": [],
+                       "installing": [],
                        "installed": [],
                        "transactions": []}
         self.load()
