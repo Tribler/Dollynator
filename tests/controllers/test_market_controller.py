@@ -56,24 +56,24 @@ class TestMarketController(unittest.TestCase):
  def test_put_ask(self):
      self.true_put = Market._put_request
      Market._put_request = MagicMock(return_value=True)
-     assert(Market.put_ask(10, 'MB', 10, 'BTC', 100))
+     assert(Market.put_ask(10, 'BTC', 10, 'MB', 100))
      Market._put_request = self.true_put
 
  def test_put_bid(self):
      self.true_put = Market._put_request
      Market._put_request = MagicMock(return_value=True)
-     assert(Market.put_bid(10, 'MB', 10, 'BTC', 100))
+     assert(Market.put_bid(10, 'BTC', 10, 'MB', 100))
      Market._put_request = self.true_put
 
  @responses.activate
  def test_put_request(self):
-     responses.add(responses.PUT, 'http://localhost:8085/market/bids', json={'created': True})
-     assert(Market._put_request(10, 'MB', 10, 'BTC', 1000, 'bids'))
+     responses.add(responses.PUT, 'http://localhost:8085/market/bids', json={'order_number': "1"})
+     assert(Market._put_request(10, 'BTC', 10, 'MB', 1000, 'bids'))
 
  @responses.activate
  def test_put_request_False(self):
      responses.add(responses.PUT, 'http://localhost:8085/market/bids', json={'error': {'message': 'test'}})
-     self.assertFalse(Market._put_request(10, 'MB', 10, 'BTC', 1000, 'bids'))
+     self.assertFalse(Market._put_request(10, 'BTC', 10, 'MB', 1000, 'bids'))
 
  @responses.activate
  def test_matchmakers(self):

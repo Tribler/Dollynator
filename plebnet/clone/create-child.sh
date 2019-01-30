@@ -20,16 +20,13 @@
 
 OWN="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/create-child.sh"
 
-CHILD_DNA_FILE=~/.config/Child_DNA.json
-DNA_FILE=~/.config/DNA.json
-# WALLET_FILE="~/.electrum/wallets/default_wallet"
-
 export DEBIAN_FRONTEND=noninteractive
 
 cd
 
-CHILD_DNA_FILE=~/.config/Child_DNA.json
-DNA_FILE=~/.config/DNA.json
+CHILD_QTABLE_FILE=~/.config/Child_QTable.json
+QTABLE_FILE=~/.config/QTable.json
+CONFIG_FILE=~/.config/plebnet_setup.cfg
 WALLET_FILE=~/.electrum/wallets/default_wallet
 TESTNET_WALLET_FILE=~/.electrum/testnet/wallets/default_wallet
 
@@ -163,10 +160,17 @@ sshpass -p${PASSWORD} ssh  -o UserKnownHostsFile=/dev/null -o StrictHostKeyCheck
 
 ############################### COPYING FILES ########################################
 echo "Copying DNA"
-if [ ! -e ${CHILD_DNA_FILE} ]; then
-    echo "File $CHILD_DNA_FILE not found"
+if [ ! -e ${CHILD_QTABLE_FILE} ]; then
+    echo "File $CHILD_QTABLE_FILE not found"
 else
-    sshpass -p${PASSWORD} scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${CHILD_DNA_FILE} root@${IP}:${DNA_FILE}
+    sshpass -p${PASSWORD} scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${CHILD_QTABLE_FILE} root@${IP}:${QTABLE_FILE}
+fi
+
+echo "Copying configuration"
+if [ ! -e ${CONFIG_FILE} ]; then
+    echo "File $CONFIG_FILE not found"
+else
+    sshpass -p${PASSWORD} scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${CONFIG_FILE} root@${IP}:${CONFIG_FILE}
 fi
 
 # copying VPN configs if they exist
@@ -187,6 +191,6 @@ fi
 echo "Installing PlebNet"
 echo "Installing from branch: $BRANCH";
 
-sshpass -p${PASSWORD} ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@${IP} "wget https://raw.githubusercontent.com/vwigmore/plebnet/$BRANCH/plebnet/clone/install.sh && \
+sshpass -p${PASSWORD} ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@${IP} "wget https://raw.githubusercontent.com/Tribler/plebnet/$BRANCH/plebnet/clone/install.sh && \
     chmod +x install.sh && \
     ./install.sh $BRANCH $EXITNODE $TESTNET | tee plebnet_installation.log"

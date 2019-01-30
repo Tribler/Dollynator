@@ -1,6 +1,13 @@
+import copy
 import unittest
 from unittest import skip
-from plebnet.agent.dna import DNA
+import mock
+
+from CaseInsensitiveDict import CaseInsensitiveDict
+from cloudomate.hoster.vps.vps_hoster import VpsOption
+
+from plebnet.agent.qtable import QTable, VPSState
+
 from plebnet.agent.config import PlebNetConfig
 from plebnet.clone import server_installer
 from plebnet.controllers import tribler_controller, cloudomate_controller, market_controller, wallet_controller
@@ -13,8 +20,7 @@ import subprocess
 import os
 import re
 from appdirs import user_config_dir
-
-from plebnet.agent.dna import DNA
+import cloudomate.hoster.vps.blueangelhost as blueAngel
 
 
 class TestCore(unittest.TestCase):
@@ -96,7 +102,6 @@ class TestCore(unittest.TestCase):
     def test_setup(self):
         self.logger = logger.log
         self.provider = cloudomate_controller.get_vps_providers
-        self.DNA = DNA.read_dictionary
         self.settings = plebnet_settings.Init.wallets_testnet
         self.fake = fake_generator.generate_child_account
         self.irc_nic = plebnet_settings.Init.irc_nick
@@ -105,20 +110,15 @@ class TestCore(unittest.TestCase):
         self.init_client = irc_handler.init_irc_client
         self.start_client = irc_handler.start_irc_client
         self.success = logger.success
-        self.dna_remove = DNA.remove_provider
         self.load = PlebNetConfig.load
         self.exit = plebnet_settings.Init.tribler_exitnode
-        self.tree = DNA.get_own_tree
-        self.stree = DNA.set_own_tree
 
         args = MagicMock()
-        DNA.remove_provider = MagicMock()
         args.testnet = True
         logger.log = MagicMock()
         fake_generator.generate_child_account = MagicMock()
         plebnet_settings.Init.wallets_testnet = MagicMock()
         cloudomate_controller.get_vps_providers = MagicMock()
-        DNA.read_dictionary = MagicMock()
         plebnet_settings.Init.irc_nick = MagicMock()
         plebnet_settings.Init.irc_nick_def = MagicMock()
         PlebNetConfig.save = MagicMock()
@@ -127,16 +127,12 @@ class TestCore(unittest.TestCase):
         irc_handler.start_irc_client = MagicMock()
         logger.success = MagicMock()
         plebnet_settings.Init.tribler_exitnode = MagicMock()
-        DNA.get_own_tree = MagicMock(return_value='')
-        DNA.set_own_tree = MagicMock()
 
         Core.setup(args)
         logger.success.assert_called_once()
 
         logger.log = self.logger
-        DNA.remove_provider = self.dna_remove
         cloudomate_controller.get_vps_providers = self.provider
-        DNA.read_dictionary = self.DNA
         plebnet_settings.Init.wallets_testnet = self.settings
         fake_generator.generate_child_account = self.fake
         plebnet_settings.Init.irc_nick = self.irc_nic
@@ -147,38 +143,24 @@ class TestCore(unittest.TestCase):
         irc_handler.start_irc_client = self.start_client
         logger.success = self.success
         plebnet_settings.Init.tribler_exitnode = self.exit
-        DNA.get_own_tree = self.tree
-        DNA.set_own_tree = self.stree
 
-    def test_check(self):
+    @mock.patch('plebnet.agent.core.attempt_purchase')
+    @mock.patch('plebnet.settings.plebnet_settings.Init.wallets_initiate_once', return_value=False)
+    @mock.patch('plebnet.settings.plebnet_settings.Init.wallets_testnet_created', return_value=True)
+    @mock.patch('plebnet.agent.core.check_tribler', return_value=False)
+    @mock.patch('plebnet.agent.core.vpn_is_running', return_value=True)
+    @mock.patch('plebnet.agent.core.create_wallet')
+    @mock.patch('plebnet.agent.core.select_provider')
+    @mock.patch('plebnet.agent.core.strategies')
+    @mock.patch('plebnet.agent.core.install_vps')
+    @mock.patch('plebnet.controllers.market_controller.has_matchmakers', return_value=True)
+    @mock.patch('plebnet.agent.config.PlebNetConfig.load', return_value=False)
+    def test_check(self, mock1, mock2, mock3, mock4, mock5, mock6, mock7, mock8, mock9, mock10, mock11):
         self.logger = logger.log
-        self.wallet_created = plebnet_settings.Init.wallets_testnet_created
-        self.tribler = Core.check_tribler
-        self.DNA = DNA.read_dictionary
-        self.initiated = plebnet_settings.Init.wallets_initiate_once
-        self.cw = Core.create_wallet
-        self.sp = Core.select_provider
-        self.hm = market_controller.has_matchmakers
-        self.uo = Core.update_offer
-        self.ap = Core.attempt_purchase
-        self.iv = Core.install_vps
-        self.load = PlebNetConfig.load
-        self.vpn_running = Core.vpn_is_running
 
         logger.log = MagicMock()
-        plebnet_settings.Init.wallets_testnet_created = MagicMock(return_value=True)
 
-        PlebNetConfig.load = MagicMock(return_value=False)
-        Core.check_tribler = MagicMock(return_value=False)
-        Core.vpn_is_running = MagicMock(return_value=True)
-        DNA.read_dictionary = MagicMock()
-        plebnet_settings.Init.wallets_initiate_once = MagicMock(return_value=False)
-        Core.create_wallet = MagicMock()
-        Core.select_provider = MagicMock()
-        market_controller.has_matchmakers = MagicMock(return_value=True)
-        Core.update_offer = MagicMock()
-        Core.attempt_purchase = MagicMock()
-        Core.install_vps = MagicMock()
+        Core.strategies['test']().apply = MagicMock()
 
         Core.check()
         os.environ['TESTNET'] = '0'
@@ -188,72 +170,59 @@ class TestCore(unittest.TestCase):
 
         Core.check()
         Core.install_vps.assert_called_once()
-        Core.attempt_purchase.assert_called_once()
+        Core.strategies['test']().apply.assert_called_once()
         Core.create_wallet.assert_called_once()
 
         logger.log = self.logger
-        Core.vpn_is_running = self.vpn_running
-        plebnet_settings.Init.wallets_testnet_created = self.wallet_created
-        Core.check_tribler = self.tribler
-        DNA.read_dictionary = self.DNA
-        plebnet_settings.Init.wallets_initiate_once = self.initiated
-        Core.create_wallet = self.cw
-        Core.select_provider = self.sp
-        market_controller.has_matchmakers = self.hm
-        Core.update_offer = self.uo
-        Core.attempt_purchase = self.ap
-        Core.install_vps = self.iv
-        PlebNetConfig.load = self.load
 
-    def test_update_offer(self):
-        self.time = PlebNetConfig.time_since_offer
-        self.timep = plebnet_settings.TIME_IN_HOUR
-        self.logger = logger.log
-        self.uo = cloudomate_controller.update_offer
-        self.save = PlebNetConfig.save
-
-        PlebNetConfig.time_since_offer = MagicMock(return_value=300)
-        plebnet_settings.TIME_IN_HOUR = 200
-        logger.log = MagicMock()
-        cloudomate_controller.update_offer = MagicMock()
-        PlebNetConfig.save = MagicMock()
-
-        Core.config = PlebNetConfig
-        Core.update_offer()
-        PlebNetConfig.save.assert_called_once()
-
-        PlebNetConfig.time_since_offer = self.time
-        plebnet_settings.TIME_IN_HOUR = self.timep
-        logger.log = self.logger
-        cloudomate_controller.update_offer = self.uo
-        PlebNetConfig.save = self.save
-
-    def test_attempt_purchase(self):
+    @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
+                return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
+    @mock.patch('plebnet.controllers.cloudomate_controller.options', return_value=[VpsOption(name='Advanced',
+                                                                                             storage=2,
+                                                                                             cores=2,
+                                                                                             memory=2,
+                                                                                             bandwidth="4.0",
+                                                                                             connection="1",
+                                                                                             price=100.0,
+                                                                                             purchase_url="mock"
+                                                                                             ),
+                                                                                   VpsOption(name='Basic Plan',
+                                                                                             storage=2,
+                                                                                             cores=2,
+                                                                                             memory=2,
+                                                                                             bandwidth="1.0",
+                                                                                             connection="1",
+                                                                                             price=10.0,
+                                                                                             purchase_url="mock"
+                                                                                             )])
+    def test_attempt_purchase(self, mock1, mock2):
         self.log = logger.log
         self.testnet = plebnet_settings.Init.wallets_testnet
         self.get = PlebNetConfig.get
         self.get_balance = market_controller.get_balance
         self.calculate_price = cloudomate_controller.calculate_price
         self.purchase_choice = cloudomate_controller.purchase_choice
-        self.evolve = DNA.evolve
         self.set = PlebNetConfig.set
         self.save = PlebNetConfig.save
         self.vpn = Core.attempt_purchase_vpn
         self.new = PlebNetConfig.increment_child_index
         self.provider = cloudomate_controller.get_vps_providers
         self.fg = fake_generator.generate_child_account
-        self.tree = DNA.get_own_tree
+        self.qtable = QTable()
+        self.providers = cloudomate_controller.get_vps_providers()
+        providers = cloudomate_controller.get_vps_providers()
+        self.qtable.init_qtable_and_environment(providers)
+        self.qtable.set_self_state(VPSState("blueangelhost", "Basic Plan"))
 
         logger.log = MagicMock()
-        plebnet_settings.Init.wallets_testnet = MagicMock(return_value=True)
-        PlebNetConfig.get = MagicMock(return_value=['linevast', 'test', 0])
-        market_controller.get_balance = MagicMock(return_value=300)
-        DNA.get_own_tree = MagicMock()
+        plebnet_settings.Init.wallets_testnet = MagicMock(return_value=False)
+        PlebNetConfig.get = MagicMock(return_value=['blueangelhost', 'Basic Plan', 0])
+        market_controller.get_balance = MagicMock(return_value=100000000)
 
+        Core.qtable = self.qtable
         Core.attempt_purchase_vpn = MagicMock(return_value=False)
-        cloudomate_controller.calculate_price = MagicMock(return_value=500)
+        cloudomate_controller.calculate_price = MagicMock(return_value=0.01)
         cloudomate_controller.purchase_choice = MagicMock(return_value=plebnet_settings.SUCCESS)
-        DNA.evolve = MagicMock()
         PlebNetConfig.set = MagicMock()
         PlebNetConfig.save = MagicMock()
         PlebNetConfig.increment_child_index = MagicMock()
@@ -261,17 +230,19 @@ class TestCore(unittest.TestCase):
         fake_generator.generate_child_account = MagicMock()
 
         Core.config = PlebNetConfig
-        Core.dna = DNA
+        qtable_copy = copy.deepcopy(Core.qtable.qtable)
+
         Core.attempt_purchase()
 
-        plebnet_settings.Init.wallets_testnet = MagicMock(return_value=False)
-        market_controller.get_balance = MagicMock(return_value=700)
-        Core.attempt_purchase()
-        DNA.evolve.assert_called_with(True)
+        self.assertLess(qtable_copy['blueangelhost_basic plan']['blueangelhost_basic plan'],
+                        Core.qtable.qtable['blueangelhost_basic plan']['blueangelhost_basic plan'])
 
+        qtable_copy = copy.deepcopy(Core.qtable.qtable)
         cloudomate_controller.purchase_choice = MagicMock(return_value=plebnet_settings.FAILURE)
         Core.attempt_purchase()
-        DNA.evolve.assert_called_with(False, 'linevast')
+
+        self.assertGreater(qtable_copy['blueangelhost_basic plan']['blueangelhost_basic plan'],
+                           Core.qtable.qtable['blueangelhost_basic plan']['blueangelhost_basic plan'])
 
         logger.log = self.log
         plebnet_settings.Init.wallets_testnet = self.testnet
@@ -279,14 +250,12 @@ class TestCore(unittest.TestCase):
         market_controller.get_balance = self.get_balance
         cloudomate_controller.calculate_price = self.calculate_price
         cloudomate_controller.purchase_choice = self.purchase_choice
-        DNA.evolve = self.evolve
         Core.attempt_purchase_vpn = self.vpn
         PlebNetConfig.set = self.set
         PlebNetConfig.save = self.save
         PlebNetConfig.increment_child_index = self.new
         cloudomate_controller.get_vps_providers = self.provider
         fake_generator.generate_child_account = self.fg
-        DNA.get_own_tree = self.tree
 
     def test_install_vps(self):
         self.ias = server_installer.install_available_servers
@@ -312,8 +281,8 @@ class TestCore(unittest.TestCase):
         plebnet_settings.Init.vpn_host = MagicMock()
         cloudomate_controller.get_vpn_providers = MagicMock(return_value='String')
         plebnet_settings.Init.wallets_testnet = MagicMock(return_value=True)
-        market_controller.get_balance = MagicMock(return_value=800)
-        cloudomate_controller.calculate_price_vpn = MagicMock(return_value=500)
+        market_controller.get_balance = MagicMock(return_value=1100000)
+        cloudomate_controller.calculate_price_vpn = MagicMock(return_value=0.01)
         logger.success = MagicMock()
         logger.log = MagicMock()
         logger.error = MagicMock()
@@ -414,14 +383,6 @@ class TestCore(unittest.TestCase):
         plebnet_settings.Init.vpn_child_prefix = self.cpr
         os.path.expanduser = self.usr
         Core.vpn_is_running = self.vpn_running
-
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':

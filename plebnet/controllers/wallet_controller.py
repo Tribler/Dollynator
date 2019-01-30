@@ -11,6 +11,7 @@ import plebnet.settings.plebnet_settings as plebnet_settings
 import requests
 from requests.exceptions import ConnectionError
 from plebnet.utilities import logger
+from plebnet.utilities.btc import btc_to_satoshi
 
 settings = plebnet_settings.get_instance()
 
@@ -62,34 +63,49 @@ class TriblerWallet(object):
         else:
             self.coin = 'BTC'
 
-    def get_balance(self):
+    def get_balance(self, coin=None):
         """
         Returns the balance of the current wallet.
         :return: the balance
         """
-        return marketcontroller.get_balance(self.coin)
+        if coin is None:
+            coin = self.coin
+        return marketcontroller.get_balance(coin)
 
-    def pay(self, address, amount, fee=None):
+    def pay(self, address, amount, fee=None, coin=None):
         """
         Send a post request to the Tribler web API for making a transaction.
         :param address: the address of the receiver
-        :param amount: the amount to be sent excluding fee
+        :param amount: the amount in BTC to be sent, excluding fee
         :param fee: the fee to be used, 0 if None
+        :param coin: the coin to be sent, (T)BTC if None
         :return: the transaction hash
         """
-        if self.get_balance() < amount:
+        if coin is None:
+            coin = self.coin
+
+        if coin == 'BTC' or coin == 'TBTC':
+            amount = btc_to_satoshi(amount)
+
+        if self.get_balance(coin) < amount:
             logger.log('Not enough funds', 'wallet_controller.pay')
             return False
 
         try:
-            data = {'amount': amount*1.1, 'destination': address}
-            r = requests.post('http://localhost:8085/wallets/' + self.coin + '/transfer', data=data)
-            transaction_hash = r.json()['txid']
+            data = {'amount': amount, 'destination': address}
+            r = requests.post('http://localhost:8085/wallets/' + coin + '/transfer', data=data)
+            json = r.json()
+
+            if 'error' in json:
+                logger.log(json['error'], 'wallet_controller.pay')
+                return False
+
+            transaction_hash = json['txid']
 
             if transaction_hash:
                 logger.log('Transaction successful. transaction_hash: %s' % transaction_hash, 'wallet_controller.pay')
             else:
-                if self.coin == 'TBTC':
+                if coin == 'TBTC':
                     # in case the testnet servers are acting funky, but transaction actually
                     # was successful, retrieve the transaction_has from the /transactions route
                     btx = requests.get('http://localhost:8085/wallets/tbtc/transactions')

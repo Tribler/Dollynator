@@ -3,7 +3,6 @@ import unittest
 from plebnet.communication.irc import ircbot
 from plebnet.settings import plebnet_settings
 from mock.mock import MagicMock
-from plebnet.agent import dna
 
 
 line_join = "376 " + plebnet_settings.get_instance().irc_nick()
@@ -80,9 +79,6 @@ class TestIRCbot(unittest.TestCase):
 
     def test_keep_running(self):
         msg = "%s\r\n%s\r\n%s\r\n%s\r\n" % (line_join, line_ping, line_host, line_error)
-        self.true_dna = dna.get_host
-
-        dna.get_host = MagicMock(return_value="Linevast")
         self.instance.keep_running(str(msg))
 
         self.assertIn(reply_join, msgs[0])
@@ -92,10 +88,6 @@ class TestIRCbot(unittest.TestCase):
         msg = "%s\r\n" % (line_alive)
         self.instance.keep_running(str(msg))
         self.assertIn(reply_alive, msgs[4])
-
-
-
-        dna.get_host = self.true_dna
 
     def test_heartbeat(self):
         self.instance.last_beat = 0

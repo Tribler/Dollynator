@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import os
 sys.path.append(os.path.abspath('../tracker'))
@@ -18,6 +19,9 @@ app = Flask(__name__)
 data_path = "~/.config/"
 data_name = "tracker.data"
 data_file = os.path.join(data_path, data_name)
+
+if not os.path.exists(os.path.expanduser(data_file)):
+    open(os.path.expanduser(data_file), 'w+').close()
 
 cols = ['timestamp', 'nick', 'type', 'value']
 data = pd.read_csv(data_file,
@@ -140,18 +144,8 @@ class BotNode:
     def get_group(self):
         if self.dead:
             group = 'dead'
-        elif self.host.lower() == 'linevast':
-            group = 'linevast'
-        elif self.host.lower() == 'blueangelhost':
-            group = 'blueangelhost'
-        elif self.host.lower() == 'twosync':
-            group = 'twosync'
-        elif self.host.lower() == 'proxhost':
-            group = 'proxhost'
-        elif self.host.lower() == 'unknown':
-            group = 'unknown'
-        elif self.host.lower() == 'undergroundprivate':
-            group = 'undergroundprivate'
+        elif len(self.host.lower()) > 0:
+            group = self.host.lower()
         else:
             group = 'unknown'
         return group
@@ -214,10 +208,10 @@ def handle_data(bot_nick, key, value):
         root_bot = root_bot_nodes[root]
      
         if len(tree) == 1:
-            print "bot %s is root" % bot_nick
+            print("bot %s is root" % bot_nick)
             root_bot.set_status(bot_nick, d['exitnode'], d['host'], d['vpn'], last_seen=time.time(), dead=False)
         else:
-            print "add %s to: %s" %('.'.join(tree), root)
+            print("add %s to: %s" %('.'.join(tree), root))
             child = root_bot.add_child(tree)
             child.set_status(bot_nick, d['exitnode'], d['host'], d['vpn'], last_seen=time.time(), dead=False)
             bot_node_by_nicks[bot_nick] = child
@@ -266,4 +260,4 @@ def show_nodes():
     return str(nodes)
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5500)
+    app.run(host='0.0.0.0', port=5500)

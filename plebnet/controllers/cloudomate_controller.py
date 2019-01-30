@@ -27,7 +27,6 @@ from plebnet.controllers import market_controller
 from plebnet.controllers.wallet_controller import TriblerWallet
 from plebnet.settings import plebnet_settings
 from plebnet.utilities import logger
-from plebnet.agent.dna import DNA
 from plebnet.communication import git_issuer
 
 
@@ -95,11 +94,16 @@ def get_ip(provider, account):
 def setrootpw(provider, password):
     settings = child_account()
     settings.put('server', 'root_password', password)
-    return # provider.set_rootpw(settings)
+    return  # provider.set_rootpw(settings)
 
 
 def options(provider):
-    return provider.get_options()
+    opts = []
+    try:
+        opts = provider.get_options()
+    except:
+        logger.log(provider.get_metadata()[0] + " options failed", "cloudomate_controller")
+    return opts
 
 
 def get_network_fee():
@@ -112,12 +116,16 @@ def pick_provider(providers):
     :param providers:
     :return:
     """
-    provider = DNA.choose_provider(providers)
-    gateway = get_vps_providers()[provider].get_gateway()
-    option, price, currency = pick_option(provider)
-    btc_price = gateway.estimate_price(
-        wallet_util.get_price(price, currency))
-    return provider, option, btc_price
+    from plebnet.agent.qtable import QTable
+
+    qtable = QTable()
+    qtable.read_dictionary(providers)
+    chosen_option = qtable.choose_option(providers)
+
+    gateway = get_vps_providers()[chosen_option["provider_name"]].get_gateway()
+    btc_price = gateway.estimate_price(wallet_util.get_price(chosen_option["price"], chosen_option["currency"]))
+
+    return chosen_option["provider_name"], chosen_option["option_name"], btc_price
 
 
 def pick_option(provider):
@@ -139,19 +147,6 @@ def pick_option(provider):
     return cheapest_option, vps_options[cheapest_option].price, 'USD'
 
 
-def update_offer(config):
-    """
-    Retrieve the price of the chosen server to buy and make a new offer on the Tribler marketplace.
-    :param config: configuration of the agent
-    :return: None
-    """
-    if not config.get('chosen_provider'):
-        return
-    (provider, option, _) = config.get('chosen_provider')
-    btc_price = calculate_price(provider, option) * 1.15
-    place_offer(btc_price, config)
-
-
 def calculate_price(provider, option):
     """
     Calculate the price of the chosen server to buy.
@@ -159,21 +154,27 @@ def calculate_price(provider, option):
     :param option: the option at the provider chosen
     :return: the price
     """
-    logger.log('provider: %s option: %s' % (provider, option), "cloudomate_controller")
-    vps_option = options(cloudomate_providers['vps'][provider])[option]
+    vps_option = get_vps_option(provider, option)
     gateway = cloudomate_providers['vps'][provider].get_gateway()
     btc_price = gateway.estimate_price(
         wallet_util.get_price(vps_option.price, 'USD'))
     return btc_price
 
 
-def calculate_price_vpn(vpn_provider='azirevpn'):
-    logger.log('vpn provider: %s' % vpn_provider, "cloudomate_controller")
+def get_vps_option(provider, vps_option_name):
+    vps_option = {}
+    for option in options(cloudomate_providers['vps'][provider]):
+        if option.name == vps_option_name:
+            vps_option = option
+    return vps_option
+
+
+def calculate_price_vpn(vpn_provider='mullvad'):
     # option is assumed to be the first one
     vpn_option = options(get_vpn_providers()[vpn_provider])[0]
     gateway = get_vpn_providers()[vpn_provider].get_gateway()
     btc_price = gateway.estimate_price(
-        wallet_util.get_price(vpn_option.price, 'EUR'))
+        wallet_util.get_price(vpn_option.price, 'USD'))
     return btc_price
 
 
@@ -191,16 +192,21 @@ def purchase_choice_vpn(config):
     # option is assumbed to be the first vpn provider option
     option = configurations[0]
 
-    transaction_hash = provider_instance.purchase(wallet, option)
+    try:
+        transaction_hash = provider_instance.purchase(wallet, option)
+    except:
+        title = "Failed to purchase vpn: %s" % sys.exc_info()[0]
+        body = traceback.format_exc()
+        logger.error(title)
+        logger.error(body)
+        git_issuer.handle_error(title, body)
+        git_issuer.handle_error("Failed to purchase server", sys.exc_info()[0], ['crash'])
+        return plebnet_settings.FAILURE
 
     if not transaction_hash:
-        logger.warning("Failed to purchase vpn")
-        return plebnet_settings.FAILURE
-    if False:
-        logger.warning("Insufficient funds to purchase server")
-        return plebnet_settings.UNKNOWN
+        logger.warning("VPN probably purchased, but transaction hash not returned")
 
-    config.get('bought').append((provider, transaction_hash, config.get('child_index')))
+    config.get('bought').append((provider, option, transaction_hash, config.get('child_index')))
     config.get('transactions').append(transaction_hash)
     config.save()
 
@@ -219,13 +225,10 @@ def purchase_choice(config):
     provider_instance = cloudomate_providers['vps'][provider](child_account())
 
     wallet = TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
-    c = cloudomate_providers['vps'][provider]
 
-    configurations = c.get_options()
-    option = configurations[option]
-
+    vps_option = get_vps_option(provider,option)
     try:
-        transaction_hash = provider_instance.purchase(wallet, option)
+        transaction_hash = provider_instance.purchase(wallet, vps_option)
     except:
         title = "Failed to purchase server: %s" % sys.exc_info()[0]
         body = traceback.format_exc()
@@ -235,38 +238,17 @@ def purchase_choice(config):
         git_issuer.handle_error("Failed to purchase server", sys.exc_info()[0], ['crash'])
         return plebnet_settings.FAILURE
 
+    # Cloudomate should throw an exception when purchase fails. The transaction hash is not in fact required,
+    # and even when cloudomate fails to return it, the purchase itself could have been successful.
     if not transaction_hash:
-        return plebnet_settings.FAILURE
-    config.get('bought').append((provider, transaction_hash, config.get('child_index')))
+        logger.warning("Server probably purchased, but transaction hash not returned")
+
+    config.get('bought').append((provider, option, transaction_hash, config.get('child_index')))
     config.get('transactions').append(transaction_hash)
     config.set('chosen_provider', None)
     config.save()
 
     return plebnet_settings.SUCCESS
-
-
-def place_offer(chosen_est_price, config):
-    """
-    Sell all available MB for the chosen estimated price on the Tribler market.
-    :param config: config
-    :param chosen_est_price: Target amount of BTC to receive
-    :return: success of offer placement
-    """
-    available_mb = market_controller.get_balance('MB')
-    if available_mb == 0:
-        logger.log("No MB available")
-        return False
-    config.bump_offer_date()
-
-    coin = 'TBTC' if plebnet_settings.get_instance().wallets_testnet() else 'BTC'
-
-    config.set('last_offer', {coin: chosen_est_price, 'MB': available_mb})
-    price_per_unit = max(0.0001, chosen_est_price / float(available_mb))
-    return market_controller.put_ask(price=price_per_unit,
-                                     price_type=coin,
-                                     quantity=available_mb,
-                                     quantity_type='MB',
-                                     timeout=plebnet_settings.TIME_IN_HOUR)
 
 
 def save_info_vpn(child_index):
@@ -276,27 +258,34 @@ def save_info_vpn(child_index):
     :return:
     """
     vpn = get_vpn_providers()[plebnet_settings.get_instance().vpn_host()](child_account())
-    info = vpn.get_configuration()
-    prefix = plebnet_settings.get_instance().vpn_child_prefix()
 
+    try:
+        info = vpn.get_configuration()
+        prefix = plebnet_settings.get_instance().vpn_child_prefix()
 
-    dir = path.expanduser(plebnet_settings.get_instance().vpn_config_path())
-    credentials = prefix + str(child_index) +plebnet_settings.get_instance().vpn_credentials_name()
-        
-    ovpn = prefix + str(child_index) +plebnet_settings.get_instance().vpn_config_name()
+        dir = path.expanduser(plebnet_settings.get_instance().vpn_config_path())
+        credentials = prefix + str(child_index) + plebnet_settings.get_instance().vpn_credentials_name()
 
-    # the .ovpn file contains the line auth-user-pass so that it knows which credentials file to use
-    # when the child config and credentials are passed to create-child, it is placed on the server as "own" 
-    # so the reference to "own" is put in the .ovpn file.
-    own_credentials = plebnet_settings.get_instance().vpn_own_prefix() \
-                      + plebnet_settings.get_instance().vpn_credentials_name()
-    with io.open(path.join(dir, ovpn), 'w', encoding='utf-8') as ovpn_file:
-        ovpn_file.write(info.ovpn + '\nauth-user-pass ' + own_credentials)
+        ovpn = prefix + str(child_index) + plebnet_settings.get_instance().vpn_config_name()
 
-    # write the ovpn file to vpn dir
-    with io.open(path.join(dir, credentials), 'w', encoding='utf-8') as credentials_file:
-        credentials_file.writelines([info.username + '\n', info.password])
+        # the .ovpn file contains the line auth-user-pass so that it knows which credentials file to use
+        # when the child config and credentials are passed to create-child, it is placed on the server as "own"
+        # so the reference to "own" is put in the .ovpn file.
+        own_credentials = plebnet_settings.get_instance().vpn_own_prefix() \
+                          + plebnet_settings.get_instance().vpn_credentials_name()
+        with io.open(path.join(dir, ovpn), 'w', encoding='utf-8') as ovpn_file:
+            ovpn_file.write(info.ovpn + '\nauth-user-pass ' + own_credentials)
 
-    print("Saved VPN configuration to " + dir)
+        # write the ovpn file to vpn dir
+        with io.open(path.join(dir, credentials), 'w', encoding='utf-8') as credentials_file:
+            credentials_file.writelines([info.username + '\n', info.password])
 
-    return True
+        logger.log("Saved VPN configuration to " + dir, "cloudomate_controller")
+
+        return True
+    except:
+        title = "Failed to save VPN info: %s" % sys.exc_info()[0]
+        body = traceback.format_exc()
+        logger.error(title)
+        logger.error(body)
+        return False

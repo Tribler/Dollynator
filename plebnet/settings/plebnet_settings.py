@@ -28,8 +28,8 @@ init_file = os.path.join(init_path, file_name)
 conf_file = os.path.join(conf_path, file_name)
 
 """ DATE AND TIME VARIABLES """
-TIME_IN_HOUR = 60.0 * 60.0
-TIME_IN_DAY = TIME_IN_HOUR * 24.0
+TIME_IN_HOUR = 60 * 60
+TIME_IN_DAY = TIME_IN_HOUR * 24
 MAX_DAYS = 5
 """ EXIT CODES """
 FAILURE = 0
@@ -42,6 +42,10 @@ instance = None
 class Init(object):
 
     def __init__(self):
+        # if config dir does not exist --> create
+        if not os.path.exists(conf_path):
+            os.makedirs(conf_path)
+
         # file does not exist --> copy the initial file
         if not os.path.isfile(conf_file):
             copy(init_file, conf_path)
@@ -120,6 +124,10 @@ class Init(object):
 
     def wallets_password(self, value=None): return self.settings.handle("wallets", "password", value)
 
+    def wallets_btc_global(self, value=None): return self.settings.handle("wallets", "btc_global", value)
+
+    def wallets_mb_global(self, value=None): return self.settings.handle("wallets", "mb_global", value)
+
     """THE ATTRIBUTE METHODS FOR THE ACTIVE SECTION"""
 
     def active_verbose(self, value=None): return self.settings.handle("active", "verbose", value) == "1"
@@ -146,8 +154,16 @@ class Init(object):
 
     def vpn_credentials_name(self, value=None): return self.settings.handle("vpn", "credentials_name", value)
 
+    def anticaptcha_accountkey(self, value=None): return self.settings.handle("vpn", "anticaptcha_accountkey", value)
+
     """THE ATTRIBUTE METHODS FOR THE TRIBLER SECTION"""
     def tribler_exitnode(self, value=None): return self.settings.handle("tribler", "exitnode", value)  == '1'
+
+    """THE ATTRIBUTE METHODS FOR THE STRATEGY SECTION"""
+
+    def strategy_name(self, value=None): return self.settings.handle("strategy", "name", value)
+
+    def strategy_vps_count(self, value=None): return self.settings.handle("strategy", "vps_count", value)
 
 
 def write():

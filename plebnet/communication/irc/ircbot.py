@@ -11,10 +11,10 @@ import time
 import sys
 
 # as the file is loaded separately, the imports have to be adjusted.
+
 sys.path.append('./PlebNet')
-from plebnet.agent import dna
+from plebnet.agent.qtable import QTable
 from plebnet.agent.core import vpn_is_running
-from plebnet.agent.config import PlebNetConfig
 from plebnet.communication import git_issuer
 from plebnet.controllers import wallet_controller, market_controller, tribler_controller
 from plebnet.utilities import logger
@@ -58,7 +58,6 @@ class Create(object):
         self.add_response("matchmakers",  self.msg_match_makers)
         self.add_response("uploaded",     self.msg_uploaded)
         self.add_response("downloaded",   self.msg_downloaded)
-        self.add_response("dna",          self.msg_dna)
         self.add_response("general",      self.msg_general)
         self.add_response("helped",       self.msg_helped)
         self.add_response("helped_by",    self.msg_helped_by)
@@ -99,7 +98,7 @@ class Create(object):
         self.heartbeat()
 
         buffer = ""
-        while 1:
+        while True:
             buffer = self.keep_running(buffer)
 
     def keep_running(self, buffer):
@@ -225,13 +224,14 @@ class Create(object):
 
     def msg_helped_by(self):    self.send_msg("I am currently helped by: %s peers" % tribler_controller.get_helped_by())
 
-    def msg_dna(self):          self.send_msg("My DNA is: %s" % dna.get_dna())
-
     def msg_general(self):
+        qtable = QTable()
+        qtable.read_dictionary()
         data = {
-            'host': dna.get_host(),
+            'host': qtable.self_state.provider,
+            'option': qtable.self_state.option,
             'vpn': vpn_is_running(),
-            'tree': dna.get_tree(),
+            'tree': qtable.tree,
             'exitnode': plebnet_settings.get_instance().tribler_exitnode()
         }
         self.send_msg("general: %s" % data)

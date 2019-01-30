@@ -132,7 +132,7 @@ then
     echo "default-keyring=keyrings.alt.file.PlaintextKeyring" >> $KRCFG
 fi
 
-[ ! -d "PlebNet" ] && git clone -b $BRANCH --recurse-submodules https://github.com/vwigmore/PlebNet
+[ ! -d "PlebNet" ] && git clone -b $BRANCH --recurse-submodules https://github.com/Tribler/PlebNet
 
 # when branch is given, this create-child.sh's default branch value will be updated
 #   this is because the child's cloned repo also needs these values updated
@@ -142,7 +142,23 @@ python -m pip install --upgrade ./PlebNet
 cd PlebNet
 
 pip install ./cloudomate
-pip install ./tribler/electrum
+
+# Install tribler
+pip install pony
+pip install ./tribler
+cd ..
+
+# Install bitcoinlib
+# pip install bitcoinlib==0.4.4
+git clone https://github.com/1200wd/bitcoinlib.git
+pip install ./bitcoinlib
+
+# Install electrum as it is required by cloudomate and not included in tribler anymore
+git clone -b 2.9.x https://github.com/spesmilo/electrum.git
+cd electrum
+python setup.py install
+sudo apt-get -y install protobuf-compiler
+protoc --proto_path=lib/ --python_out=lib/ lib/paymentrequest.proto
 
 cd /root
 
@@ -157,7 +173,6 @@ if [[ $TESTNET -eq 1 ]]; then
     echo "Installed in testnet mode: TBTC bitcoin wallet used, no cron job checking - run \"plebnet check\" manually."
 else
     plebnet setup $ARGS >> plebnet.log 2>&1
-    cron plebnet check
     echo "*/5 * * * * root /usr/local/bin/plebnet check >> plebnet.log 2>&1" > /etc/cron.d/plebnet
     echo "Installed in normal mode: BTC bitcoin wallet used, cron job created, exit node is on"
 fi
