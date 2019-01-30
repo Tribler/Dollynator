@@ -149,7 +149,7 @@ LastDaySell waits until there is one day left until the expiration of the curren
 
 ConstantSell, as soon as it is first called, places an order on the market selling all available reputation for the amount of Bitcoin needed for the configured number of replications. This order is updated hourly with the new income.
 
-Orderbok-based Strategies
+Orderbook-based Strategies
 -------------------------
 
 Dollynator has one Orderbook-based Strategy: SimpleMovingAverage. This strategy tries to get the most of the market by evaluating the current price (the price of the last transaction) against a simple moving average of 30 periods, using days as periods.
