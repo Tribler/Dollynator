@@ -61,32 +61,32 @@ The choice of next VPS is dictated by QTable (Q-Learning).
 Q-Learning is a reinforcement learning technique. The aim of this technique
 is to learn how to act in the environment.
 The update values in Q-Table is as follows:
-:math:`Q_{new}(s_{t},a_{t})\leftarrow (1-\alpha )+\alpha*(reward +\gamma *\max_{a}(s_{t+1},a))`
-where
 
-:math:`\gamma` is a discount factor (how important are gains of future steps
+.. image:: http://latex.codecogs.com/gif.latex?Q_%7Bnew%7D%28s_%7Bt%7D%2Ca_%7Bt%7D%29%5Cleftarrow%20%281-lr%29&plus;lr*%28reward%20&plus;discount%20*%5Cmax_%7Ba%7D%28s_%7Bt&plus;1%7D%2Ca%29%29
 
-:math:`\alpha` is a learning rate
+``discount`` is a discount factor (how important are gains of future steps
 
-:math:`s_{t}` is a current state
+``lr`` is a learning rate
 
-:math:`s_{t+1}` is a next step
+``st`` is a current state
+
+``s(t+1)`` is a next step
 
 **Reinforcement Mappings**
 
 We define few mappings which are used in Reinforcement Learning jargon:
 
--``states`` - VPS offers
+- ``states`` - VPS offers
 
--``environment`` – transition matrix between states. This kind of dictates what reinforcement we will get by choosing certain transition. Initially all 0s.
+- ``environment`` – transition matrix between states. This kind of dictates what reinforcement we will get by choosing certain transition. Initially all 0s.
 
--``current_state`` – current VPS option
+- ``current_state`` – current VPS option
 
 **Initial values**
 
 Initial values for QTable are calculated according to the formula bellow:
 
-:math:`\frac{1}{price^3}* bandwidth`
+.. image:: http://latex.codecogs.com/gif.latex?%5Cfrac%7B1%7D%7Bprice%5E3%7D*%20bandwidth
 
 
 **How does it works in Dollybot?**
@@ -95,23 +95,23 @@ In Dollybot we use form of Q-Learning, as we are not fully aware of the environm
 
 Environment is getting updated by each try of replication:
 
--when node manages to buy new option and replicate environment is updated positively (all transitions leading to ``current_state``)
+- when node manages to buy new option and replicate environment is updated positively (all transitions leading to ``current_state``)
 
--when nodes fails to buy option environment is getting updated negatively (transition between ``current_state`` and chosen failed state)
+- when nodes fails to buy option environment is getting updated negatively (transition between ``current_state`` and chosen failed state)
 
 After updating the environment values qtables are recalculated one more time to find action maximizing our possible gains for each state.
 
 **What is passed to the child?**
 
--his state (provider name + option name)
+- his state (provider name + option name)
 
--name (to have some id)
+- name (to have some id)
 
--tree of replications
+- tree of replications
 
--providers_offers (all VPSs offer for all providers)
+- providers_offers (all VPSs offer for all providers)
 
--current qtable
+- current qtable
 
 **Final remarks about RL**
 
@@ -121,8 +121,7 @@ To choose option from QTable we use exponential distribution with lambda converg
 
 The current version is using simple formula to choose which kth best option to choose:
 
-:math:`1 - \frac{1}{no\_replications + 3}`
-
+.. image:: http://latex.codecogs.com/gif.latex?%5Cleft%20%5Clfloor%201%20-%20%5Cfrac%7B1%7D%7Bno%5C_replications%20&plus;%203%7D%20%5Cright%20%5Crfloor
 
 Market Strategies
 =================
