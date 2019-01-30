@@ -73,6 +73,13 @@ class Strategy():
         coin = 'TBTC' if plebnet_settings.get_instance().wallets_testnet() else 'BTC'
 
         config.set('last_offer', {coin: chosen_est_price, 'MB': mb_amount})
+
+        if coin == 'TBTC':
+            return market_controller.put_ask(first_asset_amount=mb_amount,
+                                             first_asset_type='MB',
+                                             second_asset_amount=btc_to_satoshi(chosen_est_price),
+                                             second_asset_type=coin,
+                                             timeout=timeout)
         return market_controller.put_bid(first_asset_amount=btc_to_satoshi(chosen_est_price),
                                          first_asset_type=coin,
                                          second_asset_amount=mb_amount,
