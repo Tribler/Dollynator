@@ -11,7 +11,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup(
     name='plebnet',
 
-    version='0.2.0',
+    version='0.3.0',
 
     description='Working class botnet',
     long_description=long_description,
