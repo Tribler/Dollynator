@@ -54,9 +54,19 @@ Finally, it connects to the purchased server over SSH, downloads the latest Pleb
 
 Reinforcement Learning
 ======================
-The choice of next VPS is dictated by QTable.
+The choice of next VPS is dictated by QTable (Q-Learning).
 
-We define few mappings which are used in Reinforcement Learning:
+**What is Q-Learning?**
+
+Q-Learning is a reinforcement learning technique. The aim of this technique
+is to learn how to act in the environment.
+The update values in Q-Table is as follows:
+
+:math: Q\_{new}(s\_{t},a_{t})\leftarrow (1-\alpha )+\alpha*(reward +\gamma *\max_{a}(s\_{t+1},a))
+
+**Reinforcement Mappings**
+
+We define few mappings which are used in Reinforcement Learning jargon:
 
 -``states`` - VPS offers
 
@@ -64,18 +74,25 @@ We define few mappings which are used in Reinforcement Learning:
 
 -``current_state`` – current VPS option
 
+**Initial values**
+
 Initial values for QTable are calculated according to the formula bellow:
 
-``1/(price^3) * bandwidth``
+:math:``1/(price^3) * bandwidth``
+
+**How does it works in Dollybot?**
+
+In Dollybot we use form of Q-Learning, as we are fully aware of the enviroment and our reinforcements for each state, we try to learn them on the go.
 
 Environment is getting updated by each try of replication:
 
 -when node manages to buy new option and replicate environment is updated positively (all transitions leading to ``current_state``)
 
 -when nodes fails to buy option environment is getting updated negatively (transition between ``current_state`` and chosen failed state)
-While we update the environment QTable entries are getting updated consequently.
 
-What is passed to the child?
+After updating the environment values qtables are recalculated one more time to find action maximizing our possible gains for each state.
+
+**What is passed to the child?**
 
 -his state (provider name + option name)
 
@@ -83,14 +100,15 @@ What is passed to the child?
 
 -tree of replications
 
--``providers_offers`` (all VPSs offer for all providers)
+-providers_offers (all VPSs offer for all providers)
 
--current ``qtable``
+-current qtable
 
+**Final remarks about RL**
 
 Currently VPSs are chosen using QTable , VPNs not.
 
-To choose option from QTable we use exponential distribution with lambda converging decreasingly to 1. As lambda is changing with number of replications process seems to be similar to ``simulated annealing``.
+To choose option from QTable we use exponential distribution with lambda converging decreasingly to 1. As lambda is changing with number of replications process seems to be similar to **simulated annealing**.
 
 
 Market Strategies
