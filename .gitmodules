@@ -4,3 +4,4 @@
 [submodule "tribler"]
 	path = tribler
 	url = https://github.com/Tribler/tribler.git
+	branch = devel
