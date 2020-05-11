@@ -8,7 +8,7 @@ from plebnet.controllers import market_controller
 from plebnet.settings import plebnet_settings
 from plebnet.utilities import logger
 from plebnet.utilities.btc import satoshi_to_btc
-from strategy import Strategy
+from plebnet.agent.strategies.strategy import Strategy
 from datetime import datetime, timedelta
 from math import sqrt
 

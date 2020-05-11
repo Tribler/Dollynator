@@ -13,13 +13,11 @@ from plebnet.clone import server_installer
 from plebnet.controllers import tribler_controller, cloudomate_controller, market_controller, wallet_controller
 from plebnet.communication.irc import irc_handler
 from plebnet.settings import plebnet_settings
-from mock.mock import MagicMock
+from unittest.mock import MagicMock
 from plebnet.utilities import logger, fake_generator
 import plebnet.agent.core as Core
 import subprocess
 import os
-import re
-from appdirs import user_config_dir
 import cloudomate.hoster.vps.blueangelhost as blueAngel
 
 

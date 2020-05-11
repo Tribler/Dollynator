@@ -11,7 +11,7 @@ from plebnet.agent.qtable import QTable
 from plebnet.utilities import fake_generator
 from cloudomate.util.settings import Settings
 from plebnet.settings import plebnet_settings as setup
-from mock.mock import MagicMock
+from unittest.mock import MagicMock
 from plebnet.utilities import logger as Logger
 
 test_log_path = os.path.join(user_config_dir(), 'tests_logs')
