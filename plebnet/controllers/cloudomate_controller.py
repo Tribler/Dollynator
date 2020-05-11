@@ -23,7 +23,6 @@ from cloudomate.util.settings import Settings as AccountSettings
 from cloudomate.hoster.vps.proxhost import ProxHost
 
 from plebnet.agent.config import PlebNetConfig
-from plebnet.controllers import market_controller
 from plebnet.controllers.wallet_controller import TriblerWallet
 from plebnet.settings import plebnet_settings
 from plebnet.utilities import logger

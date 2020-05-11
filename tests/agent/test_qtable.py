@@ -1,12 +1,12 @@
 import copy
 import random
 import unittest
-import mock
+import unittest.mock as mock
 import cloudomate.hoster.vps.blueangelhost as blueAngel
 from CaseInsensitiveDict import CaseInsensitiveDict
 
 from cloudomate.hoster.vps.vps_hoster import VpsOption
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 from plebnet.agent.qtable import QTable, VPSState, ProviderOffer
 from plebnet.controllers import cloudomate_controller

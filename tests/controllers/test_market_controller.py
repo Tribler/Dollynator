@@ -2,7 +2,7 @@ import unittest
 import responses
 import plebnet.controllers.market_controller as Market
 import requests
-from mock.mock import MagicMock
+from unittest.mock import MagicMock
 from plebnet.utilities import logger
 
 

@@ -1,6 +1,6 @@
 import unittest
 
-from mock.mock import MagicMock
+from unittest.mock import MagicMock
 
 from plebnet.agent import core
 from plebnet.agent.strategies.constant_sell import ConstantSell

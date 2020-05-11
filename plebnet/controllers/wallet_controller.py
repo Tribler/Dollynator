@@ -6,7 +6,7 @@ this code. If Tribler alters its web API, this should be the only file which nee
 in PlebNet.
 """
 
-import market_controller as marketcontroller
+import plebnet.controllers.market_controller as marketcontroller
 import plebnet.settings.plebnet_settings as plebnet_settings
 import requests
 from requests.exceptions import ConnectionError

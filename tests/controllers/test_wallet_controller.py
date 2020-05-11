@@ -8,7 +8,7 @@ import plebnet.controllers.wallet_controller as walletcontroller
 import plebnet.controllers.market_controller as marketcontroller
 import plebnet.settings.plebnet_settings as plebnet_settings
 
-from mock.mock import MagicMock
+from unittest.mock import MagicMock
 from plebnet.utilities import logger
 
 
