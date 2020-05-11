@@ -1,6 +1,6 @@
 import unittest
 
-from mock.mock import MagicMock
+from unittest.mock import MagicMock
 
 from plebnet.agent.config import PlebNetConfig
 import plebnet.controllers.market_controller as market

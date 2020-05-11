@@ -8,7 +8,7 @@ The only method to call is the generate_child_account(), which returns a random 
 """
 
 # Total imports
-import ConfigParser
+import configparser as ConfigParser
 import codecs
 import random
 import unicodedata

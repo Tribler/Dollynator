@@ -1,7 +1,7 @@
 import os
 import random
 import unittest
-import mock
+import unittest.mock as mock
 
 import cloudomate.hoster.vps.blueangelhost as blueAngel
 import cloudomate.hoster.vps.linevast as linevast
@@ -12,7 +12,7 @@ from cloudomate import wallet as wallet_util
 from cloudomate.hoster.vps.clientarea import ClientArea
 from cloudomate.util.settings import Settings
 from cloudomate.cmdline import providers as cloudomate_providers
-from mock.mock import MagicMock
+from unittest.mock import MagicMock
 from plebnet.communication import git_issuer
 
 import plebnet.controllers.cloudomate_controller as cloudomate

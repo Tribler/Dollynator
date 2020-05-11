@@ -1,7 +1,7 @@
 import copy
 import unittest
 from unittest import skip
-import mock
+import unittest.mock as mock
 
 from CaseInsensitiveDict import CaseInsensitiveDict
 from cloudomate.hoster.vps.vps_hoster import VpsOption

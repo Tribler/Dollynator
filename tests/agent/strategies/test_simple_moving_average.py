@@ -2,8 +2,8 @@ from datetime import datetime
 import time
 import unittest
 
-from mock.mock import MagicMock
-import mock
+from unittest.mock import MagicMock
+import unittest.mock as mock
 
 from plebnet.agent import core
 from plebnet.agent.strategies.last_day_sell import LastDaySell
