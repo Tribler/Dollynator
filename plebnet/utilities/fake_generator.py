@@ -50,7 +50,7 @@ def _remove_unicode(cp):
     for section in cp.sections():
         for option in cp.options(section):
             item = cp.get(section, option)
-            if isinstance(item, unicodedata):
+            if isinstance(item, str):
                 cp.set(section, option, unicodedata.normalize('NFKD', item).encode('ascii', 'ignore'))
 
 
