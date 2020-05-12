@@ -44,7 +44,7 @@ apt-get remove --purge -y python-pip
 wget https://bootstrap.pypa.io/get-pip.py
 python3 get-pip.py
 
-pip3.8 install -U wheel setuptools
+pip3 install -U wheel setuptools
 
 #(echo "alias pip='python -m pip'" | tee -a ~/.bashrc) && source ~/.bashrc
 
@@ -88,8 +88,8 @@ apt-get install -y \
     git \
     python-lxml
 
-pip3.8 install pyaes psutil
-pip3.8 install -U pyopenssl
+pip3 install pyaes psutil
+pip3 install -U pyopenssl
 
 echo "Install Crypto, pynacl, libsodium"
 apt-get install -y python-cryptography \
@@ -100,11 +100,11 @@ keyrings.alt
 # python-socks needed? It's going to be installed by pip later
 
 apt-get install -y build-essential libssl-dev libffi-dev python-dev software-properties-common
-pip3.8 install cryptography
-pip3.8 install pynacl
-pip3.8 install pysocks
-pip3.8 install keyrings.alt
-pip3.8 install libnacl
+pip3 install cryptography
+pip3 install pynacl
+pip3 install pysocks
+pip3 install keyrings.alt
+pip3 install libnacl
 add-apt-repository -y ppa:chris-lea/libsodium;
 echo "deb http://ppa.launchpad.net/chris-lea/libsodium/ubuntu trusty main" >> /etc/apt/sources.list;
 echo "deb-src http://ppa.launchpad.net/chris-lea/libsodium/ubuntu trusty main" >> /etc/apt/sources.list;
@@ -139,19 +139,19 @@ fi
 sed -i -E "s/(BRANCH\s*=\s*\")(.+)(\")/\1${BRANCH}\3/" $CREATECHILD && echo "Updated branch to $BRANCH in file ($CREATECHILD)";
 
 python3 -m pip3 install --upgrade ./PlebNet
-cd Dollynator
+cd PlebNet
 
-pip3.8 install ./cloudomate
+pip3 install ./cloudomate
 
 # Install tribler
-pip3.8 install pony
-pip3.8 install ./tribler
+pip3 install pony
+pip3 install ./tribler
 cd ..
 
 # Install bitcoinlib
 # pip install bitcoinlib==0.4.4
 git clone https://github.com/1200wd/bitcoinlib.git
-pip3.8 install ./bitcoinlib
+pip3 install ./bitcoinlib
 
 # Install electrum as it is required by cloudomate and not included in tribler anymore
 git clone -b 2.9.x https://github.com/spesmilo/electrum.git
