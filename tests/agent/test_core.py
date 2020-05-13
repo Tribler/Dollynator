@@ -142,6 +142,7 @@ class TestCore(unittest.TestCase):
         logger.success = self.success
         plebnet_settings.Init.tribler_exitnode = self.exit
 
+
     @mock.patch('plebnet.agent.core.attempt_purchase')
     @mock.patch('plebnet.settings.plebnet_settings.Init.wallets_initiate_once', return_value=False)
     @mock.patch('plebnet.settings.plebnet_settings.Init.wallets_testnet_created', return_value=True)
@@ -193,6 +194,7 @@ class TestCore(unittest.TestCase):
                                                                                              price=10.0,
                                                                                              purchase_url="mock"
                                                                                              )])
+
     def test_attempt_purchase(self, mock1, mock2):
         self.log = logger.log
         self.testnet = plebnet_settings.Init.wallets_testnet
@@ -321,6 +323,7 @@ class TestCore(unittest.TestCase):
         plebnet_settings.Init.vpn_pid = self.pid
         plebnet_settings.Init.vpn_running = self.run
         subprocess.call = self.call
+
 
     def test_check_vpn_install(self):
         self.vpn_installed = plebnet_settings.Init.vpn_installed

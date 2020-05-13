@@ -299,7 +299,7 @@ class TestCloudomateController(unittest.TestCase):
         if value == 'child_index':
             return 2
         else:
-            return ['BlueAngelHost', 0, 'test']
+            return ['LineVast', 0, 'test']
 
 
 if __name__ == '__main__':
