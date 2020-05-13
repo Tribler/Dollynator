@@ -16,9 +16,9 @@ setup(
     description='Working class botnet',
     long_description=long_description,
 
-    url='https://github.com/Tribler/PlebNet',
+    url='https://github.com/GioAc96/Dollynator',
 
-    author='PlebNet',
+    author='Dollynator',
     author_email='authentic8989@gmail.com',
 
     license='LGPLv3',
@@ -32,8 +32,8 @@ setup(
 
         'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
 
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
 
         'Operating System :: POSIX :: Linux',
     ],
