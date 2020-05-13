@@ -8,7 +8,7 @@ The only method to call is the generate_child_account(), which returns a random 
 """
 
 # Total imports
-import configparser as ConfigParser
+import configparser
 import codecs
 import random
 import unicodedata
@@ -31,7 +31,7 @@ def generate_child_account():
     filename = _child_file()
     locale = random.choice(['cs_CZ', 'de_DE', 'dk_DK', 'es_ES', 'et_EE', 'hr_HR', 'it_IT'])
     fake = Factory().create(locale)
-    cp = ConfigParser.ConfigParser()
+    cp = configparser.RawConfigParser(allow_no_value=True)
     _generate_address(cp, fake)
     _generate_server(cp, fake)
     _generate_user(cp, fake)
