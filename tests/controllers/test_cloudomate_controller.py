@@ -65,14 +65,14 @@ class TestCloudomateController(unittest.TestCase):
 
     def test_status(self):
         self.child_account = cloudomate.child_account
-        self.provider = blueAngel.BlueAngelHost.get_status
+        self.provider = linevast.LineVast.get_status
 
         cloudomate.child_account = MagicMock()
-        blueAngel.BlueAngelHost.get_status = MagicMock()
-        assert cloudomate.status(blueAngel.BlueAngelHost)
+        linevast.LineVast.get_status = MagicMock()
+        assert cloudomate.status(linevast.LineVast)
 
         cloudomate.child_account = self.child_account
-        blueAngel.BlueAngelHost.get_status = self.provider
+        linevast.LineVast.get_status = self.provider
 
     def test_get_ip(self):
         self.clientarea = ClientArea.__init__
@@ -85,7 +85,7 @@ class TestCloudomateController(unittest.TestCase):
         ClientArea.get_services = MagicMock()
         ClientArea.get_ip = MagicMock()
 
-        cloudomate.get_ip(blueAngel.BlueAngelHost, 'testaccount')
+        cloudomate.get_ip(linevast.LineVast, 'testaccount')
         ClientArea.get_ip.assert_called_once()
 
         ClientArea.__init__ = self.clientarea
@@ -94,13 +94,13 @@ class TestCloudomateController(unittest.TestCase):
         ClientArea.get_ip = self.clientarea_ip
 
     def test_options(self):
-        self.provider = blueAngel.BlueAngelHost.get_options
+        self.provider = linevast.LineVast.get_options
 
-        blueAngel.BlueAngelHost.get_options = MagicMock()
-        cloudomate.options(blueAngel.BlueAngelHost)
-        blueAngel.BlueAngelHost.get_options.assert_called_once()
+        linevast.LineVast.get_options = MagicMock()
+        cloudomate.options(linevast.LineVast)
+        linevast.LineVast.get_options.assert_called_once()
 
-        blueAngel.BlueAngelHost.get_options = self.provider
+        linevast.LineVast.get_options = self.provider
 
     def test_get_network_fee(self):
         self.wallet_util = wallet_util.get_network_fee
@@ -145,7 +145,7 @@ class TestCloudomateController(unittest.TestCase):
 
         cloudomate.options = MagicMock()
         cloudomate_providers.__init__ = MagicMock()
-        cloudomate.pick_option('BlueAngelHost')
+        cloudomate.pick_option('LineVast')
         cloudomate.options.assert_called_once()
 
         cloudomate.options = self.options
@@ -161,7 +161,7 @@ class TestCloudomateController(unittest.TestCase):
         cloudomate_providers.__init__ = MagicMock()
         Logger.log = MagicMock()
 
-        cloudomate.pick_option('BlueAngelHost')
+        cloudomate.pick_option('LineVast')
         Logger.log.assert_called_once()
 
         cloudomate_providers.__init__ = self.providers_true
@@ -178,7 +178,7 @@ class TestCloudomateController(unittest.TestCase):
         Logger.log = MagicMock()
         cloudomate_providers.__init__ = MagicMock()
 
-        cloudomate.calculate_price('BlueAngelHost', 'option')
+        cloudomate.calculate_price('LineVast', 'option')
         cloudomate.get_vps_option.assert_called_once()
 
         self.options = cloudomate.options = self.options
@@ -205,13 +205,13 @@ class TestCloudomateController(unittest.TestCase):
         self.config = PlebNetConfig.get
         self.triblerwallet = TriblerWallet.__init__
         self.settings = plebnet_settings.Init.wallets_testnet_created
-        self.purchase = blueAngel.BlueAngelHost.purchase
+        self.purchase = linevast.LineVast.purchase
         self.logger = Logger.warning
 
         PlebNetConfig.get = MagicMock(side_effect=self.side_effect)
         plebnet_settings.Init.wallets_testnet_created = MagicMock(return_value=None)
         TriblerWallet.__init__ = MagicMock(return_value=None)
-        blueAngel.BlueAngelHost.purchase = MagicMock(side_effect=Exception("Purchase failed"))
+        linevast.LineVast.purchase = MagicMock(side_effect=Exception("Purchase failed"))
         Logger.warning = MagicMock()
 
         self.assertEquals(cloudomate.purchase_choice(PlebNetConfig()), plebnet_settings.FAILURE)
@@ -219,20 +219,20 @@ class TestCloudomateController(unittest.TestCase):
         PlebNetConfig.get = self.config
         TriblerWallet.__init__ = self.triblerwallet
         plebnet_settings.Init.wallets_testnet_created = self.settings
-        blueAngel.BlueAngelHost.purchase = self.purchase
+        linevast.LineVast.purchase = self.purchase
         Logger.warning = self.logger
 
     def test_purchase_choice(self):
         self.config = PlebNetConfig.get
         self.triblerwallet = TriblerWallet.__init__
         self.settings = plebnet_settings.Init.wallets_testnet_created
-        self.purchase = blueAngel.BlueAngelHost.purchase
+        self.purchase = linevast.LineVast.purchase
         self.logger = Logger.warning
 
         PlebNetConfig.get = MagicMock(side_effect=self.side_effect)
         plebnet_settings.Init.wallets_testnet_created = MagicMock(return_value=None)
         TriblerWallet.__init__ = MagicMock(return_value=None)
-        blueAngel.BlueAngelHost.purchase = MagicMock(return_value=('Hash', 0))
+        linevast.LineVast.purchase = MagicMock(return_value=('Hash', 0))
         Logger.warning = MagicMock()
 
         self.assertEquals(cloudomate.purchase_choice(PlebNetConfig()), plebnet_settings.SUCCESS)
@@ -240,14 +240,14 @@ class TestCloudomateController(unittest.TestCase):
         PlebNetConfig.get = self.config
         TriblerWallet.__init__ = self.triblerwallet
         plebnet_settings.Init.wallets_testnet_created = self.settings
-        blueAngel.BlueAngelHost.purchase = self.purchase
+        linevast.LineVast.purchase = self.purchase
         Logger.warning = self.logger
 
     def test_purchase_choice_error(self):
         self.config = PlebNetConfig.get
         self.triblerwallet = TriblerWallet.__init__
         self.settings = plebnet_settings.Init.wallets_testnet_created
-        self.purchase = blueAngel.BlueAngelHost.purchase
+        self.purchase = linevast.LineVast.purchase
         self.logger = Logger.warning
 
         self.error = Logger.error
@@ -256,7 +256,7 @@ class TestCloudomateController(unittest.TestCase):
         PlebNetConfig.get = MagicMock(side_effect=self.side_effect)
         plebnet_settings.Init.wallets_testnet_created = MagicMock(return_value=None)
         TriblerWallet.__init__ = MagicMock(return_value=None)
-        blueAngel.BlueAngelHost.purchase = MagicMock(side_effect=Exception)
+        linevast.LineVast.purchase = MagicMock(side_effect=Exception)
         Logger.warning = MagicMock()
         Logger.error = MagicMock()
         git_issuer.handle_error = MagicMock()
@@ -266,7 +266,7 @@ class TestCloudomateController(unittest.TestCase):
         PlebNetConfig.get = self.config
         TriblerWallet.__init__ = self.triblerwallet
         plebnet_settings.Init.wallets_testnet_created = self.settings
-        blueAngel.BlueAngelHost.purchase = self.purchase
+        linevast.LineVast.purchase = self.purchase
         Logger.warning = self.logger
         Logger.error = self.error
         git_issuer.handle_error = self.issue
