@@ -36,7 +36,6 @@ def generate_child_account():
     _generate_server(cp, fake)
     _generate_user(cp, fake)
     _add_anticaptcha(cp)
-    _remove_unicode(cp)
     with codecs.open(filename, 'w', 'utf8') as config_file:
         cp.write(config_file)
     return cp
