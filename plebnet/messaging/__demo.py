@@ -9,7 +9,7 @@ import time
 import pickle 
 
 # Receives messages
-def receive():
+def receive(port):
 
     # Initialize the message receiver service
     receiver = MessageReceiver(port)
@@ -29,7 +29,7 @@ def receive():
     receiver.registerConsumer(consumer2)
 
 # Sends messages
-def send(sleepTime):
+def send(sleepTime, port):
     
     # Initialize sender
     sender = MessageSender(port)
@@ -44,9 +44,10 @@ def send(sleepTime):
         sender.sendMessage("Counter: " + str(counter))
         counter += 1
 
-# Start sender and receiver on two separate threads
-port = 8000
+if __name__ == '__main__':
+    port = 8000
 
-threading.Thread(target=send, args= (1, )).start()
-threading.Thread(target=receive).start()
+    # Start sender and receiver on two separate threads
+    threading.Thread(target=send, args= (1, port,)).start()
+    threading.Thread(target=receive, args = (port,)).start()
 
