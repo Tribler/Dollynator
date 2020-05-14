@@ -9,6 +9,10 @@ from MessageConsumer import MessageConsumer
 from interface import Interface
 
 class MessageReceiver:
+    """
+    Message receiving service. Opens a socket on the specified port, and notifies
+    registered consumers when new messages are received.
+    """
 
     def __init__(self, port, connectionsQueueSize = 20, notifyInterfal = 1):
 
@@ -26,7 +30,9 @@ class MessageReceiver:
 
 
     def registerConsumer(self, messageConsumer: MessageConsumer):
-
+        """
+        Registers a MessageConsumer.
+        """
         self.messageConsumers.append(messageConsumer)
 
 
@@ -66,8 +72,7 @@ class MessageReceiver:
             self.messagesQueue.append(message)
 
     def __notifyConsumers(self, message):
-
-
+        
         for consumer in self.messageConsumers:
             
             consumer.notify(message)

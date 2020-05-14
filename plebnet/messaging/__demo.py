@@ -8,12 +8,13 @@ import threading
 import time
 import pickle 
 
-port = 8082
+# Receives messages
+def receive():
 
-def server():
-
+    # Initialize the message receiver service
     receiver = MessageReceiver(port)
     
+    # Declare message consumers
     class Consumer(implements(MessageConsumer)):
 
         def notify(self, message): 
@@ -23,23 +24,29 @@ def server():
     consumer1 = Consumer()
     consumer2 = Consumer()
 
+    # Register the consumers
     receiver.registerConsumer(consumer1)
     receiver.registerConsumer(consumer2)
 
-def client(sleepTime):
+# Sends messages
+def send(sleepTime):
     
+    # Initialize sender
     sender = MessageSender(port)
     
+    # Send message
     counter = 0
     
     while True:
         
         time.sleep(sleepTime)
 
-        sender.sendMessage(counter)
+        sender.sendMessage("Counter: " + str(counter))
         counter += 1
 
+# Start sender and receiver on two separate threads
+port = 8000
 
-threading.Thread(target=client, args= (1, )).start()
-threading.Thread(target=server).start()
+threading.Thread(target=send, args= (1, )).start()
+threading.Thread(target=receive).start()
 
