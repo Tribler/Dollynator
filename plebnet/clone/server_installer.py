@@ -136,7 +136,7 @@ def _install_server(ip, rootpw, vpn_child_index=None, testnet=False):
     command = ["bash", script_path, "-i", ip.strip(), "-p", rootpw.strip(), "-b", branch]
 
     # additional VPN arguments
-    if vpn_child_index > -1:
+    if vpn_child_index is not None:
         prefix = settings.vpn_child_prefix()
 
         dir = os.path.expanduser(settings.vpn_config_path())

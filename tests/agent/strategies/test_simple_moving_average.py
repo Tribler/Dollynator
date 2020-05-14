@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 import unittest
 
@@ -134,9 +134,10 @@ class TestSimpleMovingAverage(unittest.TestCase):
         closing_timestamps = []
         self.strategy.transactions = []
         num_days = 3
+        start_date = datetime.today() - timedelta(days=num_days)
         for i in range(0, num_days):
-            t1 = time.mktime((2019, 1, 1+i, 15, 0, 0, 0, 0, -1))
-            t2 = time.mktime((2019, 1, 1+i, 20, 0, 0, 0, 0, -1))
+            t1 = time.mktime((start_date.year, start_date.month, start_date.day+i, 15, 0, 0, 0, 0, -1))
+            t2 = time.mktime((start_date.year, start_date.month, start_date.day+i, 20, 0, 0, 0, 0, -1))
             closing_timestamps.append(t2)
             self.strategy.transactions.append(self.create_transaction(t1))
             self.strategy.transactions.append(self.create_transaction(t2))

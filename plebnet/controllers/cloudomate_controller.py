@@ -49,7 +49,7 @@ def child_account(index=None):
     :return: configuration of the child
     :rtype: Settings
     """
-    if index > -1:
+    if index is not None:
         account = AccountSettings()
         account.read_settings(
             os.path.join(user_config_dir(), 'child_config' + str(index) + '.cfg'))

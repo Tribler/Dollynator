@@ -2,9 +2,9 @@ import unittest
 import sys
 
 # from unittest.mock import Mock
-from mock.mock import Mock
+from unittest.mock import Mock
 from argparse import Namespace
-from mock.mock import patch
+
 from argparse import ArgumentParser
 import traceback
 
