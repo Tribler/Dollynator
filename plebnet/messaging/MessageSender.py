@@ -3,18 +3,18 @@ import socket
 
 class MessageSender:
 
-    def __init__(self, port):
+    def __init__(self, port: int):
 
         self.port = port
         
 
-    def sendMessage(self, data):
+    def sendMessage(self, host: str, data):
  
         messageBody = pickle.dumps(data)
 
         s = socket.socket()   
                
-        s.connect(('127.0.0.1', self.port)) 
+        s.connect((host, self.port)) 
 
         s.send(str(len(messageBody)).encode('utf-8'))
 

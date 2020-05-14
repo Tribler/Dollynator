@@ -71,6 +71,7 @@ class MessageReceiver:
 
             self.messagesQueue.append(message)
 
+
     def __notifyConsumers(self, message):
         
         for consumer in self.messageConsumers:

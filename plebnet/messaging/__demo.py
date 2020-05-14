@@ -29,7 +29,7 @@ def receive(port):
     receiver.registerConsumer(consumer2)
 
 # Sends messages
-def send(sleepTime, port):
+def send(sleepTime, port, host='127.0.0.1'):
     
     # Initialize sender
     sender = MessageSender(port)
@@ -41,7 +41,7 @@ def send(sleepTime, port):
         
         time.sleep(sleepTime)
 
-        sender.sendMessage("Counter: " + str(counter))
+        sender.sendMessage(host, "Counter: " + str(counter))
         counter += 1
 
 if __name__ == '__main__':
