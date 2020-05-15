@@ -3,6 +3,7 @@ import math
 import os
 import sys
 import random
+from typing import Dict, Any
 
 import jsonpickle
 
@@ -212,6 +213,15 @@ class QTable:
         with open(filename, 'w') as json_file:
             encoded_to_save_var = jsonpickle.encode(to_save_var)
             json.dump(encoded_to_save_var, json_file)
+
+    def update_qtable(self, rTable):
+        # method that gets a remote Qtable and updates the local one following the
+        # algorithm (10) found in the following paper link
+        for provider_offer in self.providers_offers:
+            for provider_of in self.providers_offers:
+                self.qtable[self.get_ID(provider_offer)][self.get_ID(provider_of)] = \
+                    rTable[self.get_ID(provider_offer)][self.get_ID(provider_of)]
+        return self.qtable
 
 
 class ProviderOffer:
