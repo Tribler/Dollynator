@@ -215,12 +215,17 @@ class QTable:
             json.dump(encoded_to_save_var, json_file)
 
     def update_qtable(self, rTable):
-        # method that gets a remote Qtable and updates the local one following the
-        # algorithm (10) found in the following paper link
+        """
+        method that gets a remote Qtable and updates the local one following the
+        algorithm (10) found in the following paper 'link'
+        parameter: remote QTable shared by random agent
+        """
         for provider_offer in self.providers_offers:
             for provider_of in self.providers_offers:
+                currentValue = self.qtable[self.get_ID(provider_offer)][self.get_ID(provider_of)]
+                remoteValue = rTable[self.get_ID(provider_offer)][self.get_ID(provider_of)]
                 self.qtable[self.get_ID(provider_offer)][self.get_ID(provider_of)] = \
-                    rTable[self.get_ID(provider_offer)][self.get_ID(provider_of)]
+                    currentValue * 0.7 + remoteValue * 0.3
         return self.qtable
 
 

@@ -258,7 +258,7 @@ class TestQTable(unittest.TestCase):
         assert (qtable_copy != self.qtable.qtable)
         assert (qtable_copy[provider_offer_ID_other][provider_offer_ID] <
                 self.qtable.qtable[provider_offer_ID_other][provider_offer_ID])
-        assert(round(self.qtable.qtable[provider_offer_ID_other][provider_offer_ID],7) == 0.0020125)
+        assert (round(self.qtable.qtable[provider_offer_ID_other][provider_offer_ID], 7) == 0.0020125)
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
@@ -298,12 +298,13 @@ class TestQTable(unittest.TestCase):
                 self.qtable.qtable[provider_offer_ID_other][provider_offer_ID])
         assert (round(self.qtable.qtable[provider_offer_ID_other][provider_offer_ID], 7) == 0.0020125)
 
+        qtable_copy2 = copy.deepcopy(self.qtable.qtable)
+
         self.qtable.update_qtable(qtable_copy)
 
-        assert (qtable_copy == self.qtable.qtable)
-
-
-
+        assert (self.qtable.qtable[provider_offer_ID_other][provider_offer_ID] ==
+                (qtable_copy[provider_offer_ID_other][provider_offer_ID] * 0.3 +
+                 qtable_copy2[provider_offer_ID_other][provider_offer_ID] * 0.7))
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
@@ -340,7 +341,7 @@ class TestQTable(unittest.TestCase):
         assert (qtable_copy != self.qtable.qtable)
         assert (qtable_copy[provider_offer_ID][provider_offer_ID] >
                 self.qtable.qtable[provider_offer_ID][provider_offer_ID])
-        assert(round(self.qtable.qtable[provider_offer_ID_other][provider_offer_ID], 7) == 0.0099525)
+        assert (round(self.qtable.qtable[provider_offer_ID_other][provider_offer_ID], 7) == 0.0099525)
 
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
@@ -459,6 +460,9 @@ class TestQTable(unittest.TestCase):
     def test_get_no_replications(self):
         self.qtable.tree = "plebbot1.2.3"
         self.assertEqual(self.qtable.get_no_replications(), 3)
+
+    def get_ID(self, provider_offer):
+        return str(provider_offer.provider_name).lower() + "_" + str(provider_offer.name).lower()
 
 
 if __name__ == '__main__':
