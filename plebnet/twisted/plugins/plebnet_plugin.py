@@ -17,7 +17,6 @@ from Tribler.Core.Session import Session
 # Register yappi profiler
 from Tribler.community.market.community import MarketCommunity
 
-
 class Options(usage.Options):
     optParameters = [
         ["statedir", "s", None, "Use an alternate statedir", str],
