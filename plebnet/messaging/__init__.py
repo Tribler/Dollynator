@@ -1,3 +1,3 @@
-from messaging.MessageSender import MessageSender
-from messaging.MessageConsumer import MessageConsumer
-from messaging.MessageReceiver import MessageReceiver
+from plebnet.messaging.MessageSender import MessageSender
+from plebnet.messaging.MessageConsumer import MessageConsumer
+from plebnet.messaging.MessageReceiver import MessageReceiver
