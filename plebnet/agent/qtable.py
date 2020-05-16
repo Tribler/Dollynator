@@ -229,8 +229,12 @@ class QTable:
 
     def update_recieved_qtables(self, recieved_qtables, provider_offer_ID, status=False):
 
+        # TODO: suitable alpha value
+        alpha = 0.7
+
         for (remote_qtable, remote_state_action) in recieved_qtables:
             self.update_qtable(provider_offer_ID, status, remote_qtable, remote_state_action)
+        self.update_values(provider_offer_ID, status, alpha)
 
     def update_qtable(self, provider_offer_ID, status, remote_qtable, remote_state_action=QStateAction()):
         """
@@ -246,16 +250,13 @@ class QTable:
         #             currentValue * 0.7 + remoteValue * 0.3
         # return self.qtable
 
-        # TODO: suitable alpha and beta values
-        alpha = 0.7
+        # TODO: suitable beta value
         beta = 0.3
 
         self.qtable[remote_state_action.state][remote_state_action.action] = \
             self.qtable[remote_state_action.state][remote_state_action.action] \
             - beta * (self.qtable[remote_state_action.state][remote_state_action.action] \
             - remote_qtable[remote_state_action.state][remote_state_action.action])
-
-        self.update_values(provider_offer_ID, status, alpha)
 
 
 class ProviderOffer:
