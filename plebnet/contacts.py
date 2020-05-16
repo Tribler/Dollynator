@@ -37,6 +37,7 @@ class Contact:
 
 class AddressBook(implements(MessageConsumer)):
 
+
     def __init__(self, self_contact: Contact, contacts: list = [],):
         
         self.receiver = MessageReceiver(self_contact.port)
@@ -72,9 +73,10 @@ class AddressBook(implements(MessageConsumer)):
 
         self.contacts.append(contact)
 
-        self.__forward_contact(contact)
+        # self.__forward_contact(contact)
 
 
+    # Not use in current state.
     def __forward_contact(self, contact: Contact):
         
         message = self.generate_add_contact_message(contact)
