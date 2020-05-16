@@ -1,9 +1,9 @@
-from interface import implements
-from plebnet.contacts.Contact import Contact
-from interface import implements
+
 from plebnet.messaging import MessageConsumer
 from plebnet.messaging import MessageSender
 from plebnet.messaging import MessageReceiver
+
+
 
 from plebnet.contacts.Contact import Contact
 
@@ -11,7 +11,7 @@ from plebnet.contacts.Contact import Contact
 # TODO: change package methods naming
 # TODO: 
 
-class AddressBook(implements(MessageConsumer)):
+class AddressBook(MessageConsumer):
 
     def __init__(self, self_contact: Contact, contacts: list = [],):
         

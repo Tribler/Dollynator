@@ -1,6 +1,6 @@
-from interface import Interface
+from abc import ABC
 
-class MessageConsumer(Interface):
+class MessageConsumer(ABC):
 
     def notify(self, message):
         

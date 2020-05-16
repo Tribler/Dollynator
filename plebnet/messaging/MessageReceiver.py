@@ -4,9 +4,8 @@ import threading
 import time
 import pickle
 
-from MessageConsumer import MessageConsumer
+from plebnet.messaging.MessageConsumer import MessageConsumer
 
-from interface import Interface
 
 class MessageReceiver:
     """

@@ -12,7 +12,7 @@ def generate_contact_id(parent_id: str):
         letters = string.ascii_lowercase
         return ''.join(random.choice(letters) for i in range(length))
 
-    return hashlib.sha256(parent_id + generate_random_string(5)) + calendar.timegm(time.gmtime())
+    return str(hashlib.sha256((parent_id + generate_random_string(5)).encode('utf-8'))) + str(calendar.timegm(time.gmtime()))
 
 
 class Contact:
