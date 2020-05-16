@@ -14,7 +14,7 @@ from plebnet.settings import plebnet_settings
 
 
 class QStateAction:
-    def __init__(self, state="", action=""):
+    def __init__(self, state, action):
         self.state = state
         self.action = action
 
@@ -50,6 +50,9 @@ class QTable:
                 environment_arr[self.get_ID(provider_offer)] = 0
             self.qtable[self.get_ID(provider_of)] = prov
             self.environment[self.get_ID(provider_of)] = environment_arr
+
+    #def __getitem__(self, item):
+    #    return item
 
     @staticmethod
     def calculate_measure(provider_offer):
@@ -233,10 +236,10 @@ class QTable:
         alpha = 0.7
 
         for (remote_qtable, remote_state_action) in recieved_qtables:
-            self.update_qtable(provider_offer_ID, status, remote_qtable, remote_state_action)
+            self.update_qtable(remote_qtable, remote_state_action)
         self.update_values(provider_offer_ID, status, alpha)
 
-    def update_qtable(self, provider_offer_ID, status, remote_qtable, remote_state_action=QStateAction()):
+    def update_qtable(self, remote_qtable, remote_state_action=QStateAction("", "")):
         """
         method that gets a remote Qtable and updates the local one following the
         algorithm (10) found in the following paper 'link'
@@ -256,7 +259,7 @@ class QTable:
         self.qtable[remote_state_action.state][remote_state_action.action] = \
             self.qtable[remote_state_action.state][remote_state_action.action] \
             - beta * (self.qtable[remote_state_action.state][remote_state_action.action] \
-            - remote_qtable[remote_state_action.state][remote_state_action.action])
+            - remote_qtable.qtable[remote_state_action.state][remote_state_action.action])
 
 
 class ProviderOffer:
