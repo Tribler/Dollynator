@@ -86,7 +86,6 @@ class QTable:
                                         bandwidth=option.bandwidth, price=option.price, memory=option.memory)
                 self.providers_offers.append(element)
 
-    # TODO: update alpha and beta in this function, maybe make a seperate function for it
     # TODO: to be implemented after midterm
     def update_values2(self, other_q_values, amount_mb_tokens_per_usd_per_day):
         """
@@ -105,6 +104,7 @@ class QTable:
         every time we merge local QTable with remote one we want to update alpha and beta first in order to give the
         appropriate weight to local and remote information.
         """
+        # TODO: Switch to a mathematical model update? I.e.: a modified sigmoid
         num = self.number_of_updates[self.get_ID_from_state()][provider_offer_ID]
         if num <= 50:
             for provider_of in self.providers_offers:
@@ -224,7 +224,8 @@ class QTable:
 
     def create_child_qtable(self, provider, option, transaction_hash, child_index):
         """
-        Creates the QTable configuration for the child agent. This is done by copying the own QTable configuration and including the new host provider, the parent name and the transaction hash.
+        Creates the QTable configuration for the child agent. This is done by copying the own QTable configuration and
+        including the new host provider, the parent name and the transaction hash.
         :param provider: the name the child tree name.
         :param transaction_hash: the transaction hash the child is bought with.
         """
@@ -236,6 +237,7 @@ class QTable:
             "qtable": self.qtable,
             "alphatable": self.alphatable,
             "betatable": self.betatable,
+            # TODO: Consider whether adding this information or not
             "number_of_updates": self.number_of_updates,
             "providers_offers": self.providers_offers,
             "self_state": next_state,
@@ -274,7 +276,15 @@ class QTable:
             encoded_to_save_var = jsonpickle.encode(to_save_var)
             json.dump(encoded_to_save_var, json_file)
 
-    def update_qtable(self, recieved_qtables, provider_offer_ID, status=False):
+    def update_qtable(self, received_qtables, provider_offer_ID, status=False):
+        """
+        Updates an agent's QTable by considering the QTables received from other nodes through gossiping
+        and its own informations, according to an adapted version of the QD-Learning algorithm.
+        It uses two submethods - update_remote_qtable and update_self_qtable - to execute the two part of the algorithm.
+        :param received_qtables: an array containing the QTables received from other agents
+        :param provider_offer_ID: the ID of the VPS option attempted to purchase.
+        :param status: a boolean indicating whether the purchase was successfully executed or not.
+        """
 
         self.update_alpha_and_beta(provider_offer_ID)
 
@@ -283,7 +293,7 @@ class QTable:
             for j in to_add:
                 to_add[i][j] = 0
 
-        for remote_qtable in recieved_qtables:
+        for remote_qtable in received_qtables:
             self.update_remote_qtable(remote_qtable, provider_offer_ID, to_add)
 
         self.update_self_qtable(provider_offer_ID, status, to_add)
@@ -294,9 +304,11 @@ class QTable:
 
     def update_remote_qtable(self, remote_qtable, provider_offer_ID, to_add):
         """
-        method that gets a remote Qtable and updates the local one following the
+        Method that gets a remote QTable and updates the local one following the
         algorithm (10) found in the following paper 'link'
-        parameter: remote QTable shared by random agent
+        :param remote_qtable: remote QTable shared by random agent.
+        :param provider_offer_ID: the ID of the VPS option attempted to purchase.
+        :param to_add: a matrix having the same dimensions of a qtable to store intermediate results.
         """
 
         for state in to_add:
@@ -305,6 +317,13 @@ class QTable:
                                                              - remote_qtable[state][provider_offer_ID]
 
     def update_self_qtable(self, provider_offer_ID, status, to_add):
+        """
+        Method that gets updates an agent's QTable according to its purchase attempt of a new VPS service
+        :param provider_offer_ID: the ID of the VPS option attempted to purchase.
+        :param status: a boolean indicating whether the purchase was successfully executed or not.
+        :param to_add: a matrix having the same dimensions of a qtable to store intermediate results.
+        """
+
         self.update_environment_new(provider_offer_ID, status)
 
         for provider_offer in self.providers_offers:
@@ -316,6 +335,12 @@ class QTable:
                                                                           provider_offer_ID] * learning_compound
 
     def update_environment_new(self, provider_offer_ID, status):
+        """
+        Method that updates an agent's environment according to its purchase attempt of a new VPS service
+        :param provider_offer_ID: the ID of the VPS option attempted to purchase.
+        :param status: a boolean indicating whether the purchase was successfully executed or not.
+        """
+
         if status:
             for i, actions in enumerate(self.environment):
                 self.environment[actions][provider_offer_ID] += self.environment_lr

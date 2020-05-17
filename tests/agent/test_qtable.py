@@ -566,8 +566,9 @@ class TestQTable(unittest.TestCase):
                                                                                              connection="1",
                                                                                              price=10.0,
                                                                                              purchase_url="mock"
-                                                                                             )])
-    def test_update_qtable3(self, mock1, mock2): # FIXFIXFIX!!!!!!!!
+                                                                                            )])
+    # FIXFIXFIXFIXFIXFIXFIXFIX!!!!!!!!
+    def test_update_qtable3(self, mock1, mock2):
         qtable2 = QTable()
 
         blue_angel_offers = cloudomate_controller.options(self.providers["blueangelhost"])
