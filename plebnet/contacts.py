@@ -38,9 +38,9 @@ class Contact:
 class AddressBook(implements(MessageConsumer)):
 
 
-    def __init__(self, self_contact: Contact, contacts: list = [],):
+    def __init__(self, self_contact: Contact, contacts: list = [], receiver_notify_interval=1):
         
-        self.receiver = MessageReceiver(self_contact.port)
+        self.receiver = MessageReceiver(self_contact.port, notifyInterfal=receiver_notify_interval)
         
         self.contacts = contacts.copy()
         self.receiver.registerConsumer(self)
@@ -65,6 +65,10 @@ class AddressBook(implements(MessageConsumer)):
 
     def __add_contact(self, contact: Contact):
 
+        if contact.id == self.self_contact.id:
+
+            return
+
         for known_contact in self.contacts:
 
             if known_contact.id == contact.id:
@@ -73,10 +77,9 @@ class AddressBook(implements(MessageConsumer)):
 
         self.contacts.append(contact)
 
-        # self.__forward_contact(contact)
+        self.__forward_contact(contact)
 
 
-    # Not use in current state.
     def __forward_contact(self, contact: Contact):
         
         message = self.generate_add_contact_message(contact)
@@ -97,7 +100,7 @@ class AddressBook(implements(MessageConsumer)):
 
     
     def notify(self, message):
-        
+
         command, data = self.parse_message(message)
 
         if command == 'add-contact':
@@ -148,8 +151,6 @@ def __demo():
         nodes.append(new_node)
 
         replicating_node.create_new_distributed_contact(new_node.self_contact)
-
-        
 
         time.sleep(1)
 
