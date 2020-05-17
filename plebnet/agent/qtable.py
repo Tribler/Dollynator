@@ -1,3 +1,4 @@
+import copy
 import json
 import math
 import os
@@ -11,18 +12,6 @@ from appdirs import user_config_dir
 
 from plebnet.controllers import cloudomate_controller
 from plebnet.settings import plebnet_settings
-
-
-class QStateAction:
-    def __init__(self, state, action):
-        self.state = state
-        self.action = action
-
-    def getstate(self):
-        return self.state
-
-    def getaction(self):
-        return self.action
 
 
 class QTable:
@@ -74,9 +63,6 @@ class QTable:
             self.alphatable[self.get_ID(provider_of)] = alph
             self.betatable[self.get_ID(provider_of)] = bet
 
-    #def __getitem__(self, item):
-    #    return item
-
     @staticmethod
     def calculate_measure(provider_offer):
         """
@@ -105,8 +91,9 @@ class QTable:
                                     - self.qtable[self.get_ID(provider_offer)][self.get_ID(provider_of)]
 
                 self.qtable[self.get_ID(provider_offer)][self.get_ID(provider_of)] = weight \
-                    * (self.qtable[self.get_ID(provider_offer)][self.get_ID(provider_of)] \
-                    + self.learning_rate * learning_compound)
+                                                                                     * (self.qtable[self.get_ID(
+                    provider_offer)][self.get_ID(provider_of)] \
+                                                                                        + self.learning_rate * learning_compound)
 
     def update_environment(self, provider_offer_ID, status):
 
@@ -288,37 +275,51 @@ class QTable:
             encoded_to_save_var = jsonpickle.encode(to_save_var)
             json.dump(encoded_to_save_var, json_file)
 
+    def update_qtable(self, recieved_qtables, provider_offer_ID, status=False):
 
-    def update_recieved_qtables(self, recieved_qtables, provider_offer_ID, status=False):
+        to_add = copy.deepcopy(self.qtable)
+        for i in to_add:
+            for j in to_add:
+                to_add[self.get_ID(i)][self.get_ID(j)] = 0
 
-        # TODO: suitable alpha value
-        alpha = 0.7
+        for remote_qtable in recieved_qtables:
+            self.update_remote_qtable(remote_qtable, provider_offer_ID, to_add)
 
-        for (remote_qtable, remote_state_action) in recieved_qtables:
-            self.update_qtable(remote_qtable, remote_state_action)
-        self.update_values(provider_offer_ID, status, alpha)
+        self.update_self_qtable(provider_offer_ID, status, to_add)
 
-    def update_qtable(self, remote_qtable, remote_state_action=QStateAction("", "")):
+        for i in self.qtable:
+            for j in self.qtable:
+                self.qtable[self.get_ID(i)][self.get_ID(j)] += to_add[self.get_ID(i)][self.get_ID(j)]
+
+    def update_remote_qtable(self, remote_qtable, provider_offer_ID, to_add):
         """
         method that gets a remote Qtable and updates the local one following the
         algorithm (10) found in the following paper 'link'
         parameter: remote QTable shared by random agent
         """
-        # for provider_offer in self.providers_offers:
-        #     for provider_of in self.providers_offers:
-        #         currentValue = self.qtable[self.get_ID(provider_offer)][self.get_ID(provider_of)]
-        #         remoteValue = rTable[self.get_ID(provider_offer)][self.get_ID(provider_of)]
-        #         self.qtable[self.get_ID(provider_offer)][self.get_ID(provider_of)] = \
-        #             currentValue * 0.7 + remoteValue * 0.3
-        # return self.qtable
 
-        # TODO: suitable beta value
-        beta = 0.3
+        for state in to_add:
+            to_add[self.get_ID(state)][provider_offer_ID] -= self.betatable[provider_offer_ID] \
+                                                             * self.qtable[self.get_ID(state)][provider_offer_ID] \
+                                                             - remote_qtable[self.get_ID(state)][provider_offer_ID]
 
-        self.qtable[remote_state_action.state][remote_state_action.action] = \
-            self.qtable[remote_state_action.state][remote_state_action.action] \
-            - beta * (self.qtable[remote_state_action.state][remote_state_action.action] \
-            - remote_qtable.qtable[remote_state_action.state][remote_state_action.action])
+    def update_self_qtable(self, provider_offer_ID, status, to_add):
+        self.update_environment_new(provider_offer_ID, status)
+
+        for provider_offer in self.providers_offers:
+            learning_compound = self.environment[self.get_ID(provider_offer)][provider_offer_ID] \
+                                + self.discount * self.max_action_value(provider_offer) \
+                                - self.qtable[self.get_ID(provider_offer)][provider_offer_ID]
+
+            to_add[self.get_ID(provider_offer)][provider_offer_ID] += self.alphatable[provider_offer_ID] * learning_compound
+
+    def update_environment_new(self, provider_offer_ID, status):
+        if status:
+            for i, actions in enumerate(self.environment):
+                self.environment[actions][provider_offer_ID] += self.environment_lr
+        else:
+            for i, actions in enumerate(self.environment):
+                self.environment[actions][provider_offer_ID] -= self.environment_lr
 
 
 class ProviderOffer:
