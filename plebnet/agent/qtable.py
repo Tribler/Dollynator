@@ -123,7 +123,7 @@ class QTable:
         :param other_q_values: The list of q-values received from gossipping with its neighbours
         :param amount_mb_tokens_per_usd_per_day: the reward of the current state at the current time
         """
-        self.update_alpha_and_beta()
+        # self.update_alpha_and_beta()
         pass
 
     def update_alpha_and_beta(self, provider_offer_ID):
@@ -171,6 +171,7 @@ class QTable:
                 self.qtable = data['qtable']
                 self.alphatable = data['alphatable']
                 self.betatable = data['betatable']
+                self.number_of_updates = data['number_of_updates']
                 self.providers_offers = data['providers_offers']
                 self.self_state = data['self_state']
                 self.tree = data['tree']
@@ -258,6 +259,7 @@ class QTable:
             "qtable": self.qtable,
             "alphatable": self.alphatable,
             "betatable": self.betatable,
+            "number_of_updates": self.number_of_updates,
             "providers_offers": self.providers_offers,
             "self_state": next_state,
             "transaction_hash": transaction_hash,
@@ -286,6 +288,7 @@ class QTable:
             "qtable": self.qtable,
             "alphatable": self.alphatable,
             "betatable": self.betatable,
+            "number_of_updates": self.number_of_updates,
             "providers_offers": self.providers_offers,
             "self_state": self.self_state,
             "tree": self.tree
@@ -296,6 +299,8 @@ class QTable:
 
 
     def update_qtable(self, recieved_qtables, provider_offer_ID, status=False):
+
+        self.update_alpha_and_beta(provider_offer_ID)
 
         to_add = copy.deepcopy(self.qtable)
         for i in to_add:
