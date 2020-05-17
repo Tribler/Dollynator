@@ -246,7 +246,10 @@ def attempt_purchase():
         success = cloudomate_controller.purchase_choice(config)
         if success == plebnet_settings.SUCCESS:
             # Update qtable yourself positively if you are successful
-            qtable.update_values(provider_offer_ID,True)
+            qtable.update_values(provider_offer_ID, True)
+            # TODO: line below to be uncommented after the midterm meeting
+            # qtable.update_values2(get_q_tables_through_gossipping(), get_reward_qlearning())
+            # purchase VPN with same config if server allows for it
             # purchase VPN with same config if server allows for it
             if cloudomate_controller.get_vps_providers()[provider].TUN_TAP_SETTINGS:
                 attempt_purchase_vpn()
@@ -260,6 +263,26 @@ def attempt_purchase():
         config.set('chosen_provider', None)
         config.save()
 
+# TODO: need to keep track of MB tokens traded on the marked, total MB tokens;
+#  current amount in wallet + amount of MB tokens traded for Bitcoin
+def get_reward_qlearning():
+    """
+    Gets the reward for the qlearning algorithm, i.e. the amount of MB_tokens earned per day per price vps server?
+    :return: the amount of MB tokens earned per day per price current vps server
+    """
+    current_vpsprovider = qtable.self_state.provider
+    current_vpsoption = qtable.self_state.option
+    pass
+
+
+# TODO: implement this method
+def get_q_tables_through_gossipping():
+    """
+    Gossip with neighbours to get a list of q-values to use for q-learning
+    :return: a list of q-values
+    """
+    current_state = qtable.self_state
+    pass
 
 def install_vps():
     """

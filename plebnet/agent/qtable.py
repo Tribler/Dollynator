@@ -30,16 +30,24 @@ class QTable:
     environment_lr = 0.4
     discount = 0.05
     INFINITY = 10000000
+    # TODO: decide on starting values alpha and beta (sum should be 1)
+    start_alpha = 0  # between 0.5 and 1
+    start_beta = 0  # between 0 and 0.5
 
     def __init__(self):
         self.qtable = {}
         self.environment = {}
+        self.alphatable = {}
+        self.betatable = {}
         self.providers_offers = []
         self.self_state = VPSState()
         self.tree = ""
         pass
 
     def init_qtable_and_environment(self, providers):
+        """
+        Initializes the qtable and environment with their respective starting values.
+        """
         self.init_providers_offers(providers)
 
         for provider_of in self.providers_offers:
@@ -51,14 +59,35 @@ class QTable:
             self.qtable[self.get_ID(provider_of)] = prov
             self.environment[self.get_ID(provider_of)] = environment_arr
 
+    def init_alpha_and_beta(self):
+        """
+        Initialize the alpha and beta tables with their respective starting values.
+        """
+        # self.alphatable = {i: self.start_alpha for i in self.providers_offers}
+        # self.betatable = {i: self.start_beta for i in self.providers_offers}
+        for provider_of in self.providers_offers:
+            alph = {}
+            bet = {}
+            for provider_offer in self.providers_offers:
+                alph[self.get_ID(provider_offer)] = self.start_alpha
+                bet[self.get_ID(provider_offer)] = self.start_beta
+            self.alphatable[self.get_ID(provider_of)] = alph
+            self.betatable[self.get_ID(provider_of)] = bet
+
     #def __getitem__(self, item):
     #    return item
 
     @staticmethod
     def calculate_measure(provider_offer):
+        """
+        Estimeates the starting value of the qtable.
+        """
         return 1 / (math.pow(float(provider_offer.price), 3)) * float(provider_offer.bandwidth)
 
     def init_providers_offers(self, providers):
+        """
+        Gets all the available provider offers to choose from.
+        """
         for i, id in enumerate(providers):
             options = cloudomate_controller.options(providers[id])
             for i, option in enumerate(options):
@@ -89,6 +118,24 @@ class QTable:
         if not status:
             self.environment[self.get_ID_from_state()][provider_offer_ID] -= self.environment_lr
 
+    # TODO: update alpha and beta in this function, maybe make a seperate function for it
+    # TODO: to be implemented after midterm
+    def update_values2(self, other_q_values, amount_mb_tokens_per_usd_per_day):
+        """
+        Updates the qtable following the QD-learning algorithm.
+        QD-learning update for current state (else q-value remains constant):
+            Qnew <- Qold - beta * (sum of (Qold - Qrecieved))
+                         + alpha * (reward + discount * max(action (qvalue) in next state) - Qold)
+        :param other_q_values: The list of q-values received from gossipping with its neighbours
+        :param amount_mb_tokens_per_usd_per_day: the reward of the current state at the current time
+        """
+        self.update_alpha_and_beta()
+        pass
+
+    # TODO: to be implemented after midterm
+    def update_alpha_and_beta(self):
+        pass
+
     def max_action_value(self, provider):
         max_value = -self.INFINITY
         for i, provider_offer in enumerate(self.qtable):
@@ -97,7 +144,9 @@ class QTable:
         return max_value
 
     def read_dictionary(self, providers=None):
-
+        """
+        Read the QTable object from file, if there isn't any make one.
+        """
         config_dir = user_config_dir()
         filename = os.path.join(config_dir, 'QTable.json')
 
@@ -105,6 +154,7 @@ class QTable:
             # TODO: check if it will not affect anything
             self.self_state = VPSState(provider="blueangelhost", option="Basic Plan")
             self.init_qtable_and_environment(providers)
+            self.init_alpha_and_beta()
             self.create_initial_tree()
             self.write_dictionary()
         else:
@@ -113,11 +163,16 @@ class QTable:
                 data = jsonpickle.decode(data_encoded)
                 self.environment = data['environment']
                 self.qtable = data['qtable']
+                self.alphatable = data['alphatable']
+                self.betatable = data['betatable']
                 self.providers_offers = data['providers_offers']
                 self.self_state = data['self_state']
                 self.tree = data['tree']
 
     def choose_option(self, providers):
+        """
+        Selects the next action (VPS provider to buy) to choose from the qtable.
+        """
         lambd = 1 - 1 / (self.get_no_replications() + 3)
         num = random.expovariate(lambd)
         num = int(math.floor(num))
@@ -195,6 +250,8 @@ class QTable:
         dictionary = {
             "environment": self.environment,
             "qtable": self.qtable,
+            "alphatable": self.alphatable,
+            "betatable": self.betatable,
             "providers_offers": self.providers_offers,
             "self_state": next_state,
             "transaction_hash": transaction_hash,
@@ -221,6 +278,8 @@ class QTable:
         to_save_var = {
             "environment": self.environment,
             "qtable": self.qtable,
+            "alphatable": self.alphatable,
+            "betatable": self.betatable,
             "providers_offers": self.providers_offers,
             "self_state": self.self_state,
             "tree": self.tree
