@@ -86,32 +86,6 @@ class QTable:
                                         bandwidth=option.bandwidth, price=option.price, memory=option.memory)
                 self.providers_offers.append(element)
 
-    def update_values(self, provider_offer_ID, status=False, weight=1.0):
-        self.update_environment(provider_offer_ID, status)
-
-        for provider_offer in self.providers_offers:
-            for provider_of in self.providers_offers:
-                learning_compound = self.environment[self.get_ID(provider_offer)][self.get_ID(provider_of)] \
-                                    + self.discount * self.max_action_value(provider_offer) \
-                                    - self.qtable[self.get_ID(provider_offer)][self.get_ID(provider_of)]
-
-                self.qtable[self.get_ID(provider_offer)][self.get_ID(provider_of)] = weight \
-                                                                                     * (self.qtable[self.get_ID(
-
-                    provider_offer)][self.get_ID(provider_of)]
-
-                                                                                        + self.learning_rate * learning_compound)
-
-    def update_environment(self, provider_offer_ID, status):
-
-        for i, actions in enumerate(self.environment):
-            if status:
-                self.environment[actions][self.get_ID_from_state()] += self.environment_lr
-
-        # Update for offer which was chosen
-        if not status:
-            self.environment[self.get_ID_from_state()][provider_offer_ID] -= self.environment_lr
-
     # TODO: update alpha and beta in this function, maybe make a seperate function for it
     # TODO: to be implemented after midterm
     def update_values2(self, other_q_values, amount_mb_tokens_per_usd_per_day):
@@ -326,9 +300,9 @@ class QTable:
         """
 
         for state in to_add:
-            to_add[self.get_ID(state)][provider_offer_ID] -= self.betatable[provider_offer_ID] \
-                                                             * self.qtable[self.get_ID(state)][provider_offer_ID] \
-                                                             - remote_qtable[self.get_ID(state)][provider_offer_ID]
+            to_add[state][provider_offer_ID] -= self.betatable[state][provider_offer_ID] \
+                                                             * self.qtable[state][provider_offer_ID] \
+                                                             - remote_qtable[state][provider_offer_ID]
 
     def update_self_qtable(self, provider_offer_ID, status, to_add):
         self.update_environment_new(provider_offer_ID, status)

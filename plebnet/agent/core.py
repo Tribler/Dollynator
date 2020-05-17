@@ -246,7 +246,7 @@ def attempt_purchase():
         success = cloudomate_controller.purchase_choice(config)
         if success == plebnet_settings.SUCCESS:
             # Update qtable yourself positively if you are successful
-            qtable.update_qtable({}, provider_offer_ID, True)
+            qtable.update_qtable([], provider_offer_ID, True)
             # TODO: line below to be uncommented after the midterm meeting
             # qtable.update_values2(get_q_tables_through_gossipping(), get_reward_qlearning())
             # purchase VPN with same config if server allows for it
@@ -255,7 +255,7 @@ def attempt_purchase():
                 attempt_purchase_vpn()
         elif success == plebnet_settings.FAILURE:
             # Update qtable provider negatively if not successful
-            qtable.update_qtable({}, provider_offer_ID, False)
+            qtable.update_qtable([], provider_offer_ID, False)
 
         qtable.write_dictionary()
         config.increment_child_index()
