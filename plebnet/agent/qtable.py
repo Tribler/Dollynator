@@ -30,15 +30,15 @@ class QTable:
     environment_lr = 0.4
     discount = 0.05
     INFINITY = 10000000
-    # TODO: decide on starting values alpha and beta (sum should be 1)
-    start_alpha = 0  # between 0.5 and 1
-    start_beta = 0  # between 0 and 0.5
+    start_alpha = 0.8  # between 0.5 and 1
+    start_beta = 0.2  # between 0 and 0.5
 
     def __init__(self):
         self.qtable = {}
         self.environment = {}
         self.alphatable = {}
         self.betatable = {}
+        self.number_of_updates = {}
         self.providers_offers = []
         self.self_state = VPSState()
         self.tree = ""
@@ -59,22 +59,27 @@ class QTable:
             self.qtable[self.get_ID(provider_of)] = prov
             self.environment[self.get_ID(provider_of)] = environment_arr
 
-    def init_alpha_and_beta(self):
+    def init_alpha_and_beta(self, ciao):
         """
-        Initialize the alpha and beta tables with their respective starting values.
+        Initialize the alpha and beta arrays with their respective starting values.
+        Arrays and not table because every column of the QTable is going to have the same
+        alpha and beta values since we never update only one cell but the whole column.
         """
         # self.alphatable = {i: self.start_alpha for i in self.providers_offers}
         # self.betatable = {i: self.start_beta for i in self.providers_offers}
         for provider_of in self.providers_offers:
             alph = {}
             bet = {}
+            num = {}
             for provider_offer in self.providers_offers:
                 alph[self.get_ID(provider_offer)] = self.start_alpha
                 bet[self.get_ID(provider_offer)] = self.start_beta
+                num[self.get_ID(provider_offer)] = 0
             self.alphatable[self.get_ID(provider_of)] = alph
             self.betatable[self.get_ID(provider_of)] = bet
+            self.number_of_updates[self.get_ID(provider_of)] = num
 
-    #def __getitem__(self, item):
+    # def __getitem__(self, item):
     #    return item
 
     @staticmethod
@@ -105,8 +110,9 @@ class QTable:
                                     - self.qtable[self.get_ID(provider_offer)][self.get_ID(provider_of)]
 
                 self.qtable[self.get_ID(provider_offer)][self.get_ID(provider_of)] = weight \
-                    * (self.qtable[self.get_ID(provider_offer)][self.get_ID(provider_of)] \
-                    + self.learning_rate * learning_compound)
+                                                                                     * (self.qtable[self.get_ID(
+                    provider_offer)][self.get_ID(provider_of)]
+                                                                                        + self.learning_rate * learning_compound)
 
     def update_environment(self, provider_offer_ID, status):
 
@@ -132,8 +138,20 @@ class QTable:
         self.update_alpha_and_beta()
         pass
 
-    # TODO: to be implemented after midterm
-    def update_alpha_and_beta(self):
+    def update_alpha_and_beta(self, provider_offer_ID):
+        """
+        every time we merge local QTable with remote one we want to update alpha and beta first in order to give the
+        appropriate weight to local and remote information.
+        """
+        num = self.number_of_updates[self.get_ID_from_state()][provider_offer_ID]
+        if num <= 50:
+            for provider_of in self.providers_offers:
+                # update alpha and beta
+                self.alphatable[provider_of][provider_offer_ID] = self.start_alpha - num * 0.012  # chosen constant
+                self.betatable[provider_of][provider_offer_ID] = self.start_beta + num * 0.012  # chosen constant
+                # update number_of_updates table
+                self.number_of_updates[provider_of][provider_offer_ID] += 1
+            pass
         pass
 
     def max_action_value(self, provider):
@@ -288,7 +306,6 @@ class QTable:
             encoded_to_save_var = jsonpickle.encode(to_save_var)
             json.dump(encoded_to_save_var, json_file)
 
-
     def update_recieved_qtables(self, recieved_qtables, provider_offer_ID, status=False):
 
         # TODO: suitable alpha value
@@ -296,6 +313,7 @@ class QTable:
 
         for (remote_qtable, remote_state_action) in recieved_qtables:
             self.update_qtable(remote_qtable, remote_state_action)
+            pass
         self.update_values(provider_offer_ID, status, alpha)
 
     def update_qtable(self, remote_qtable, remote_state_action=QStateAction("", "")):
@@ -317,8 +335,8 @@ class QTable:
 
         self.qtable[remote_state_action.state][remote_state_action.action] = \
             self.qtable[remote_state_action.state][remote_state_action.action] \
-            - beta * (self.qtable[remote_state_action.state][remote_state_action.action] \
-            - remote_qtable.qtable[remote_state_action.state][remote_state_action.action])
+            - beta * (self.qtable[remote_state_action.state][remote_state_action.action]
+                      - remote_qtable.qtable[remote_state_action.state][remote_state_action.action])
 
 
 class ProviderOffer:

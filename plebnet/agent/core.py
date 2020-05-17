@@ -255,7 +255,7 @@ def attempt_purchase():
                 attempt_purchase_vpn()
         elif success == plebnet_settings.FAILURE:
             # Update qtable provider negatively if not successful
-            qtable.update_values(provider_offer_ID,False)
+            qtable.update_values(provider_offer_ID, False)
 
         qtable.write_dictionary()
         config.increment_child_index()
