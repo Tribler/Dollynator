@@ -100,7 +100,7 @@ class QTable:
 
                     provider_offer)][self.get_ID(provider_of)]
 
-                                                                         + self.learning_rate * learning_compound)
+                                                                                        + self.learning_rate * learning_compound)
 
     def update_environment(self, provider_offer_ID, status):
 
@@ -139,8 +139,11 @@ class QTable:
                 self.betatable[provider_of][provider_offer_ID] = self.start_beta + num * 0.012  # chosen constant
                 # update number_of_updates table
                 self.number_of_updates[provider_of][provider_offer_ID] += 1
-            pass
-        pass
+            else:
+                for provider_of in self.providers_offers:
+                    # set alpha and beta to maximum values
+                    self.alphatable[provider_of][provider_offer_ID] = 0.2
+                    self.betatable[provider_of][provider_offer_ID] = 0.8
 
     def max_action_value(self, provider):
         max_value = -self.INFINITY
@@ -297,7 +300,6 @@ class QTable:
             encoded_to_save_var = jsonpickle.encode(to_save_var)
             json.dump(encoded_to_save_var, json_file)
 
-
     def update_qtable(self, recieved_qtables, provider_offer_ID, status=False):
 
         self.update_alpha_and_beta(provider_offer_ID)
@@ -310,14 +312,11 @@ class QTable:
         for remote_qtable in recieved_qtables:
             self.update_remote_qtable(remote_qtable, provider_offer_ID, to_add)
 
-
         self.update_self_qtable(provider_offer_ID, status, to_add)
-
 
         for i in self.qtable:
             for j in self.qtable:
                 self.qtable[self.get_ID(i)][self.get_ID(j)] += to_add[self.get_ID(i)][self.get_ID(j)]
-
 
     def update_remote_qtable(self, remote_qtable, provider_offer_ID, to_add):
         """
@@ -331,7 +330,6 @@ class QTable:
                                                              * self.qtable[self.get_ID(state)][provider_offer_ID] \
                                                              - remote_qtable[self.get_ID(state)][provider_offer_ID]
 
-
     def update_self_qtable(self, provider_offer_ID, status, to_add):
         self.update_environment_new(provider_offer_ID, status)
 
@@ -340,7 +338,8 @@ class QTable:
                                 + self.discount * self.max_action_value(provider_offer) \
                                 - self.qtable[self.get_ID(provider_offer)][provider_offer_ID]
 
-            to_add[self.get_ID(provider_offer)][provider_offer_ID] += self.alphatable[provider_offer_ID] * learning_compound
+            to_add[self.get_ID(provider_offer)][provider_offer_ID] += self.alphatable[
+                                                                          provider_offer_ID] * learning_compound
 
     def update_environment_new(self, provider_offer_ID, status):
         if status:
