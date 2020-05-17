@@ -382,6 +382,5 @@ class TestCore(unittest.TestCase):
         os.path.expanduser = self.usr
         Core.vpn_is_running = self.vpn_running
 
-
 if __name__ == '__main__':
     unittest.main()
