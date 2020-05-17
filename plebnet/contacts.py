@@ -43,7 +43,7 @@ class AddressBook(implements(MessageConsumer)):
         self.receiver = MessageReceiver(self_contact.port, notifyInterfal=receiver_notify_interval)
         
         self.contacts = contacts.copy()
-        self.receiver.registerConsumer(self)
+        self.receiver.register_consumer(self)
         self.self_contact = self_contact
 
 
@@ -96,7 +96,7 @@ class AddressBook(implements(MessageConsumer)):
         
         sender = MessageSender(recipient.host, recipient.port)
 
-        sender.sendMessage(message)
+        sender.send_message(message)
 
     
     def notify(self, message):

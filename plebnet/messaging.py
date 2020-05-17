@@ -15,7 +15,7 @@ class MessageSender:
         self.host = host
         
 
-    def sendMessage(self, data):
+    def send_message(self, data):
  
         messageBody = pickle.dumps(data)
 
@@ -55,31 +55,31 @@ class MessageReceiver:
 
         self.messageConsumers = []
 
-        threading.Thread(target=self.__startListening).start()
+        threading.Thread(target=self.__start_listening).start()
 
-        threading.Thread(target=self.__startNotifying).start()
+        threading.Thread(target=self.__start_notifying).start()
 
 
-    def registerConsumer(self, messageConsumer: MessageConsumer):
+    def register_consumer(self, messageConsumer: MessageConsumer):
         """
         Registers a MessageConsumer.
         """
         self.messageConsumers.append(messageConsumer)
 
 
-    def __startNotifying(self):
+    def __start_notifying(self):
 
         while True:
             
             if len(self.messagesQueue) > 0:
 
-                self.__notifyConsumers(pickle.loads(self.messagesQueue.popleft()))
+                self.__notify_consumers(pickle.loads(self.messagesQueue.popleft()))
                 
             time.sleep(self.notifyInterval)
 
 
 
-    def __startListening(self):
+    def __start_listening(self):
     
         s = socket.socket()           
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -103,7 +103,7 @@ class MessageReceiver:
             self.messagesQueue.append(message)
 
 
-    def __notifyConsumers(self, message):
+    def __notify_consumers(self, message):
         
         for consumer in self.messageConsumers:
             
@@ -127,8 +127,8 @@ def __demo_receive(port):
     consumer2 = Consumer()
 
     # Register the consumers
-    receiver.registerConsumer(consumer1)
-    receiver.registerConsumer(consumer2)
+    receiver.register_consumer(consumer1)
+    receiver.register_consumer(consumer2)
 
 # Sends messages
 def __demo_send(sleepTime, port, host='127.0.0.1'):
@@ -143,7 +143,7 @@ def __demo_send(sleepTime, port, host='127.0.0.1'):
         
         time.sleep(sleepTime)
 
-        sender.sendMessage("Counter: " + str(counter))
+        sender.send_message("Counter: " + str(counter))
         counter += 1
 
 if __name__ == '__main__':
