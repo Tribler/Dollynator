@@ -210,6 +210,7 @@ class TestCore(unittest.TestCase):
         self.providers = cloudomate_controller.get_vps_providers()
         providers = cloudomate_controller.get_vps_providers()
         self.qtable.init_qtable_and_environment(providers)
+        self.qtable.init_alpha_and_beta()
         self.qtable.set_self_state(VPSState("blueangelhost", "Basic Plan"))
 
         logger.log = MagicMock()

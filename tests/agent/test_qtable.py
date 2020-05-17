@@ -330,7 +330,7 @@ class TestQTable(unittest.TestCase):
         blue_angel_offers = cloudomate_controller.options(self.providers["blueangelhost"])
         self.qtable.self_state = VPSState("blueangelhost", blue_angel_offers[0].name)
         self.qtable.init_qtable_and_environment(self.providers)
-        self.qtable.init_alpha_and_beta(self)
+        self.qtable.init_alpha_and_beta()
         vps_options_list = cloudomate_controller.options(self.providers)
         vps_option = vps_options_list[0]
 

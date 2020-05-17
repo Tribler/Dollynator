@@ -48,7 +48,7 @@ class QTable:
             self.qtable[self.get_ID(provider_of)] = prov
             self.environment[self.get_ID(provider_of)] = environment_arr
 
-    def init_alpha_and_beta(self, ciao):
+    def init_alpha_and_beta(self):
         """
         Initialize the alpha and beta arrays with their respective starting values.
         Arrays and not table because every column of the QTable is going to have the same
@@ -135,15 +135,15 @@ class QTable:
         if num <= 50:
             for provider_of in self.providers_offers:
                 # update alpha and beta
-                self.alphatable[provider_of][provider_offer_ID] = self.start_alpha - num * 0.012  # chosen constant
-                self.betatable[provider_of][provider_offer_ID] = self.start_beta + num * 0.012  # chosen constant
+                self.alphatable[self.get_ID(provider_of)][provider_offer_ID] = self.start_alpha - num * 0.012  # chosen constant
+                self.betatable[self.get_ID(provider_of)][provider_offer_ID] = self.start_beta + num * 0.012  # chosen constant
                 # update number_of_updates table
-                self.number_of_updates[provider_of][provider_offer_ID] += 1
+                self.number_of_updates[self.get_ID(provider_of)][provider_offer_ID] += 1
             else:
                 for provider_of in self.providers_offers:
                     # set alpha and beta to maximum values
-                    self.alphatable[provider_of][provider_offer_ID] = 0.2
-                    self.betatable[provider_of][provider_offer_ID] = 0.8
+                    self.alphatable[self.get_ID(provider_of)][provider_offer_ID] = 0.2
+                    self.betatable[self.get_ID(provider_of)][provider_offer_ID] = 0.8
 
     def max_action_value(self, provider):
         max_value = -self.INFINITY
@@ -307,7 +307,7 @@ class QTable:
         to_add = copy.deepcopy(self.qtable)
         for i in to_add:
             for j in to_add:
-                to_add[self.get_ID(i)][self.get_ID(j)] = 0
+                to_add[i][j] = 0
 
         for remote_qtable in recieved_qtables:
             self.update_remote_qtable(remote_qtable, provider_offer_ID, to_add)
@@ -316,7 +316,7 @@ class QTable:
 
         for i in self.qtable:
             for j in self.qtable:
-                self.qtable[self.get_ID(i)][self.get_ID(j)] += to_add[self.get_ID(i)][self.get_ID(j)]
+                self.qtable[i][j] += to_add[i][j]
 
     def update_remote_qtable(self, remote_qtable, provider_offer_ID, to_add):
         """
@@ -338,7 +338,7 @@ class QTable:
                                 + self.discount * self.max_action_value(provider_offer) \
                                 - self.qtable[self.get_ID(provider_offer)][provider_offer_ID]
 
-            to_add[self.get_ID(provider_offer)][provider_offer_ID] += self.alphatable[
+            to_add[self.get_ID(provider_offer)][provider_offer_ID] += self.alphatable[self.get_ID(provider_offer)][
                                                                           provider_offer_ID] * learning_compound
 
     def update_environment_new(self, provider_offer_ID, status):
