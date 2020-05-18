@@ -1,3 +1,4 @@
+
 from codecs import open
 from os import path
 
@@ -42,7 +43,13 @@ setup(
 
     packages=find_packages(exclude=['docs']),
 
-    install_requires=['requests', 'names', 'faker', 'jsonpickle'],
+    install_requires=[
+        'requests',
+        'names',
+        'faker',
+        'jsonpickle'
+
+    ],
 
     extras_require={
         'dev': [],
@@ -59,3 +66,4 @@ setup(
         ],
     },
 )
+
