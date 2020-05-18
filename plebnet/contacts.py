@@ -123,7 +123,8 @@ class AddressBook:
 
         for known_contact in self.contacts:
             
-            if known_contact.id == self.self_contact.id:
+            # Prevent notifying a contact of themselves
+            if known_contact.id == contact.id:
                 continue 
             
             self.__send_message_to_contact(known_contact, message)
