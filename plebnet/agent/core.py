@@ -36,6 +36,7 @@ strategies = {
     'simple_moving_average': SimpleMovingAverage
 }
 qtable = None  # Used to store the QTable of the agent and only load once.
+TIME_ALIVE = 30 * plebnet_settings.TIME_IN_DAY
 
 
 def setup(args):
@@ -50,7 +51,7 @@ def setup(args):
     # Set general info about the PlebNet agent
     settings.irc_nick(settings.irc_nick_def() + str(random.randint(1000, 10000)))
     config = PlebNetConfig()
-    config.set('expiration_date', time.time() + 30 * plebnet_settings.TIME_IN_DAY)
+    config.set('expiration_date', time.time() + TIME_ALIVE)
 
     # Prepare the QTable configuration
     qtable = QTable()
@@ -263,16 +264,30 @@ def attempt_purchase():
         config.set('chosen_provider', None)
         config.save()
 
+
 # TODO: need to keep track of MB tokens traded on the marked, total MB tokens;
 #  current amount in wallet + amount of MB tokens traded for Bitcoin
 def get_reward_qlearning():
     """
-    Gets the reward for the qlearning algorithm, i.e. the amount of MB_tokens earned per day per price vps server?
+    Gets the reward for the q-learning algorithm, i.e. the amount of MB_tokens earned per day per price vps server?
     :return: the amount of MB tokens earned per day per price current vps server
     """
     current_vpsprovider = qtable.self_state.provider
     current_vpsoption = qtable.self_state.option
-    pass
+    option = cloudomate_controller.get_vps_option(current_vpsprovider, current_vpsoption)
+    price = option.price
+
+    time_alive = TIME_ALIVE - config.time_to_expiration()
+    days_alive = time_alive / plebnet_settings.TIME_IN_DAY
+
+    wallet = wallet_controller.TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
+    current_mb_balance = wallet.get_balance('MB')
+    # current_mb_balence = market_controller.get_balance('MB')
+    sold_mb_balance = 0  # TODO: find out the MB tokens sold
+    mb_tokens_gotten = current_mb_balance + sold_mb_balance
+
+    reward_q_learning = mb_tokens_gotten / (price * days_alive)
+    return reward_q_learning
 
 
 # TODO: implement this method
@@ -283,6 +298,7 @@ def get_q_tables_through_gossipping():
     """
     current_state = qtable.self_state
     pass
+
 
 def install_vps():
     """
