@@ -4,11 +4,9 @@ import string
 import calendar
 import time
 
-from plebnet.messaging import MessageConsumer
 from plebnet.messaging import MessageSender
 from plebnet.messaging import MessageReceiver
 
-from interface import implements
 
 def generate_contact_id(parent_id: str):
     
@@ -35,7 +33,7 @@ class Contact:
         self.port = port
 
 
-class AddressBook(implements(MessageConsumer)):
+class AddressBook:
 
 
     def __init__(self, self_contact: Contact, contacts: list = [], receiver_notify_interval=1):

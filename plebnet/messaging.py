@@ -5,7 +5,7 @@ import threading
 import time
 
 from abc import ABC
-from interface import implements, Interface
+
 
 class MessageSender:
     
@@ -32,12 +32,6 @@ class MessageSender:
         s.close()
 
 
-class MessageConsumer(Interface):
-    
-    def notify(self, message):
-        
-        pass
-    
 
 class MessageReceiver:
     """
@@ -60,7 +54,7 @@ class MessageReceiver:
         threading.Thread(target=self.__start_notifying).start()
 
 
-    def register_consumer(self, messageConsumer: MessageConsumer):
+    def register_consumer(self, messageConsumer):
         """
         Registers a MessageConsumer.
         """
@@ -117,7 +111,7 @@ def __demo_receive(port):
     receiver = MessageReceiver(port)
     
     # Declare message consumers
-    class Consumer(implements(MessageConsumer)):
+    class Consumer:
 
         def notify(self, message): 
 
