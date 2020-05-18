@@ -57,7 +57,7 @@ class AddressBook:
     """
     def __init__(self, self_contact: Contact, contacts: list = [], receiver_notify_interval=1):
         
-        self.receiver = MessageReceiver(self_contact.port, notifyInterfal=receiver_notify_interval)
+        self.receiver = MessageReceiver(self_contact.port, notify_interval=receiver_notify_interval)
         
         self.contacts = contacts.copy()
         self.receiver.register_consumer(self)
@@ -162,7 +162,7 @@ class AddressBook:
 
         self.contacts.append(contact)
 
-        message = self.generate_add_contact_message(contact)
+        message = self.__generate_add_contact_message(contact)
 
         for known_contact in self.contacts[:-1]:
 

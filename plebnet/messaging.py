@@ -26,17 +26,17 @@ class MessageSender:
         data: message payload
         """
  
-        messageBody = pickle.dumps(data)
+        meessage_body = pickle.dumps(data)
 
         s = socket.socket()   
                
         s.connect((self.host, self.port)) 
 
-        s.send(str(len(messageBody)).encode('utf-8'))
+        s.send(str(len(meessage_body)).encode('utf-8'))
 
         s.recv(1)
 
-        s.send(messageBody)
+        s.send(meessage_body)
 
         s.close()
 
@@ -50,30 +50,30 @@ class MessageReceiver:
 
     """
     port: port to open listening socket on.
-    connectionsQueueSize: size of the connections queue.
-    notifyInterfal: (seconds) interval at which message consumers are notified.
+    connections_queue_size: size of the connections queue.
+    notify_interval: (seconds) interval at which message consumers are notified.
     """
-    def __init__(self, port, connectionsQueueSize = 20, notifyInterfal = 1):
+    def __init__(self, port, connections_queue_size = 20, notify_interval = 1):
 
         self.port = port
-        self.connectionsQueueSize = connectionsQueueSize
-        self.notifyInterval = notifyInterfal
+        self.connections_queue_size = connections_queue_size
+        self.notify_interval = notify_interval
 
-        self.messagesQueue = collections.deque()
+        self.meessages_queue = collections.deque()
 
-        self.messageConsumers = []
+        self.message_consumers = []
 
         threading.Thread(target=self.__start_listening).start()
 
         threading.Thread(target=self.__start_notifying).start()
 
 
-    def register_consumer(self, messageConsumer):
+    def register_consumer(self, message_consumer):
         """
-        Registers a MessageConsumer.
-        messageConsumer: MessageConsumer to register as a listener
+        Registers a message_consumer.
+        message_consumer: message_consumer to register as a listener
         """
-        self.messageConsumers.append(messageConsumer)
+        self.message_consumers.append(message_consumer)
 
 
     def __start_notifying(self):
@@ -82,11 +82,11 @@ class MessageReceiver:
         """
         while True:
             
-            if len(self.messagesQueue) > 0:
+            if len(self.meessages_queue) > 0:
 
-                self.__notify_consumers(pickle.loads(self.messagesQueue.popleft()))
+                self.__notify_consumers(pickle.loads(self.meessages_queue.popleft()))
                 
-            time.sleep(self.notifyInterval)
+            time.sleep(self.notify_interval)
 
 
 
@@ -99,28 +99,28 @@ class MessageReceiver:
         
         s.bind(('', self.port))
         
-        s.listen(self.connectionsQueueSize)
+        s.listen(self.connections_queue_size)
         
         while True: 
         
             connection, addr = s.accept()
             
-            messageLength = int(connection.recv(4).decode('utf-8'))
+            message_length = int(connection.recv(4).decode('utf-8'))
 
             connection.send(b'\xff')
 
-            message = connection.recv(messageLength)
+            message = connection.recv(message_length)
             
             connection.close() 
 
-            self.messagesQueue.append(message)
+            self.meessages_queue.append(message)
 
 
     def __notify_consumers(self, message):
         """
         Notifies all registered message consumers.
         """
-        for consumer in self.messageConsumers:
+        for consumer in self.message_consumers:
             
             consumer.notify(message)
 
