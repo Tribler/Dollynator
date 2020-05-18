@@ -8,8 +8,11 @@ from plebnet.messaging import MessageSender
 from plebnet.messaging import MessageReceiver
 
 
-def generate_contact_id(parent_id: str):
-    
+def generate_contact_id(parent_id: str = ""):
+    """
+    Generates a contact id for a node children.
+    parent_id: id of the parent. Use "" if node has no parent.
+    """
     def generate_random_string(length):
 
         letters = string.ascii_lowercase
@@ -25,7 +28,15 @@ def generate_contact_id(parent_id: str):
 
 
 class Contact:
+    """
+    Nodes contact.
+    """
 
+    """
+    id: id of the node.
+    host: host of the node.
+    port: message receiver listening port
+    """
     def __init__(self, id: str, host: str, port: int):
         
         self.id = id
@@ -34,8 +45,16 @@ class Contact:
 
 
 class AddressBook:
+    """
+    Node address book.
+    Also shares new contacts with all other nodes in the network.
+    """
 
-
+    """
+    self_contact: contact of the owner node of the address book.
+    list: initial list of contacts
+    receiver_notify_interval: notify interval for incoming messages
+    """
     def __init__(self, self_contact: Contact, contacts: list = [], receiver_notify_interval=1):
         
         self.receiver = MessageReceiver(self_contact.port, notifyInterfal=receiver_notify_interval)
@@ -46,14 +65,22 @@ class AddressBook:
 
 
     def parse_message(self, raw_message):
-
+        """
+        Parses a raw message into comamnd and data.
+        raw_message: raw_message to parse
+        """
         command = raw_message['command']
         data = raw_message['data']
 
         return command, data
 
 
-    def generate_add_contact_message(self, contact: Contact):
+    def __generate_add_contact_message(self, contact: Contact):
+
+        """
+        Generates an "add-contact" message.
+        contact: add-contact message payload
+        """
 
         return {
             'command': 'add-contact',
@@ -62,16 +89,24 @@ class AddressBook:
 
 
     def __add_contact(self, contact: Contact):
+        """
+        Handles incoming "add-contacts" commands.
+        contact: contact to add
+        """
 
         if contact.id == self.self_contact.id:
 
+            # Contact is self
             return
 
         for known_contact in self.contacts:
 
             if known_contact.id == contact.id:
 
+                # Contact is already known
                 return
+
+        # Contact is added and forwarded
 
         self.contacts.append(contact)
 
@@ -79,8 +114,12 @@ class AddressBook:
 
 
     def __forward_contact(self, contact: Contact):
+        """
+        Forwards new contact to all other known contacts.
+        contact: new contact
+        """
         
-        message = self.generate_add_contact_message(contact)
+        message = self.__generate_add_contact_message(contact)
 
         for known_contact in self.contacts:
             
@@ -91,6 +130,11 @@ class AddressBook:
             
 
     def __send_message_to_contact(self, recipient: Contact, message):
+        """
+        Sends a message to a contact.
+        recipient: recipient node's contact
+        message: message to send
+        """
         
         sender = MessageSender(recipient.host, recipient.port)
 
@@ -98,7 +142,10 @@ class AddressBook:
 
     
     def notify(self, message):
-
+        """
+        Handles incoming messages.
+        message: message to handle
+        """
         command, data = self.parse_message(message)
 
         if command == 'add-contact':
@@ -107,6 +154,10 @@ class AddressBook:
 
 
     def create_new_distributed_contact(self, contact: Contact):
+        """
+        Adds new contact and notifies the network.
+        contact: new contact
+        """
 
         self.contacts.append(contact)
 
@@ -125,9 +176,12 @@ def __demo():
     print("Initial node id: " + str(id_counter))
     root_contact = Contact(str(id_counter), '127.0.0.1', port_counter)
 
-    nodes = [AddressBook(root_contact)]
+    nodes = [AddressBook(root_contact, receiver_notify_interval=0.1)]
 
-    while True:
+    max_nodes = 10
+    i = 0
+
+    while i < max_nodes:
 
         for node in nodes:
 
@@ -144,13 +198,23 @@ def __demo():
         new_node_contact = Contact(str(id_counter), '127.0.0.1', port_counter)
         new_node_contacts_list = replicating_node.contacts.copy()
         new_node_contacts_list.append(replicating_node.self_contact)
-        new_node = AddressBook(new_node_contact, new_node_contacts_list)
+        new_node = AddressBook(new_node_contact, new_node_contacts_list, receiver_notify_interval=0.1)
 
         nodes.append(new_node)
 
         replicating_node.create_new_distributed_contact(new_node.self_contact)
 
         time.sleep(1)
+
+        i += 1
+
+    while True:
+        
+        print("-----------------------------------------------------------------")
+        for node in nodes:
+            print("Node " + node.self_contact.id + " now has " + str(len(node.contacts)) + " contacts")
+
+        time.sleep(5)
 
 
 if __name__ == '__main__':

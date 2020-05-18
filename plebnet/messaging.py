@@ -8,14 +8,23 @@ from abc import ABC
 
 
 class MessageSender:
-    
+    """
+    Class for sending messages to MessageReceivers.
+    """    
     def __init__(self, host: str, port: int):
-
+        """
+        host: Receipient host name.
+        port: Receipient port
+        """
         self.port = port
         self.host = host
         
 
     def send_message(self, data):
+        """
+        Sends a message.
+        data: message payload
+        """
  
         messageBody = pickle.dumps(data)
 
@@ -39,6 +48,11 @@ class MessageReceiver:
     registered consumers when new messages are received.
     """
 
+    """
+    port: port to open listening socket on.
+    connectionsQueueSize: size of the connections queue.
+    notifyInterfal: (seconds) interval at which message consumers are notified.
+    """
     def __init__(self, port, connectionsQueueSize = 20, notifyInterfal = 1):
 
         self.port = port
@@ -57,12 +71,15 @@ class MessageReceiver:
     def register_consumer(self, messageConsumer):
         """
         Registers a MessageConsumer.
+        messageConsumer: MessageConsumer to register as a listener
         """
         self.messageConsumers.append(messageConsumer)
 
 
     def __start_notifying(self):
-
+        """
+        Starts periodically notifying the registered message consumers.
+        """
         while True:
             
             if len(self.messagesQueue) > 0:
@@ -74,7 +91,9 @@ class MessageReceiver:
 
 
     def __start_listening(self):
-    
+        """
+        Starts listening for incoming connections.
+        """
         s = socket.socket()           
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         
@@ -98,7 +117,9 @@ class MessageReceiver:
 
 
     def __notify_consumers(self, message):
-        
+        """
+        Notifies all registered message consumers.
+        """
         for consumer in self.messageConsumers:
             
             consumer.notify(message)
