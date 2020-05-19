@@ -4,7 +4,12 @@ import collections
 import threading
 import time
 
-from abc import ABC
+
+class MessageConsumer:
+
+    def notify(self, message):
+
+        pass
 
 
 class MessageSender:
@@ -68,7 +73,7 @@ class MessageReceiver:
         threading.Thread(target=self.__start_notifying).start()
 
 
-    def register_consumer(self, message_consumer):
+    def register_consumer(self, message_consumer: MessageConsumer):
         """
         Registers a message_consumer.
         message_consumer: message_consumer to register as a listener
