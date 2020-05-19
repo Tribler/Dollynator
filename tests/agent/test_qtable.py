@@ -176,7 +176,7 @@ class TestQTable(unittest.TestCase):
         provider_offer_ID = str(self.providers.keys()[0]).lower() + "_" + str(vps_option.name).lower()
         provider_offer_ID_other = str(self.providers.keys()[0]).lower() + "_" + str(vps_options_list[1].name).lower()
 
-        self.qtable.update_environment_new(provider_offer_ID, True)
+        self.qtable.update_environment(provider_offer_ID, True, 0)
         assert (environment_copy != self.qtable.environment)
         assert (environment_copy[provider_offer_ID_other][provider_offer_ID_other] ==
                 self.qtable.environment[provider_offer_ID_other][provider_offer_ID_other])
@@ -215,7 +215,7 @@ class TestQTable(unittest.TestCase):
         provider_offer_ID = str(self.providers.keys()[0]).lower() + "_" + str(vps_option.name).lower()
         provider_offer_ID_other = str(self.providers.keys()[0]).lower() + "_" + str(vps_options_list[1].name).lower()
 
-        self.qtable.update_environment_new(provider_offer_ID, False)
+        self.qtable.update_environment(provider_offer_ID, False, 0)
         assert (environment_copy != self.qtable.environment)
         assert (environment_copy[provider_offer_ID][provider_offer_ID] >
                 self.qtable.environment[provider_offer_ID][provider_offer_ID])

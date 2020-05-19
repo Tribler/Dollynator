@@ -105,19 +105,29 @@ class QTable:
         appropriate weight to local and remote information.
         """
         # TODO: Switch to a mathematical model update? I.e.: a modified sigmoid
-        num = self.number_of_updates[self.get_ID_from_state()][provider_offer_ID]
-        if num <= 50:
+        update_purchase = self.number_of_updates[self.get_ID_from_state()][provider_offer_ID]
+        update_current_state = self.number_of_updates[self.get_ID_from_state()][self.get_ID_from_state()]
+        if update_purchase <= 50:
             for provider_of in self.providers_offers:
                 # update alpha and beta
-                self.alphatable[self.get_ID(provider_of)][provider_offer_ID] = self.start_alpha - num * 0.012  # chosen constant
-                self.betatable[self.get_ID(provider_of)][provider_offer_ID] = self.start_beta + num * 0.012  # chosen constant
+                self.alphatable[self.get_ID(provider_of)][provider_offer_ID] = self.start_alpha - update_purchase * 0.012  # chosen constant
+                self.betatable[self.get_ID(provider_of)][provider_offer_ID] = self.start_beta + update_purchase * 0.012  # chosen constant
                 # update number_of_updates table
                 self.number_of_updates[self.get_ID(provider_of)][provider_offer_ID] += 1
-            else:
-                for provider_of in self.providers_offers:
-                    # set alpha and beta to maximum values
-                    self.alphatable[self.get_ID(provider_of)][provider_offer_ID] = 0.2
-                    self.betatable[self.get_ID(provider_of)][provider_offer_ID] = 0.8
+        if update_current_state <= 50:
+            for provider_of in self.providers_offers:
+                # update alpha and beta
+                self.alphatable[self.get_ID(provider_of)][self.get_ID_from_state()] = self.start_alpha - update_current_state * 0.012  # chosen constant
+                self.betatable[self.get_ID(provider_of)][self.get_ID_from_state()] = self.start_beta + update_current_state * 0.012  # chosen constant
+                # update number_of_updates table
+                self.number_of_updates[self.get_ID(provider_of)][self.get_ID_from_state()] += 1
+
+        # Is this really needed?
+        else:
+            for provider_of in self.providers_offers:
+                # set alpha and beta to maximum values
+                self.alphatable[self.get_ID(provider_of)][provider_offer_ID] = 0.2
+                self.betatable[self.get_ID(provider_of)][provider_offer_ID] = 0.8
 
     def max_action_value(self, provider):
         max_value = -self.INFINITY
@@ -276,7 +286,7 @@ class QTable:
             encoded_to_save_var = jsonpickle.encode(to_save_var)
             json.dump(encoded_to_save_var, json_file)
 
-    def update_qtable(self, received_qtables, provider_offer_ID, status=False):
+    def update_qtable(self, received_qtables, provider_offer_ID, status=False, MBtokens=0):
         """
         Updates an agent's QTable by considering the QTables received from other nodes through gossiping
         and its own informations, according to an adapted version of the QD-Learning algorithm.
@@ -296,7 +306,7 @@ class QTable:
         for remote_qtable in received_qtables:
             self.update_remote_qtable(remote_qtable, provider_offer_ID, to_add)
 
-        self.update_self_qtable(provider_offer_ID, status, to_add)
+        self.update_self_qtable(provider_offer_ID, status, MBtokens, to_add)
 
         for i in self.qtable:
             for j in self.qtable:
@@ -315,8 +325,11 @@ class QTable:
             to_add[state][provider_offer_ID] -= self.betatable[state][provider_offer_ID] \
                                                              * self.qtable[state][provider_offer_ID] \
                                                              - remote_qtable[state][provider_offer_ID]
+            to_add[state][self.get_ID_from_state()] -= self.betatable[state][self.get_ID_from_state()] \
+                                                       * self.qtable[state][self.get_ID_from_state()] \
+                                                       - remote_qtable[state][self.get_ID_from_state()]
 
-    def update_self_qtable(self, provider_offer_ID, status, to_add):
+    def update_self_qtable(self, provider_offer_ID, status, MBtokens, to_add):
         """
         Method that gets updates an agent's QTable according to its purchase attempt of a new VPS service
         :param provider_offer_ID: the ID of the VPS option attempted to purchase.
@@ -324,17 +337,22 @@ class QTable:
         :param to_add: a matrix having the same dimensions of a qtable to store intermediate results.
         """
 
-        self.update_environment_new(provider_offer_ID, status)
+        self.update_environment(provider_offer_ID, status, MBtokens)
 
         for provider_offer in self.providers_offers:
-            learning_compound = self.environment[self.get_ID(provider_offer)][provider_offer_ID] \
+            learning_compound_purchase = self.environment[self.get_ID(provider_offer)][provider_offer_ID] \
                                 + self.discount * self.max_action_value(provider_offer) \
                                 - self.qtable[self.get_ID(provider_offer)][provider_offer_ID]
+            learning_compound_current = self.environment[self.get_ID(provider_offer)][self.get_ID_from_state()] \
+                                         + self.discount * self.max_action_value(provider_offer) \
+                                         - self.qtable[self.get_ID(provider_offer)][self.get_ID_from_state()]
 
             to_add[self.get_ID(provider_offer)][provider_offer_ID] += self.alphatable[self.get_ID(provider_offer)][
-                                                                          provider_offer_ID] * learning_compound
+                                                                          provider_offer_ID] * learning_compound_purchase
+            to_add[self.get_ID(provider_offer)][self.get_ID_from_state()] += self.alphatable[self.get_ID(provider_offer)][
+                                                                          self.get_ID_from_state()] * learning_compound_current
 
-    def update_environment_new(self, provider_offer_ID, status):
+    def update_environment(self, provider_offer_ID, status, MBtokens):
         """
         Method that updates an agent's environment according to its purchase attempt of a new VPS service
         :param provider_offer_ID: the ID of the VPS option attempted to purchase.
@@ -344,9 +362,11 @@ class QTable:
         if status:
             for i, actions in enumerate(self.environment):
                 self.environment[actions][provider_offer_ID] += self.environment_lr
+                self.environment[actions][self.get_ID_from_state()] += MBtokens
         else:
             for i, actions in enumerate(self.environment):
                 self.environment[actions][provider_offer_ID] -= self.environment_lr
+                self.environment[actions][self.get_ID_from_state()] += MBtokens
 
 
 class ProviderOffer:
