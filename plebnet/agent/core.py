@@ -98,9 +98,8 @@ def check():
     global sold_mb_tokens, previous_mb_tokens
     logger.log("Checking PlebNet", log_name)
 
-    # TODO: get sold MB tokens for BTC, by using the transactions on the MB wallet by implementing the API call to
-    #  http://localhost:8085/wallets/BTC/transactions in the wallet_controller.py
-    current_mb_tokens = market_controller.get_balance('MB')
+    # TODO: test get_amount_MB_tokens_earned(), if it works, it is a way better solution
+    current_mb_tokens = wallet_controller.get_MB_balance()
     if previous_mb_tokens < current_mb_tokens:
         sold_tokens = current_mb_tokens - previous_mb_tokens
         sold_mb_tokens += sold_tokens
@@ -292,9 +291,10 @@ def get_reward_qlearning():
     time_alive = TIME_ALIVE - config.time_to_expiration()
     days_alive = time_alive / plebnet_settings.TIME_IN_DAY
 
-    # wallet = wallet_controller.TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
-    # current_mb_balance = wallet.get_balance('MB')
-    current_mb_balance = market_controller.get_balance('MB')
+    current_mb_balance = wallet_controller.get_MB_balance()
+
+    # TODO: test if this works first
+    # mb_tokens_gotten = get_amount_MB_tokens_not_in_wallet()
     mb_tokens_gotten = current_mb_balance + sold_mb_tokens
 
     reward_q_learning = mb_tokens_gotten / (price * days_alive)
@@ -303,6 +303,31 @@ def get_reward_qlearning():
     reward_q_learning /= (average_MB_tokens_per_day * 2)
 
     return reward_q_learning
+
+# TODO: test if this works; if it works than this is way better
+# def get_amount_MB_tokens_earned():
+#     """
+#     Gets amount of MB tokens earned until now
+#     :return: total amount of MB tokens earned on this node until now
+#     """
+#     transactions_list = wallet_controller.get_MB_transactions()
+#
+#     # get the amount of mb tokens sold by looking at the mb wallets outgoing transactions
+#     total_mb_tokens_sold = 0
+#     for transaction in transactions_list:
+#         if transaction["outgoing"] == True:
+#             total_mb_tokens_sold += transaction["amount"]
+#
+#     # get the amount of mb tokens in the wallet on pending
+#     mb_tokens_pending = wallet_controller.get_MB_balance_pending()
+#
+#     # does pending mb tokens means it is on the market being sold??
+#     mb_tokens_available = wallet_controller.get_MB_balance()
+#
+#     # get the balance of mb tokens in the wallet
+#     mb_tokens_earned_in_total = total_mb_tokens_sold + mb_tokens_pending + mb_tokens_available
+#
+#     return mb_tokens_earned_in_total
 
 
 # TODO: implement this method
