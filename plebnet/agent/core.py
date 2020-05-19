@@ -37,6 +37,9 @@ strategies = {
 }
 qtable = None  # Used to store the QTable of the agent and only load once.
 TIME_ALIVE = 30 * plebnet_settings.TIME_IN_DAY
+average_MB_tokens_per_day = 10000  # estimate from previous reports
+sold_mb_tokens = 0
+previous_mb_tokens = 0
 
 
 def setup(args):
@@ -92,7 +95,17 @@ def check():
     starting Tribler and buying servers.
     """
     global config, qtable
+    global sold_mb_tokens, previous_mb_tokens
     logger.log("Checking PlebNet", log_name)
+
+    # TODO: get sold MB tokens for BTC, by using the transactions on the MB wallet by implementing the API call to
+    #  http://localhost:8085/wallets/BTC/transactions in the wallet_controller.py
+    current_mb_tokens = market_controller.get_balance('MB')
+    if previous_mb_tokens < current_mb_tokens:
+        sold_tokens = current_mb_tokens - previous_mb_tokens
+        sold_mb_tokens += sold_tokens
+
+        previous_mb_tokens = current_mb_tokens
 
     # Read general configuration
     if settings.wallets_testnet_created():
@@ -247,9 +260,7 @@ def attempt_purchase():
         success = cloudomate_controller.purchase_choice(config)
         if success == plebnet_settings.SUCCESS:
             # Update qtable yourself positively if you are successful
-            qtable.update_qtable([], provider_offer_ID, True)
-            # TODO: line below to be uncommented after the midterm meeting
-            # qtable.update_values2(get_q_tables_through_gossipping(), get_reward_qlearning())
+            qtable.update_qtable(get_q_tables_through_gossipping(), provider_offer_ID, True, get_reward_qlearning())
             # purchase VPN with same config if server allows for it
             # purchase VPN with same config if server allows for it
             if cloudomate_controller.get_vps_providers()[provider].TUN_TAP_SETTINGS:
@@ -265,13 +276,14 @@ def attempt_purchase():
         config.save()
 
 
-# TODO: need to keep track of MB tokens traded on the marked, total MB tokens;
-#  current amount in wallet + amount of MB tokens traded for Bitcoin
 def get_reward_qlearning():
     """
-    Gets the reward for the q-learning algorithm, i.e. the amount of MB_tokens earned per day per price vps server?
+    Gets the reward for the q-learning algorithm, i.e. the amount of MB_tokens earned per day per usd
+    and normalize it to be around 0.5 given the average from previous reports
     :return: the amount of MB tokens earned per day per price current vps server
     """
+    global sold_mb_tokens
+
     current_vpsprovider = qtable.self_state.provider
     current_vpsoption = qtable.self_state.option
     option = cloudomate_controller.get_vps_option(current_vpsprovider, current_vpsoption)
@@ -280,23 +292,25 @@ def get_reward_qlearning():
     time_alive = TIME_ALIVE - config.time_to_expiration()
     days_alive = time_alive / plebnet_settings.TIME_IN_DAY
 
-    wallet = wallet_controller.TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
-    current_mb_balance = wallet.get_balance('MB')
-    # current_mb_balence = market_controller.get_balance('MB')
-    sold_mb_balance = 0  # TODO: find out the MB tokens sold
-    mb_tokens_gotten = current_mb_balance + sold_mb_balance
+    # wallet = wallet_controller.TriblerWallet(plebnet_settings.get_instance().wallets_testnet_created())
+    # current_mb_balance = wallet.get_balance('MB')
+    current_mb_balance = market_controller.get_balance('MB')
+    mb_tokens_gotten = current_mb_balance + sold_mb_tokens
 
     reward_q_learning = mb_tokens_gotten / (price * days_alive)
+
+    # normalize it around 0.5
+    reward_q_learning /= (average_MB_tokens_per_day * 2)
+
     return reward_q_learning
 
 
 # TODO: implement this method
 def get_q_tables_through_gossipping():
     """
-    Gossip with neighbours to get a list of q-values to use for q-learning
-    :return: a list of q-values
+    Gossip with neighbours to get a list of q-tables to use for q-learning
+    :return: a list of q-tables
     """
-    current_state = qtable.self_state
     pass
 
 
@@ -361,7 +375,6 @@ def vpn_is_running():
         return False
 
 
-# TODO: dit moet naar agent.DNA, maar die is nu al te groot
 def select_provider():
     """
     Check whether a provider is already selected, otherwise select one based on the Qtable.

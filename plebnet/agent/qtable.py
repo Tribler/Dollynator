@@ -145,7 +145,7 @@ class QTable:
 
         if not os.path.exists(filename):
             # TODO: check if it will not affect anything
-            self.self_state = VPSState(provider="blueangelhost", option="Basic Plan")
+            self.self_state = VPSState(provider="linevast", option="Basic")
             self.init_qtable_and_environment(providers)
             self.init_alpha_and_beta()
             self.create_initial_tree()
