@@ -13,15 +13,17 @@ from plebnet.messaging import MessageSender
 
 def now():
     """
-    Returns the current timestamp.
+    Gets the current timestamp in seconds.
+    :return: current timestamp as integer
     """
     return int(datetime.timestamp(datetime.now()))
 
 
 def generate_contact_id(parent_id: str = ""):
     """
-    Generates a contact id for a node children.
-    parent_id: id of the parent. Use "" if node has no parent.
+    Generates a random, virtually unique id for a new node.
+    :param parent_id: id of the parent node, defaults to empty
+    :return: the generated id
     """
 
     def generate_random_string(length):
@@ -42,49 +44,67 @@ class Contact:
     Nodes contact.
     """
 
-    """
-    id: id of the node.
-    host: host of the node.
-    port: message receiver listening port
-    """
-
     def __init__(self, id: str, host: str, port: int, first_failure=None):
+        """
+        Instantiates a contact
+        :param id: id of the node
+        :param host: host of the node
+        :param port: port of the node
+        :param first_failure: first time of failure of communication with the node
+        """
 
         self.id = id
         self.host = host
         self.port = port
 
-        self.first_failure = None
+        self.first_failure = first_failure
 
-    def is_down(self):
+    def link_down(self):
+        """
+        Sets the node as down, by storing the current time as first_failure, if not set already.
+        """
 
         if self.first_failure is None:
             self.first_failure = now()
 
-    def is_up(self):
+    def link_up(self):
+        """
+        Sets the node as up, by clearing the first_failure field
+        """
 
         if self.first_failure is not None:
             self.first_failure = None
 
     def is_active(self):
+        """
+        Checks whether the contact is active.
+        :return: true iff the contact is active
+        """
 
         return self.first_failure is not None
 
 
 class AddressBook(MessageConsumer):
     """
-    Node address book.
-    Also shares new contacts with all other nodes in the network.
+    Node address book, responsible for sharing new contacts and deleting inactive ones.
     """
 
-    """
-    self_contact: contact of the owner node of the address book.
-    list: initial list of contacts
-    receiver_notify_interval: notify interval for incoming messages
-    """
-
-    def __init__(self, self_contact: Contact, contacts=None, receiver_notify_interval=1,
-                 contact_restore_timeout=3600, inactive_nodes_ping_interval=30):
+    def __init__(
+            self,
+            self_contact: Contact,
+            contacts=None,
+            receiver_notify_interval=1,
+            contact_restore_timeout=3600,
+            inactive_nodes_ping_interval=1799
+    ):
+        """
+        Initializes a new address book.
+        :param self_contact: contact of the owner of the address book
+        :param contacts: contacts in the address book
+        :param receiver_notify_interval: interval at which the message receiver notifies of new messages
+        :param contact_restore_timeout: timeout of pinging of inactive nodes before deletion
+        :param inactive_nodes_ping_interval: interval for pinging inactive nodes
+        """
 
         if contacts is None:
             contacts = []
@@ -101,8 +121,8 @@ class AddressBook(MessageConsumer):
 
     def __parse_message(self, raw_message):
         """
-        Parses a raw message into comamnd and data.
-        raw_message: raw_message to parse
+        Parses a raw message for internal processing.
+        :param raw_message: raw message to parse
         """
 
         command = raw_message['command']
@@ -113,7 +133,7 @@ class AddressBook(MessageConsumer):
     def __generate_add_contact_message(self, contact: Contact):
         """
         Generates an "add-contact" message.
-        contact: add-contact message payload
+        :param contact: add-contact message payload
         """
 
         return {
@@ -124,7 +144,7 @@ class AddressBook(MessageConsumer):
     def __add_contact(self, contact: Contact):
         """
         Handles incoming "add-contacts" commands.
-        contact: contact to add
+        :param contact: contact to add
         """
 
         if contact.id == self.self_contact.id:
@@ -145,8 +165,8 @@ class AddressBook(MessageConsumer):
 
     def __forward_contact(self, contact: Contact):
         """
-        Forwards new contact to all other known contacts.
-        contact: new contact
+        Forwards a contact to all other known contacts.
+        :param contact: contact to forward
         """
 
         message = self.__generate_add_contact_message(contact)
@@ -161,9 +181,10 @@ class AddressBook(MessageConsumer):
 
     def __send_message_to_contact(self, recipient: Contact, message):
         """
-        Sends a message to a contact.
-        recipient: recipient node's contact
-        message: message to send
+        Sends a message to a contact, and marks the link to the recipient as either up or down.
+        :param recipient: recipient node's contact
+        :param message: message to send
+        :return: True iff the delivery of the message was successful
         """
 
         try:
@@ -171,20 +192,23 @@ class AddressBook(MessageConsumer):
             sender = MessageSender(recipient.host, recipient.port)
             sender.send_message(message)
 
-            recipient.is_up()
+            recipient.link_up()
 
             return True
 
         except MessageDeliveryError:
 
-            recipient.is_down()
+            recipient.link_down()
 
             return False
 
     def __delete_contact(self, contact: Contact):
         """
-        Removes a contact from the contacts list.
+        Deletes a contact from the contact list.
+        :param contact: contact to delete
+        :return:
         """
+
         for known_contact in self.contacts:
 
             if known_contact.id == contact.id:
@@ -193,6 +217,9 @@ class AddressBook(MessageConsumer):
                 return
 
     def __start_pinging_inactive_nodes(self):
+        """
+        Starts periodically pinging inactive nodes.
+        """
 
         while True:
 
@@ -210,7 +237,7 @@ class AddressBook(MessageConsumer):
     def notify(self, message):
         """
         Handles incoming messages.
-        message: message to handle
+        :param message: message to handle
         """
 
         command, data = self.__parse_message(message)
@@ -221,7 +248,7 @@ class AddressBook(MessageConsumer):
     def create_new_distributed_contact(self, contact: Contact):
         """
         Adds new contact and notifies the network.
-        contact: new contact
+        :param contact: new contact
         """
 
         self.contacts.append(contact)
