@@ -178,11 +178,9 @@ def __demo_receive(port):
             print(message)
 
     consumer1 = Consumer()
-    consumer2 = Consumer()
 
     # Register the consumers
     receiver.register_consumer(consumer1)
-    receiver.register_consumer(consumer2)
 
 # Sends messages
 def __demo_send(sleepTime, port, host='127.0.0.1'):
