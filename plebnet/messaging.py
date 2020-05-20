@@ -5,6 +5,19 @@ import threading
 import time
 
 
+class MessageDeliveryError(Exception):
+
+    def __init__(self, *args):
+
+        if args:
+
+            self.message = args[0]
+
+        else:
+
+            self.mesage = "Message delivery failed"
+
+
 class MessageConsumer:
 
     def notify(self, message):
@@ -31,24 +44,30 @@ class MessageSender:
         data: message payload
         """
 
-        # Pickling message
-        message_body = pickle.dumps(data)
+        try:
+            
+            # Pickling message
+            message_body = pickle.dumps(data)
 
-        # Connecting to receiver
-        s = socket.socket()
-        s.connect((self.host, self.port)) 
+            # Connecting to receiver
+            s = socket.socket()
+            s.connect((self.host, self.port)) 
 
-        # Sending size of message
-        s.send(str(len(message_body)).encode('utf-8'))
+            # Sending size of message
+            s.send(str(len(message_body)).encode('utf-8'))
 
-        # Waiting for ack
-        s.settimeout(ack_timeout)
-        s.recv(1)
+            # Waiting for ack
+            s.settimeout(ack_timeout)
+            s.recv(1)
 
-        # Sending message
-        s.send(message_body)
+            # Sending message
+            s.send(message_body)
 
-        s.close()
+            s.close()
+
+        except:
+
+            raise MessageDeliveryError()
 
 
 
