@@ -10,6 +10,7 @@ import jsonpickle
 
 from appdirs import user_config_dir
 
+from plebnet import contacts
 from plebnet.controllers import cloudomate_controller
 from plebnet.settings import plebnet_settings
 
@@ -21,6 +22,8 @@ class QTable:
     INFINITY = 10000000
     start_alpha = 0.8  # between 0.5 and 1
     start_beta = 0.2  # between 0 and 0.5
+    contact_port = 8000 # port used to share information about other contacts
+    qtable_port = 8010 # port used to share QTables
 
     def __init__(self):
         self.qtable = {}
@@ -31,7 +34,11 @@ class QTable:
         self.providers_offers = []
         self.self_state = VPSState()
         self.tree = ""
+        self.address_book = self.init_address_book()
         pass
+
+    # TODO : set up a receiver for the qtables
+    # TODO : share QTable when reproducing
 
     def init_qtable_and_environment(self, providers):
         """
@@ -68,10 +75,17 @@ class QTable:
             self.betatable[self.get_ID(provider_of)] = bet
             self.number_of_updates[self.get_ID(provider_of)] = num
 
+    def init_address_book(self, parent_id: str = ""):
+        node_id = contacts.generate_contact_id(parent_id)
+        # TODO : check ip and port
+        self_contact = contacts.Contact(node_id, "127.0.0.1", self.contact_port)
+        return contacts.AddressBook(self_contact)
+
+
     @staticmethod
     def calculate_measure(provider_offer):
         """
-        Estimeates the starting value of the qtable.
+        Estimates the starting value of the qtable.
         """
         return 1 / (math.pow(float(provider_offer.price), 3)) * float(provider_offer.bandwidth)
 
@@ -109,8 +123,10 @@ class QTable:
         if num <= 50:
             for provider_of in self.providers_offers:
                 # update alpha and beta
-                self.alphatable[self.get_ID(provider_of)][provider_offer_ID] = self.start_alpha - num * 0.012  # chosen constant
-                self.betatable[self.get_ID(provider_of)][provider_offer_ID] = self.start_beta + num * 0.012  # chosen constant
+                self.alphatable[self.get_ID(provider_of)][
+                    provider_offer_ID] = self.start_alpha - num * 0.012  # chosen constant
+                self.betatable[self.get_ID(provider_of)][
+                    provider_offer_ID] = self.start_beta + num * 0.012  # chosen constant
                 # update number_of_updates table
                 self.number_of_updates[self.get_ID(provider_of)][provider_offer_ID] += 1
             else:
@@ -222,16 +238,30 @@ class QTable:
     def get_ID_from_state(self):
         return str(self.self_state.provider).lower() + "_" + str(self.self_state.option).lower()
 
+    def create_new_address_book(self):
+        """
+        This method creates a new AddressBook to pass to the child. It sets the child's contact as self_contact
+        and adds the parent's contact in the contacts list.
+        """
+        child_id = contacts.generate_contact_id(self.address_book.self_contact.id)
+        # TODO : handle IP
+        child_contact = contacts.Contact(child_id, "127.0.0.1", self.contact_port)
+        new_address_book = contacts.AddressBook(child_contact, self.address_book.contacts)
+        new_address_book.contacts.append(self.address_book.self_contact)
+        return new_address_book
+
     def create_child_qtable(self, provider, option, transaction_hash, child_index):
         """
         Creates the QTable configuration for the child agent. This is done by copying the own QTable configuration and
         including the new host provider, the parent name and the transaction hash.
+        Moreover it passes an updated AddressBook to the child.
         :param provider: the name the child tree name.
         :param transaction_hash: the transaction hash the child is bought with.
         """
 
         next_state = VPSState(provider=provider, option=option)
         tree = self.tree + "." + str(child_index)
+        new_address_book = self.create_new_address_book()
         dictionary = {
             "environment": self.environment,
             "qtable": self.qtable,
@@ -242,7 +272,8 @@ class QTable:
             "providers_offers": self.providers_offers,
             "self_state": next_state,
             "transaction_hash": transaction_hash,
-            "tree": tree
+            "tree": tree,
+            "address_book": new_address_book
         }
 
         filename = os.path.join(user_config_dir(), 'Child_QTable.json')
@@ -270,7 +301,9 @@ class QTable:
             "number_of_updates": self.number_of_updates,
             "providers_offers": self.providers_offers,
             "self_state": self.self_state,
-            "tree": self.tree
+            "tree": self.tree,
+            "contact_list": self.contact_list,
+            "address_book": self.address_book
         }
         with open(filename, 'w') as json_file:
             encoded_to_save_var = jsonpickle.encode(to_save_var)
@@ -313,8 +346,8 @@ class QTable:
 
         for state in to_add:
             to_add[state][provider_offer_ID] -= self.betatable[state][provider_offer_ID] \
-                                                             * self.qtable[state][provider_offer_ID] \
-                                                             - remote_qtable[state][provider_offer_ID]
+                                                * self.qtable[state][provider_offer_ID] \
+                                                - remote_qtable[state][provider_offer_ID]
 
     def update_self_qtable(self, provider_offer_ID, status, to_add):
         """

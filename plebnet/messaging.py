@@ -10,7 +10,8 @@ from abc import ABC
 class MessageSender:
     """
     Class for sending messages to MessageReceivers.
-    """    
+    """
+
     def __init__(self, host: str, port: int):
         """
         host: Receipient host name.
@@ -18,19 +19,18 @@ class MessageSender:
         """
         self.port = port
         self.host = host
-        
 
     def send_message(self, data):
         """
         Sends a message.
         data: message payload
         """
- 
+
         meessage_body = pickle.dumps(data)
 
-        s = socket.socket()   
-               
-        s.connect((self.host, self.port)) 
+        s = socket.socket()
+
+        s.connect((self.host, self.port))
 
         s.send(str(len(meessage_body)).encode('utf-8'))
 
@@ -39,7 +39,6 @@ class MessageSender:
         s.send(meessage_body)
 
         s.close()
-
 
 
 class MessageReceiver:
@@ -53,20 +52,20 @@ class MessageReceiver:
     connections_queue_size: size of the connections queue.
     notify_interval: (seconds) interval at which message consumers are notified.
     """
-    def __init__(self, port, connections_queue_size = 20, notify_interval = 1):
+
+    def __init__(self, port, connections_queue_size=20, notify_interval=1):
 
         self.port = port
         self.connections_queue_size = connections_queue_size
         self.notify_interval = notify_interval
 
-        self.meessages_queue = collections.deque()
+        self.messages_queue = collections.deque()
 
         self.message_consumers = []
 
         threading.Thread(target=self.__start_listening).start()
 
         threading.Thread(target=self.__start_notifying).start()
-
 
     def register_consumer(self, message_consumer):
         """
@@ -75,67 +74,59 @@ class MessageReceiver:
         """
         self.message_consumers.append(message_consumer)
 
-
     def __start_notifying(self):
         """
         Starts periodically notifying the registered message consumers.
         """
         while True:
-            
-            if len(self.meessages_queue) > 0:
 
-                self.__notify_consumers(pickle.loads(self.meessages_queue.popleft()))
-                
+            if len(self.messages_queue) > 0:
+                self.__notify_consumers(pickle.loads(self.messages_queue.popleft()))
+
+
             time.sleep(self.notify_interval)
-
-
 
     def __start_listening(self):
         """
         Starts listening for incoming connections.
         """
-        s = socket.socket()           
+        s = socket.socket()
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        
+
         s.bind(('', self.port))
-        
+
         s.listen(self.connections_queue_size)
-        
-        while True: 
-        
+
+        while True:
             connection, addr = s.accept()
-            
+
             message_length = int(connection.recv(4).decode('utf-8'))
 
             connection.send(b'\xff')
 
             message = connection.recv(message_length)
-            
-            connection.close() 
 
-            self.meessages_queue.append(message)
+            connection.close()
 
+            self.messages_queue.append(message)
 
     def __notify_consumers(self, message):
         """
         Notifies all registered message consumers.
         """
         for consumer in self.message_consumers:
-            
             consumer.notify(message)
 
 
 # Receives messages
 def __demo_receive(port):
-
     # Initialize the message receiver service
     receiver = MessageReceiver(port)
-    
+
     # Declare message consumers
     class Consumer:
 
-        def notify(self, message): 
-
+        def notify(self, message):
             print(message)
 
     consumer1 = Consumer()
@@ -145,25 +136,25 @@ def __demo_receive(port):
     receiver.register_consumer(consumer1)
     receiver.register_consumer(consumer2)
 
+
 # Sends messages
 def __demo_send(sleepTime, port, host='127.0.0.1'):
-    
     # Initialize sender
     sender = MessageSender(host, port)
-    
+
     # Send message
     counter = 0
-    
+
     while True:
-        
         time.sleep(sleepTime)
 
         sender.send_message("Counter: " + str(counter))
         counter += 1
 
+
 if __name__ == '__main__':
     port = 8000
 
     # Start sender and receiver on two separate threads
-    threading.Thread(target=__demo_send, args= (1, port,)).start()
-    threading.Thread(target=__demo_receive, args = (port,)).start()
+    threading.Thread(target=__demo_send, args=(1, port,)).start()
+    threading.Thread(target=__demo_receive, args=(port,)).start()

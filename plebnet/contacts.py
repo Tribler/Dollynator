@@ -3,6 +3,7 @@ import random
 import string
 import calendar
 import time
+from copy import deepcopy
 
 from plebnet.messaging import MessageSender
 from plebnet.messaging import MessageReceiver
@@ -13,8 +14,8 @@ def generate_contact_id(parent_id: str = ""):
     Generates a contact id for a node children.
     parent_id: id of the parent. Use "" if node has no parent.
     """
-    def generate_random_string(length):
 
+    def generate_random_string(length):
         letters = string.ascii_lowercase
         return ''.join(random.choice(letters) for i in range(length))
 
@@ -37,8 +38,8 @@ class Contact:
     host: host of the node.
     port: message receiver listening port
     """
+
     def __init__(self, id: str, host: str, port: int):
-        
         self.id = id
         self.host = host
         self.port = port
@@ -55,25 +56,24 @@ class AddressBook:
     list: initial list of contacts
     receiver_notify_interval: notify interval for incoming messages
     """
+
     def __init__(self, self_contact: Contact, contacts: list = [], receiver_notify_interval=1):
-        
+
         self.receiver = MessageReceiver(self_contact.port, notify_interval=receiver_notify_interval)
-        
-        self.contacts = contacts.copy()
+
+        self.contacts = deepcopy(contacts)
         self.receiver.register_consumer(self)
         self.self_contact = self_contact
 
-
     def parse_message(self, raw_message):
         """
-        Parses a raw message into comamnd and data.
+        Parses a raw message into command and data.
         raw_message: raw_message to parse
         """
         command = raw_message['command']
         data = raw_message['data']
 
         return command, data
-
 
     def __generate_add_contact_message(self, contact: Contact):
 
@@ -87,7 +87,6 @@ class AddressBook:
             'data': contact
         }
 
-
     def __add_contact(self, contact: Contact):
         """
         Handles incoming "add-contacts" commands.
@@ -95,14 +94,12 @@ class AddressBook:
         """
 
         if contact.id == self.self_contact.id:
-
             # Contact is self
             return
 
         for known_contact in self.contacts:
 
             if known_contact.id == contact.id:
-
                 # Contact is already known
                 return
 
@@ -112,23 +109,21 @@ class AddressBook:
 
         self.__forward_contact(contact)
 
-
     def __forward_contact(self, contact: Contact):
         """
         Forwards new contact to all other known contacts.
         contact: new contact
         """
-        
+
         message = self.__generate_add_contact_message(contact)
 
         for known_contact in self.contacts:
-            
+
             # Prevent notifying a contact of themselves
             if known_contact.id == contact.id:
-                continue 
-            
+                continue
+
             self.__send_message_to_contact(known_contact, message)
-            
 
     def __send_message_to_contact(self, recipient: Contact, message):
         """
@@ -136,12 +131,11 @@ class AddressBook:
         recipient: recipient node's contact
         message: message to send
         """
-        
+
         sender = MessageSender(recipient.host, recipient.port)
 
         sender.send_message(message)
 
-    
     def notify(self, message):
         """
         Handles incoming messages.
@@ -150,9 +144,7 @@ class AddressBook:
         command, data = self.parse_message(message)
 
         if command == 'add-contact':
-
             self.__add_contact(data)
-
 
     def create_new_distributed_contact(self, contact: Contact):
         """
@@ -165,12 +157,10 @@ class AddressBook:
         message = self.__generate_add_contact_message(contact)
 
         for known_contact in self.contacts[:-1]:
-
             self.__send_message_to_contact(known_contact, message)
-            
+
 
 def __demo():
-
     port_counter = 8000
     id_counter = 1
 
@@ -185,7 +175,6 @@ def __demo():
     while i < max_nodes:
 
         for node in nodes:
-
             print("Node " + node.self_contact.id + " now has " + str(len(node.contacts)) + " contacts")
 
         # Incrementing counters
@@ -210,7 +199,7 @@ def __demo():
         i += 1
 
     while True:
-        
+
         print("-----------------------------------------------------------------")
         for node in nodes:
             print("Node " + node.self_contact.id + " now has " + str(len(node.contacts)) + " contacts")
@@ -219,5 +208,4 @@ def __demo():
 
 
 if __name__ == '__main__':
-
     __demo()
