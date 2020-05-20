@@ -6,6 +6,7 @@ import time
 import argparse
 import getpass
 import os
+import socket
 
 from datetime import datetime
 from crontab import CronTab
@@ -15,7 +16,9 @@ from plebnet.messaging import MessageConsumer
 from plebnet.messaging import MessageReceiver
 
 def now():
-
+    """
+    Returns the current timestamp.
+    """
     return int(datetime.timestamp(datetime.now()))
 
 
@@ -36,6 +39,7 @@ def generate_contact_id(parent_id: str = ""):
     hash = hashlib.sha256(random_seed.encode('utf-8')).hexdigest()
 
     return hash + timestamp
+
 
 class Contact:
     """
@@ -117,7 +121,7 @@ class AddressBook:
     list: initial list of contacts
     receiver_notify_interval: notify interval for incoming messages
     """
-    def __init__(self, self_contact: Contact, contacts: list = [], receiver_notify_interval=1, contact_restore_timeout=3600):
+    def __init__(self, self_contact: Contact, contacts: list = [], receiver_notify_interval=1, contact_restore_timeout=3600, inactive_nodes_ping_interval=30):
         
         self.receiver = MessageReceiver(self_contact.port, notify_interval=receiver_notify_interval)
         
@@ -125,6 +129,7 @@ class AddressBook:
         self.receiver.register_consumer(self)
         self.self_contact = self_contact
         self.contact_restore_timeout = contact_restore_timeout
+        self.inactive_nodes_ping_interval = inactive_nodes_ping_interval
 
 
     def parse_message(self, raw_message):
@@ -136,6 +141,42 @@ class AddressBook:
         data = raw_message['data']
 
         return command, data
+
+
+    def __generate_add_contact_message(self, contact: Contact):
+        """
+        Generates an "add-contact" message.
+        contact: add-contact message payload
+        """
+        
+        return {
+            'command': 'add-contact',
+            'data': contact
+        }
+
+
+    def __generate_ping_unsuccessful_message(self, contact: Contact):
+        """
+        Generates an "ping-unsuccessful" message.
+        contact: ping-unsuccessful message payload
+        """
+        
+        return {
+            'command': 'ping-unsuccessful',
+            'data': contact
+        }
+
+
+    def __generate_ping_successful_message(self, contact: Contact):
+        """
+        Generates an "ping-successful" message.
+        contact: ping-successful message payload
+        """
+        
+        return {
+            'command': 'ping-successful',
+            'data': contact
+        }
 
 
     def __add_contact(self, contact: Contact):
@@ -193,9 +234,9 @@ class AddressBook:
 
             sender.send_message(message)
 
-        except ConnectionRefusedError:
+        except:
             
-            recipient.did_not_reply()
+            recipient.did_not_reply(self.self_contact.port, minutes_interval=self.inactive_nodes_ping_interval)
     
 
     def __delete_contact(self, contact: Contact):
@@ -262,92 +303,63 @@ class AddressBook:
         for known_contact in self.contacts[:-1]:
 
             self.__send_message_to_contact(known_contact, message)
-            
-
-
-def __generate_add_contact_message(contact: Contact):
-    """
-    Generates an "add-contact" message.
-    contact: add-contact message payload
-    """
     
-    return {
-        'command': 'add-contact',
-        'data': contact
-    }
-
-
-def __generate_ping_unsuccessful_message(contact: Contact):
-    """
-    Generates an "ping-unsuccessful" message.
-    contact: ping-unsuccessful message payload
-    """
-    
-    return {
-        'command': 'ping-unsuccessful',
-        'data': contact
-    }
-
-
-def __generate_ping_successful_message(contact: Contact):
-    """
-    Generates an "ping-successful" message.
-    contact: ping-successful message payload
-    """
-    
-    return {
-        'command': 'ping-successful',
-        'data': contact
-    }
-
 
 def __demo():
 
-    port_counter = 8000
+    port_counter = 8001
     id_counter = 1
 
-    print("Initial node id: " + str(id_counter))
+    nodes = []
+
     root_contact = Contact(str(id_counter), '127.0.0.1', port_counter)
 
-    nodes = [AddressBook(root_contact, receiver_notify_interval=0.1)]
-
-    max_nodes = 10
-    i = 0
-
-    while i < max_nodes:
-
-        for node in nodes:
-
-            print("Node " + node.self_contact.id + " now has " + str(len(node.contacts)) + " contacts")
-
-        # Incrementing counters
-        port_counter += 1
-        id_counter += 1
-
-        replicating_node = nodes[random.randint(0, len(nodes) - 1)]
-        print("-----------------------------------------------------------------")
-        print("Node " + str(replicating_node.self_contact.id) + " is about to replicate:\n\n")
-
-        new_node_contact = Contact(str(id_counter), '127.0.0.1', port_counter)
-        new_node_contacts_list = replicating_node.contacts.copy()
-        new_node_contacts_list.append(replicating_node.self_contact)
-        new_node = AddressBook(new_node_contact, new_node_contacts_list, receiver_notify_interval=0.1)
-
-        nodes.append(new_node)
-
-        replicating_node.create_new_distributed_contact(new_node.self_contact)
-
-        time.sleep(1)
-
-        i += 1
+    nodes.append(AddressBook(root_contact, receiver_notify_interval=0.01, contact_restore_timeout=1, inactive_nodes_ping_interval=1))
 
     while True:
-        
-        print("-----------------------------------------------------------------")
-        for node in nodes:
-            print("Node " + node.self_contact.id + " now has " + str(len(node.contacts)) + " contacts")
 
-        time.sleep(5)
+        print("")
+
+        id_counter += 1
+        port_counter += 1
+
+        replicating_node = random.choice(nodes)
+
+        print("Node " + replicating_node.self_contact.id + " is replicating")
+
+        new_node_contact = Contact(str(id_counter), '127.0.0.1', port_counter)
+
+        new_node_contact_list = replicating_node.contacts.copy()
+        new_node_contact_list.append(replicating_node.self_contact)
+
+        nodes.append(AddressBook(new_node_contact, new_node_contact_list, receiver_notify_interval=0.01, contact_restore_timeout=1, inactive_nodes_ping_interval=1))
+
+        replicating_node.create_new_distributed_contact(new_node_contact)
+
+        print("")
+        
+        time.sleep(28)
+
+        for node in nodes:
+
+            contacts = ""
+
+            for contact in node.contacts:
+
+                contacts += contact.id + ", "
+
+
+            print("Node " + node.self_contact.id + " has contacts: " + contacts)
+
+        for i in range(int(len(nodes) / 2)):
+
+            node_to_kill = random.choice(nodes)
+            print("Killing node " + node_to_kill.self_contact.id)
+
+            node_to_kill.receiver.kill()
+            nodes.remove(node_to_kill)
+
+        time.sleep(1)
 
 
 def __ping_host(host: str, port: int, ab_port: int, contact_id: str):
@@ -355,7 +367,7 @@ def __ping_host(host: str, port: int, ab_port: int, contact_id: str):
     ping_sender = MessageSender(host, port)
     ab_sender = MessageSender('127.0.0.1', ab_port)
 
-    pinged_contact = Contact(contact, host, port)
+    pinged_contact = Contact(contact_id, host, port)
 
     try:
         ping_sender.send_message("Helo")
@@ -363,10 +375,10 @@ def __ping_host(host: str, port: int, ab_port: int, contact_id: str):
     except:
 
         print("Host down")
-        ab_sender.send_message(__generate_ping_unsuccessful_message(pinged_contact))
+        ab_sender.send_message(ab_sender.__generate_ping_unsuccessful_message(pinged_contact))
         return
 
-    ab_sender.send_message(__generate_ping_successful_message(pinged_contact))
+    ab_sender.send_message(ab_sender.__generate_ping_successful_message(pinged_contact))
 
     
 
@@ -390,25 +402,6 @@ if __name__ == '__main__':
 
         __demo()
 
-    elif args.test:
-
-        contact = Contact("", "127.0.0.1", 8000)
-        contact.did_not_reply(minutes_interval=1)
-
-
-    elif args.test_receiver:
-
-        receiver = MessageReceiver(8000)
-
-        class MyConsumer(MessageConsumer):
-
-            def notify(self, message):
-
-                print(message)
-
-        receiver.register_consumer(MyConsumer())
-
-        print("Listening")
 
     elif args.ping_node:
 
