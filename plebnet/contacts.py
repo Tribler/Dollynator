@@ -1,5 +1,7 @@
 import threading
 import time
+import random
+import rsa
 
 from plebnet.messaging import Contact
 from plebnet.messaging import MessageConsumer
@@ -7,26 +9,6 @@ from plebnet.messaging import MessageDeliveryError
 from plebnet.messaging import MessageReceiver
 from plebnet.messaging import MessageSender
 from plebnet.messaging import now
-
-
-def generate_contact_id(parent_id: str = ""):
-    """
-    Generates a random, virtually unique id for a new node.
-    :param parent_id: id of the parent node, defaults to empty
-    :return: the generated id
-    """
-
-    def generate_random_string(length):
-        letters = string.ascii_lowercase
-        return ''.join(random.choice(letters) for i in range(length))
-
-    timestamp = str(now())
-
-    random_seed = generate_random_string(5) + parent_id
-
-    random_hash = hashlib.sha256(random_seed.encode('utf-8')).hexdigest()
-
-    return random_hash + timestamp
 
 
 class AddressBook(MessageConsumer):
@@ -37,6 +19,7 @@ class AddressBook(MessageConsumer):
     def __init__(
             self,
             self_contact: Contact,
+            private_key: rsa.PrivateKey,
             contacts=None,
             receiver_notify_interval=1,
             contact_restore_timeout=3600,
@@ -54,9 +37,16 @@ class AddressBook(MessageConsumer):
         if contacts is None:
             contacts = []
 
-        self.receiver = MessageReceiver(self_contact.port, notify_interval=receiver_notify_interval)
-
         self.contacts = contacts.copy()
+        self.private_key = private_key
+
+        self.receiver = MessageReceiver(
+            port = self_contact.port,
+            private_key = self.private_key,
+            contacts = self.contacts,
+            notify_interval=receiver_notify_interval
+        )
+
         self.receiver.register_consumer(self)
         self.self_contact = self_contact
         self.contact_restore_timeout = contact_restore_timeout
@@ -126,8 +116,8 @@ class AddressBook(MessageConsumer):
 
         try:
 
-            sender = MessageSender(recipient.host, recipient.port)
-            sender.send_message(message)
+            sender = MessageSender(recipient)
+            sender.send_message(message, self.self_contact.id, self.private_key)
 
             self.__set_link_state(True, recipient)
 
@@ -209,7 +199,7 @@ class AddressBook(MessageConsumer):
                             self.__delete_contact(contact)
 
 
-    def notify(self, message):
+    def notify(self, message, sender_id):
         """
         Handles incoming messages.
         :param message: message to handle
@@ -259,10 +249,25 @@ def __demo():
 
     ping_interval = 1
     restore_timeout = 0
+    receiver_notify_interval = 0.5
 
-    root_contact = Contact(str(id_counter), "127.0.0.1", port_counter)
+    root_pub, root_priv = rsa.newkeys(512)
+    root_contact = Contact(
+        id = str(id_counter),
+        host = "127.0.0.1",
+        port = port_counter,
+        public_key = root_pub
+    )
 
-    nodes = [AddressBook(root_contact, contact_restore_timeout=restore_timeout, inactive_nodes_ping_interval=ping_interval, receiver_notify_interval=0.01)]
+    root = AddressBook(
+        self_contact = root_contact, 
+        private_key = root_priv,
+        contact_restore_timeout = restore_timeout,
+        inactive_nodes_ping_interval = ping_interval,
+        receiver_notify_interval = receiver_notify_interval
+    )
+
+    nodes = [root]
 
     while True:
 
@@ -276,9 +281,25 @@ def __demo():
         new_node_contact_list = replicating_node.contacts.copy()
         new_node_contact_list.append(replicating_node.self_contact)
 
-        new_node_contact = Contact(str(id_counter), '127.0.0.1', port_counter)
+        pub, priv = rsa.newkeys(512)
 
-        nodes.append(AddressBook(new_node_contact, new_node_contact_list, contact_restore_timeout=restore_timeout, inactive_nodes_ping_interval=ping_interval, receiver_notify_interval=0.01))
+        new_node_contact = Contact(
+            id = str(id_counter),
+            host = '127.0.0.1',
+            port = port_counter,
+            public_key = pub
+        )
+
+        new_node = AddressBook(
+            self_contact = new_node_contact,
+            private_key = priv,
+            contacts = new_node_contact_list,
+            contact_restore_timeout = restore_timeout,
+            inactive_nodes_ping_interval = ping_interval,
+            receiver_notify_interval = receiver_notify_interval
+        )
+
+        nodes.append(new_node)
 
         replicating_node.create_new_distributed_contact(new_node_contact)
 
