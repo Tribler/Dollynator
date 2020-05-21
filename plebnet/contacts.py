@@ -147,21 +147,7 @@ class AddressBook(MessageConsumer):
         :param contact: contact to add
         """
 
-        if contact.id == self.self_contact.id:
-            # Contact is self
-            return
-
-        for known_contact in self.contacts:
-
-            if known_contact.id == contact.id:
-                # Contact is already known
-                return
-
-        # Contact is added and forwarded
-
-        self.contacts.append(contact)
-
-        self.__forward_contact(contact)
+        self.create_new_distributed_contact(contact)
 
     def __forward_contact(self, contact: Contact):
         """
@@ -180,6 +166,8 @@ class AddressBook(MessageConsumer):
             # Prevent node notifying itself
             if known_contact.id == self.self_contact.id:
                 continue
+
+            # print("Node " + self.self_contact.id + " forwards " + contact.id + "'s contact to " + known_contact.id)
 
             self.send_message_to_contact(known_contact, message)
 
@@ -207,6 +195,11 @@ class AddressBook(MessageConsumer):
             return False
     
     def __set_link_state(self, link_up: bool, contact: Contact):
+        """
+        Sets the link with a node's state.
+        :param link_up: state to set
+        :param contact: contact to set the link's state of
+        """
 
         for known_contact in self.contacts:
     
@@ -218,6 +211,7 @@ class AddressBook(MessageConsumer):
 
                 else:
         
+                    # print("Node " + self.self_contact.id + " sees " + contact.id + " as down")
                     known_contact.link_down()
 
 
@@ -228,9 +222,12 @@ class AddressBook(MessageConsumer):
         :return:
         """
 
+        # print("Node " + self.self_contact.id + " deletes " + contact.id + "'s contact")
+
         for known_contact in self.contacts:
 
             if known_contact.id == contact.id:
+
                 self.contacts.remove(known_contact)
 
                 return
@@ -284,9 +281,31 @@ class AddressBook(MessageConsumer):
         :param contact: new contact
         """
 
+        if self.__append_contact(contact):
+
+            # print("Node " + self.self_contact.id + " adds " + contact.id + "'s contact")
+
+            self.__forward_contact(contact)
+
+    def __append_contact(self, contact: Contact):
+        """
+        Appends a contact to the contacts list.
+        :param contact: contact to append to the contacts list
+        """
+
+        if contact.id == self.self_contact.id:
+
+            return False
+
+        for known_contact in self.contacts:
+            
+            if known_contact.id == contact.id:
+                
+                return False
+
         self.contacts.append(contact)
 
-        self.__forward_contact(contact)
+        return True
 
 def __demo():
     
@@ -336,14 +355,14 @@ def __demo():
 
             node_to_remove = random.choice(nodes)
             print("Killing node " + node_to_remove.self_contact.id)
-            node.receiver.kill()
+            node_to_remove.receiver.kill()
             nodes.remove(node_to_remove)        
 
-        time.sleep(1)
+        time.sleep(3)
+        
         print("")
 
     
 if __name__ == '__main__':
 
     __demo()
-    
