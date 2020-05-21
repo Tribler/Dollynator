@@ -10,7 +10,7 @@ import jsonpickle
 
 from appdirs import user_config_dir
 
-from plebnet import contacts
+from plebnet import contacts, messaging
 from plebnet.controllers import cloudomate_controller
 from plebnet.settings import plebnet_settings
 
@@ -22,8 +22,8 @@ class QTable:
     INFINITY = 10000000
     start_alpha = 0.8  # between 0.5 and 1
     start_beta = 0.2  # between 0 and 0.5
-    contact_port = 8000 # port used to share information about other contacts
-    qtable_port = 8010 # port used to share QTables
+    contact_port = 8000  # port used to share information about other contacts
+    qtable_port = 8010  # port used to share QTables
 
     def __init__(self):
         self.qtable = {}
@@ -35,10 +35,17 @@ class QTable:
         self.self_state = VPSState()
         self.tree = ""
         self.address_book = self.init_address_book()
+        self.receiver = self.init_receiver_for_remote_qtables()
         pass
 
     # TODO : set up a receiver for the qtables
     # TODO : share QTable when reproducing
+
+    def init_receiver_for_remote_qtables(self):
+        """
+        This method initialises a MessageReceiver that receives the remote QTables to update the local one.
+        """
+        return messaging.MessageReceiver(self.qtable_port)
 
     def init_qtable_and_environment(self, providers):
         """
@@ -80,7 +87,6 @@ class QTable:
         # TODO : check ip and port
         self_contact = contacts.Contact(node_id, "127.0.0.1", self.contact_port)
         return contacts.AddressBook(self_contact)
-
 
     @staticmethod
     def calculate_measure(provider_offer):
@@ -168,6 +174,10 @@ class QTable:
                 self.providers_offers = data['providers_offers']
                 self.self_state = data['self_state']
                 self.tree = data['tree']
+
+    # def check_for_remote_qtables(self):
+    #     while len(self.receiver.messages_queue) > 0 :
+
 
     def choose_option(self, providers):
         """
@@ -302,7 +312,6 @@ class QTable:
             "providers_offers": self.providers_offers,
             "self_state": self.self_state,
             "tree": self.tree,
-            "contact_list": self.contact_list,
             "address_book": self.address_book
         }
         with open(filename, 'w') as json_file:
@@ -334,6 +343,10 @@ class QTable:
         for i in self.qtable:
             for j in self.qtable:
                 self.qtable[i][j] += to_add[i][j]
+
+        # update the table number_of_updates
+        for state in self.number_of_updates:
+            self.number_of_updates[state][provider_offer_ID] += 1
 
     def update_remote_qtable(self, remote_qtable, provider_offer_ID, to_add):
         """

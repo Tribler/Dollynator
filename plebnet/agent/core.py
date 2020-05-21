@@ -245,10 +245,11 @@ def attempt_purchase():
         logger.log("Try to buy a new server from %s" % provider, log_name)
         success = cloudomate_controller.purchase_choice(config)
         if success == plebnet_settings.SUCCESS:
+
+            remote_tables = get_q_tables_through_gossipping()
             # Update qtable yourself positively if you are successful
-            qtable.update_qtable([], provider_offer_ID, True)
-            # TODO: line below to be uncommented after the midterm meeting
-            # qtable.update_values2(get_q_tables_through_gossipping(), get_reward_qlearning())
+            qtable.update_qtable(remote_tables, provider_offer_ID, True)
+
             # purchase VPN with same config if server allows for it
             # purchase VPN with same config if server allows for it
             if cloudomate_controller.get_vps_providers()[provider].TUN_TAP_SETTINGS:
@@ -263,6 +264,7 @@ def attempt_purchase():
         config.set('chosen_provider', None)
         config.save()
 
+
 # TODO: need to keep track of MB tokens traded on the marked, total MB tokens;
 #  current amount in wallet + amount of MB tokens traded for Bitcoin
 def get_reward_qlearning():
@@ -275,14 +277,17 @@ def get_reward_qlearning():
     pass
 
 
-# TODO: implement this method
 def get_q_tables_through_gossipping():
     """
-    Gossip with neighbours to get a list of q-values to use for q-learning
-    :return: a list of q-values
+    Get the qtables stored in the receiver's queue
+    :return: a list of qtable
     """
-    current_state = qtable.self_state
-    pass
+    # store the received remote qtables in a list to pass to update_qtable()
+    remote_tables = []
+    while len(qtable.receiver.messages_queue) > 0:
+        remote_tables.append(qtable.receiver.messages_queue.popleft())
+    return remote_tables
+
 
 def install_vps():
     """

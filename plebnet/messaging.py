@@ -56,6 +56,7 @@ class MessageReceiver:
     def __init__(self, port, connections_queue_size=20, notify_interval=1):
 
         self.port = port
+        # TODO : make queue dynamically able to grow
         self.connections_queue_size = connections_queue_size
         self.notify_interval = notify_interval
 
@@ -65,7 +66,7 @@ class MessageReceiver:
 
         threading.Thread(target=self.__start_listening).start()
 
-        threading.Thread(target=self.__start_notifying).start()
+        # threading.Thread(target=self.__start_notifying).start()
 
     def register_consumer(self, message_consumer):
         """
