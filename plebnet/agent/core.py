@@ -271,8 +271,6 @@ def get_reward_qlearning():
     and normalize it to be around 0.5 given the average from previous reports
     :return: the amount of MB tokens earned per day per price current vps server
     """
-    global sold_mb_tokens
-
     # get the price of the current vps
     current_vpsprovider = qtable.self_state.provider
     current_vpsoption = qtable.self_state.option
