@@ -1,22 +1,12 @@
-import hashlib
-import random
-import string
 import threading
 import time
-from datetime import datetime
 
+from plebnet.messaging import Contact
 from plebnet.messaging import MessageConsumer
 from plebnet.messaging import MessageDeliveryError
 from plebnet.messaging import MessageReceiver
 from plebnet.messaging import MessageSender
-
-
-def now():
-    """
-    Gets the current timestamp in seconds.
-    :return: current timestamp as integer
-    """
-    return int(datetime.timestamp(datetime.now()))
+from plebnet.messaging import now
 
 
 def generate_contact_id(parent_id: str = ""):
@@ -37,51 +27,6 @@ def generate_contact_id(parent_id: str = ""):
     random_hash = hashlib.sha256(random_seed.encode('utf-8')).hexdigest()
 
     return random_hash + timestamp
-
-
-class Contact:
-    """
-    Nodes contact.
-    """
-
-    def __init__(self, id: str, host: str, port: int, first_failure=None):
-        """
-        Instantiates a contact
-        :param id: id of the node
-        :param host: host of the node
-        :param port: port of the node
-        :param first_failure: first time of failure of communication with the node
-        """
-
-        self.id = id
-        self.host = host
-        self.port = port
-
-        self.first_failure = first_failure
-
-    def link_down(self):
-        """
-        Sets the node link as down, by storing the current time as first_failure, if not set already.
-        """
-
-        if self.first_failure is None:
-            self.first_failure = now()
-
-    def link_up(self):
-        """
-        Sets the node link as up, by clearing the first_failure field
-        """
-
-        if self.first_failure is not None:
-            self.first_failure = None
-
-    def is_active(self):
-        """
-        Checks whether the contact is active.
-        :return: true iff the contact is active
-        """
-
-        return self.first_failure is None
 
 
 class AddressBook(MessageConsumer):

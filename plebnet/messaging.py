@@ -3,7 +3,85 @@ import socket
 import collections
 import threading
 import time
+import rsa
+import random
+import string
+import hashlib
 
+from datetime import datetime
+
+def now():
+    """
+    Gets the current timestamp in seconds.
+    :return: current timestamp as integer
+    """
+    return int(datetime.timestamp(datetime.now()))
+
+
+def generate_contact_id(parent_id: str = ""):
+    """
+    Generates a random, virtually unique id for a new node.
+    :param parent_id: id of the parent node, defaults to empty
+    :return: the generated id
+    """
+
+    def generate_random_string(length):
+        letters = string.ascii_lowercase
+        return ''.join(random.choice(letters) for i in range(length))
+
+    timestamp = str(now())
+
+    random_seed = generate_random_string(5) + parent_id
+
+    random_hash = hashlib.sha256(random_seed.encode('utf-8')).hexdigest()
+
+    return random_hash + timestamp
+
+
+
+class Contact:
+    """
+    Nodes contact.
+    """
+
+    def __init__(self, id: str, host: str, port: int, public_key: rsa.PublicKey, first_failure=None):
+        """
+        Instantiates a contact
+        :param id: id of the node
+        :param host: host of the node
+        :param port: port of the node
+        :param first_failure: first time of failure of communication with the node
+        """
+
+        self.id = id
+        self.host = host
+        self.port = port
+        self.public_key = public_key
+        self.first_failure = first_failure
+
+    def link_down(self):
+        """
+        Sets the node link as down, by storing the current time as first_failure, if not set already.
+        """
+
+        if self.first_failure is None:
+            self.first_failure = now()
+
+    def link_up(self):
+        """
+        Sets the node link as up, by clearing the first_failure field
+        """
+
+        if self.first_failure is not None:
+            self.first_failure = None
+
+    def is_active(self):
+        """
+        Checks whether the contact is active.
+        :return: true iff the contact is active
+        """
+
+        return self.first_failure is None
 
 class MessageDeliveryError(Exception):
 
@@ -20,7 +98,7 @@ class MessageDeliveryError(Exception):
 
 class MessageConsumer:
 
-    def notify(self, message):
+    def notify(self, message, sender_id):
 
         pass
 
@@ -29,34 +107,41 @@ class MessageSender:
     """
     Class for sending messages to MessageReceivers.
     """    
-    def __init__(self, host: str, port: int):
+    def __init__(self, receiver: Contact):
         """
         host: Receipient host name.
         port: Receipient port
         """
-        self.port = port
-        self.host = host
+        self.receiver = receiver
         
 
-    def send_message(self, data, ack_timeout=5.0):
+    def send_message(self, data, sender_contact_id, private_key, ack_timeout=5.0):
         """
         Sends a message.
         data: message payload
         """
 
         try:
+            # Pickling and encrypting message
+            message_body = rsa.encrypt(pickle.dumps(data), self.receiver.public_key)
+            signature = rsa.sign(message_body, private_key, "SHA-1")
             
-            # Pickling message
-            message_body = pickle.dumps(data)
-
             # Connecting to receiver
             s = socket.socket()
-            s.connect((self.host, self.port)) 
+            s.connect((self.receiver.host, self.receiver.port))
+
+            # Sending sender id
+            s.send(sender_contact_id.encode('utf-8'))        
+            s.settimeout(ack_timeout)
+            s.recv(1)
 
             # Sending size of message
             s.send(str(len(message_body)).encode('utf-8'))
-
-            # Waiting for ack
+            s.settimeout(ack_timeout)
+            s.recv(1)
+            
+            # Send signature
+            s.send(signature)
             s.settimeout(ack_timeout)
             s.recv(1)
 
@@ -64,6 +149,8 @@ class MessageSender:
             s.send(message_body)
 
             s.close()
+
+            
 
         except:
 
@@ -83,12 +170,21 @@ class MessageReceiver:
     notify_interval: (seconds) interval at which message consumers are notified.
     """
 
-    def __init__(self, port, connections_queue_size = 20, notify_interval = 1):
+    def __init__(
+        self,
+        port: int,
+        private_key: rsa.PrivateKey,
+        contacts: list,
+        connections_queue_size: int = 20,
+        notify_interval: int = 1
+    ):
 
         self.port = port
+        self.private_key = private_key
+        self.contacts = contacts
         self.connections_queue_size = connections_queue_size
         self.notify_interval = notify_interval
-
+            
         self.meessages_queue = collections.deque()
 
         self.message_consumers = []
@@ -110,16 +206,43 @@ class MessageReceiver:
 
     def __start_notifying(self):
         """
-        Starts periodically notifying the registered message consumers.
+        Starts periodically decrypting and verifying messages, and notified the registered message consumers.
         """
+
         while True:
-            
+
             if len(self.meessages_queue) > 0:
 
-                self.__notify_consumers(pickle.loads(self.meessages_queue.popleft()))
-                
+                while len(self.meessages_queue) > 0:
+                    try:
+
+                        encrypted_pickled_message, signature, sender_id = self.meessages_queue.popleft()
+                        sender_public_key = self.__get_contact_public_key(sender_id)
+                        
+                        rsa.verify(encrypted_pickled_message, signature, sender_public_key)
+
+                        pickled_message = rsa.decrypt(encrypted_pickled_message, self.private_key)
+
+                        message = pickle.loads(pickled_message)
+
+                        self.__notify_consumers(message, sender_id)
+
+                    except:
+
+                        continue
+
+
             time.sleep(self.notify_interval)
 
+    def __get_contact_public_key(self, contact_id: str):
+
+        for contact in self.contacts:
+            
+            if contact.id == contact_id:
+
+                return contact.public_key
+
+        raise Exception()
 
     def kill(self):
 
@@ -144,64 +267,74 @@ class MessageReceiver:
 
                 break
             
-            message_length = int(connection.recv(4).decode('utf-8'))
+            try:
+                # Receiving sender contact id
+                sender_id = connection.recv(74).decode('utf-8')
+                connection.send(b'\xff')
 
-            connection.send(b'\xff')
+                # Receiving size of message
+                message_length = int(connection.recv(4).decode('utf-8'))
+                connection.send(b'\xff')
 
-            message = connection.recv(message_length)
-            
-            connection.close()
+                # Receiving signature
+                signature = connection.recv(64)
+                connection.send(b'\xff')
 
-            self.meessages_queue.append(message)
+                # Receiving message
+                encrypted_pickled_message = connection.recv(message_length)
+                
+                connection.close()
+                
+                self.meessages_queue.append((encrypted_pickled_message, signature, sender_id))
+
+            except:
+
+                continue
 
 
-    def __notify_consumers(self, message):
+    def __notify_consumers(self, message, sender_id):
         """
         Notifies all registered message consumers.
         """
+
         for consumer in self.message_consumers:
             
-            consumer.notify(message)
+            consumer.notify(message, sender_id)
 
-
-# Receives messages
-def __demo_receive(port):
-
-    # Initialize the message receiver service
-    receiver = MessageReceiver(port)
     
-    # Declare message consumers
-    class Consumer:
-
-        def notify(self, message): 
-
-            print(message)
-
-    consumer1 = Consumer()
-
-    # Register the consumers
-    receiver.register_consumer(consumer1)
-
-# Sends messages
-def __demo_send(sleepTime, port, host='127.0.0.1'):
-    
-    # Initialize sender
-    sender = MessageSender(host, port)
-    
-    # Send message
-    counter = 0
-    
-    while True:
-        
-        time.sleep(sleepTime)
-
-        sender.send_message("Counter: " + str(counter))
-        counter += 1
-
 if __name__ == '__main__':
 
-    port = 8000
+    sender_pub, sender_priv = rsa.newkeys(512)
+    receiver_pub, receiver_priv = rsa.newkeys(512)
 
-    # Start sender and receiver on two separate threads
-    threading.Thread(target=__demo_send, args= (1, port,)).start()
-    threading.Thread(target=__demo_receive, args = (port,)).start()
+    receiver_contact = Contact(
+        'receiver',
+        '127.0.0.1',
+        8000,
+        receiver_pub
+    )
+
+    sender_contact = Contact(
+        'sender',
+        '127.0.0.1',
+        8001,
+        sender_pub
+    )
+
+    receiver = MessageReceiver(
+        receiver_contact.port,
+        receiver_priv,
+        [sender_contact]
+    )
+
+    class Printer(MessageConsumer):
+
+        def notify(self, message, sender_id):
+
+            print("Received message from " + sender_id + ": " + message)
+
+    receiver.register_consumer(Printer())
+
+    sender = MessageSender(receiver_contact)
+
+    sender.send_message("Ciao", sender_contact.id, sender_priv)
