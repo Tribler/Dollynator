@@ -242,21 +242,22 @@ def attempt_purchase():
     logger.log('Selected VPN: %s, %s BTC' % ("mullvad", vpn_price), log_name)
     logger.log("Balance: %s %s" % (btc_balance, domain), log_name)
     if btc_balance >= vps_price + vpn_price:
+        logger.log("Before trying to purchase VPS share current QTable with other agents")
+        qtable.share_qtable()
         logger.log("Try to buy a new server from %s" % provider, log_name)
         success = cloudomate_controller.purchase_choice(config)
         if success == plebnet_settings.SUCCESS:
-
             remote_tables = get_q_tables_through_gossipping()
             # Update qtable yourself positively if you are successful
             qtable.update_qtable(remote_tables, provider_offer_ID, True)
 
             # purchase VPN with same config if server allows for it
-            # purchase VPN with same config if server allows for it
             if cloudomate_controller.get_vps_providers()[provider].TUN_TAP_SETTINGS:
                 attempt_purchase_vpn()
         elif success == plebnet_settings.FAILURE:
+            remote_tables = get_q_tables_through_gossipping()
             # Update qtable provider negatively if not successful
-            qtable.update_qtable([], provider_offer_ID, False)
+            qtable.update_qtable(remote_tables, provider_offer_ID, False)
 
         qtable.write_dictionary()
         config.increment_child_index()

@@ -125,17 +125,6 @@ class AddressBook:
 
             self.__send_message_to_contact(known_contact, message)
 
-    def __send_message_to_contact(self, recipient: Contact, message):
-        """
-        Sends a message to a contact.
-        recipient: recipient node's contact
-        message: message to send
-        """
-
-        sender = MessageSender(recipient.host, recipient.port)
-
-        sender.send_message(message)
-
     def notify(self, message):
         """
         Handles incoming messages.
@@ -158,6 +147,18 @@ class AddressBook:
 
         for known_contact in self.contacts[:-1]:
             self.__send_message_to_contact(known_contact, message)
+
+    def __send_message_to_contact(self, recipient: Contact, message):
+        """
+        Sends a message to a contact.
+        recipient: recipient node's contact
+        message: message to send
+        """
+
+        sender = MessageSender(recipient.host, recipient.port)
+
+        sender.send_message(message)
+
 
 
 def __demo():

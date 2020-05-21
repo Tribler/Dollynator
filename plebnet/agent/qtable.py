@@ -38,7 +38,6 @@ class QTable:
         self.receiver = self.init_receiver_for_remote_qtables()
         pass
 
-    # TODO : set up a receiver for the qtables
     # TODO : share QTable when reproducing
 
     def init_receiver_for_remote_qtables(self):
@@ -106,18 +105,18 @@ class QTable:
                                         bandwidth=option.bandwidth, price=option.price, memory=option.memory)
                 self.providers_offers.append(element)
 
-    # TODO: to be implemented after midterm
-    def update_values2(self, other_q_values, amount_mb_tokens_per_usd_per_day):
-        """
-        Updates the qtable following the QD-learning algorithm.
-        QD-learning update for current state (else q-value remains constant):
-            Qnew <- Qold - beta * (sum of (Qold - Qrecieved))
-                         + alpha * (reward + discount * max(action (qvalue) in next state) - Qold)
-        :param other_q_values: The list of q-values received from gossipping with its neighbours
-        :param amount_mb_tokens_per_usd_per_day: the reward of the current state at the current time
-        """
-        # self.update_alpha_and_beta()
-        pass
+    # # TODO: to be implemented after midterm
+    # def update_values2(self, other_q_values, amount_mb_tokens_per_usd_per_day):
+    #     """
+    #     Updates the qtable following the QD-learning algorithm.
+    #     QD-learning update for current state (else q-value remains constant):
+    #         Qnew <- Qold - beta * (sum of (Qold - Qrecieved))
+    #                      + alpha * (reward + discount * max(action (qvalue) in next state) - Qold)
+    #     :param other_q_values: The list of q-values received from gossipping with its neighbours
+    #     :param amount_mb_tokens_per_usd_per_day: the reward of the current state at the current time
+    #     """
+    #     # self.update_alpha_and_beta()
+    #     pass
 
     def update_alpha_and_beta(self, provider_offer_ID):
         """
@@ -177,7 +176,6 @@ class QTable:
 
     # def check_for_remote_qtables(self):
     #     while len(self.receiver.messages_queue) > 0 :
-
 
     def choose_option(self, providers):
         """
@@ -393,6 +391,14 @@ class QTable:
         else:
             for i, actions in enumerate(self.environment):
                 self.environment[actions][provider_offer_ID] -= self.environment_lr
+
+    # TODO : decide how many nodes to share qtable with
+    def share_qtable(self):
+        """
+        Method that share local QTable with n nodes when the agent tries to reproduce.
+        """
+        for contact in self.address_book.contacts:
+            self.address_book.__send_message_to_contact(contact, self.qtable)
 
 
 class ProviderOffer:
