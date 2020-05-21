@@ -150,34 +150,33 @@ def get_BTC_balance(): return get_balance('BTC')
 def get_MB_balance(): return get_balance('MB')
 
 
-# TODO: test commented out functions below
-# def get_transactions(type):
-#     try:
-#         return requests.get('http://localhost:8085/wallets/' + type + '/transactions').json()['transactions']
-#     except:
-#         return "No %s wallet found" % type
-#
-#
-# def get_TBTC_transactions(): return get_transactions('TBTC')
-#
-#
-# def get_BTC_transactions(): return get_transactions('BTC')
-#
-#
-# def get_MB_transactions(): return get_transactions('MB')
-#
-#
-# def get_balance_pending(type):
-#     try:
-#         return requests.get('http://localhost:8085/wallets/' + type + '/balance').json()['balance']['pending']
-#     except:
-#         return "No %s wallet found" % type
-#
-#
-# def get_TBTC_balance_pending(): return get_balance_pending('TBTC')
-#
-#
-# def get_BTC_balance_pending(): return get_balance_pending('BTC')
-#
-#
-# def get_MB_balance_pending(): return get_balance_pending('MB')
+def get_transactions(type):
+    try:
+        return requests.get('http://localhost:8085/wallets/' + type + '/transactions').json()['transactions']
+    except:
+        return "No %s wallet found" % type
+
+
+def get_TBTC_transactions(): return get_transactions('TBTC')
+
+
+def get_BTC_transactions(): return get_transactions('BTC')
+
+
+def get_MB_transactions(): return get_transactions('MB')
+
+
+def get_balance_pending(type):
+    try:
+        return requests.get('http://localhost:8085/wallets/' + type + '/balance').json()['balance']['pending']
+    except:
+        return "No %s wallet found" % type
+
+
+def get_TBTC_balance_pending(): return get_balance_pending('TBTC')
+
+
+def get_BTC_balance_pending(): return get_balance_pending('BTC')
+
+
+def get_MB_balance_pending(): return get_balance_pending('MB')

@@ -38,8 +38,6 @@ strategies = {
 qtable = None  # Used to store the QTable of the agent and only load once.
 TIME_ALIVE = 30 * plebnet_settings.TIME_IN_DAY
 average_MB_tokens_per_day = 10000  # estimate from previous reports
-sold_mb_tokens = 0
-previous_mb_tokens = 0
 
 
 def setup(args):
@@ -97,14 +95,6 @@ def check():
     global config, qtable
     global sold_mb_tokens, previous_mb_tokens
     logger.log("Checking PlebNet", log_name)
-
-    # TODO: test get_amount_MB_tokens_earned(), if it works, it is a way better solution
-    current_mb_tokens = wallet_controller.get_MB_balance()
-    if previous_mb_tokens < current_mb_tokens:
-        sold_tokens = current_mb_tokens - previous_mb_tokens
-        sold_mb_tokens += sold_tokens
-
-        previous_mb_tokens = current_mb_tokens
 
     # Read general configuration
     if settings.wallets_testnet_created():
@@ -283,20 +273,20 @@ def get_reward_qlearning():
     """
     global sold_mb_tokens
 
+    # get the price of the current vps
     current_vpsprovider = qtable.self_state.provider
     current_vpsoption = qtable.self_state.option
     option = cloudomate_controller.get_vps_option(current_vpsprovider, current_vpsoption)
     price = option.price
 
+    # get how long the agent has been alive in number of days
     time_alive = TIME_ALIVE - config.time_to_expiration()
     days_alive = time_alive / plebnet_settings.TIME_IN_DAY
 
-    current_mb_balance = wallet_controller.get_MB_balance()
+    # get the total amount of mb tokens the agent has earned up until now
+    mb_tokens_gotten = get_amount_mb_tokens_earned()
 
-    # TODO: test if this works first
-    # mb_tokens_gotten = get_amount_MB_tokens_not_in_wallet()
-    mb_tokens_gotten = current_mb_balance + sold_mb_tokens
-
+    # get the amount of mb tokens per day per price of the current vps
     reward_q_learning = mb_tokens_gotten / (price * days_alive)
 
     # normalize it around 0.5
@@ -304,30 +294,30 @@ def get_reward_qlearning():
 
     return reward_q_learning
 
-# TODO: test if this works; if it works than this is way better
-# def get_amount_MB_tokens_earned():
-#     """
-#     Gets amount of MB tokens earned until now
-#     :return: total amount of MB tokens earned on this node until now
-#     """
-#     transactions_list = wallet_controller.get_MB_transactions()
-#
-#     # get the amount of mb tokens sold by looking at the mb wallets outgoing transactions
-#     total_mb_tokens_sold = 0
-#     for transaction in transactions_list:
-#         if transaction["outgoing"] == True:
-#             total_mb_tokens_sold += transaction["amount"]
-#
-#     # get the amount of mb tokens in the wallet on pending
-#     mb_tokens_pending = wallet_controller.get_MB_balance_pending()
-#
-#     # does pending mb tokens means it is on the market being sold??
-#     mb_tokens_available = wallet_controller.get_MB_balance()
-#
-#     # get the balance of mb tokens in the wallet
-#     mb_tokens_earned_in_total = total_mb_tokens_sold + mb_tokens_pending + mb_tokens_available
-#
-#     return mb_tokens_earned_in_total
+
+def get_amount_mb_tokens_earned():
+    """
+    Gets amount of MB tokens earned until now
+    :return: total amount of MB tokens earned on this node until now
+    """
+    transactions_list = wallet_controller.get_MB_transactions()
+
+    # get the amount of mb tokens sold by looking at the mb wallets outgoing transactions
+    total_mb_tokens_sold = 0
+    for transaction in transactions_list:
+        if transaction["outgoing"]:
+            total_mb_tokens_sold += transaction["amount"]
+
+    # get the amount of mb tokens in the wallet on pending
+    mb_tokens_pending = wallet_controller.get_MB_balance_pending()
+
+    # get the amount of mb tokens currently in the wallet
+    mb_tokens_available = wallet_controller.get_MB_balance()
+
+    # get the balance of mb tokens in the wallet
+    mb_tokens_earned_in_total = total_mb_tokens_sold + mb_tokens_pending + mb_tokens_available
+
+    return mb_tokens_earned_in_total
 
 
 # TODO: implement this method
