@@ -38,6 +38,8 @@ class MessageSender:
 
         s.send(meessage_body)
 
+
+
         s.close()
 
 
@@ -62,18 +64,22 @@ class MessageReceiver:
 
         self.messages_queue = collections.deque()
 
-        self.message_consumers = []
+        self.message_consumers = {
+            'network' : [],
+            'learning' : []
+        }
+        self.router = Router()
 
         threading.Thread(target=self.__start_listening).start()
 
         # threading.Thread(target=self.__start_notifying).start()
 
-    def register_consumer(self, message_consumer):
+    def register_consumer(self, message_consumer, list):
         """
         Registers a message_consumer.
         message_consumer: message_consumer to register as a listener
         """
-        self.message_consumers.append(message_consumer)
+        self.message_consumers[list].append(message_consumer)
 
     def __start_notifying(self):
         """
@@ -81,9 +87,15 @@ class MessageReceiver:
         """
         while True:
 
-            if len(self.messages_queue) > 0:
-                self.__notify_consumers(pickle.loads(self.messages_queue.popleft()))
+            for i in self.router.queues:
+                if len(self.router.queues[i]) > 0:
+                    self.__notify_consumers(i)
 
+
+
+
+            #if len(self.meessages_queue) > 0:
+            #   self.__notify_consumers(pickle.loads(self.meessages_queue.popleft()))
 
             time.sleep(self.notify_interval)
 
@@ -109,14 +121,56 @@ class MessageReceiver:
 
             connection.close()
 
-            self.messages_queue.append(message)
 
-    def __notify_consumers(self, message):
+            #self.messages_queue.append(message)
+            self.router.routing(message)
+
+    def __notify_consumers(self, key):
         """
         Notifies all registered message consumers.
         """
-        for consumer in self.message_consumers:
-            consumer.notify(message)
+        for consumer in self.message_consumers[key]:
+            consumer.notify(self.router.queues[key].popleft())
+
+class Router:
+
+    def __init__(self):
+
+        self.queues = {
+
+            'network': collections.deque(),
+            'learning': collections.deque()
+
+        }
+
+    def _parse_message(self, raw_message):
+            """
+            Parses a raw message into command and data.
+            raw_message: raw_message to parse
+            """
+            msg = pickle.loads(raw_message)
+            command = msg['command']
+            data = msg['data']
+
+            print(data)
+
+            return msg, command, data
+
+    # TODO: SHALL WE MAKE IT MORE FLEXIBLE?
+    def routing(self, message):
+
+        msg, command, data = self._parse_message(message)
+
+        if command == 'add-contact':
+            self.queues['network'].append(msg)
+
+
+        if command == 'qtable':
+            self.queues['learning'].append(msg)
+
+
+
+
 
 
 # Receives messages
@@ -134,28 +188,40 @@ def __demo_receive(port):
     consumer2 = Consumer()
 
     # Register the consumers
-    receiver.register_consumer(consumer1)
-    receiver.register_consumer(consumer2)
+    receiver.register_consumer(consumer1, 'learning')
+    receiver.register_consumer(consumer2, 'network')
 
 
 # Sends messages
 def __demo_send(sleepTime, port, host='127.0.0.1'):
     # Initialize sender
     sender = MessageSender(host, port)
-
+    print()
     # Send message
     counter = 0
 
     while True:
         time.sleep(sleepTime)
 
-        sender.send_message("Counter: " + str(counter))
+        msg1 = {
+            'command': 'add-contact',
+            'data': 'this message is for network purposes'
+        }
+
+        msg2 = {
+            'command': 'add-contact',
+            'data': 'this message is for learning purposes'
+        }
+
+        sender.send_message(msg1)
+        sender.send_message(msg2)
         counter += 1
 
 
 if __name__ == '__main__':
-    port = 8000
+    port = 8001
 
     # Start sender and receiver on two separate threads
     threading.Thread(target=__demo_send, args=(1, port,)).start()
     threading.Thread(target=__demo_receive, args=(port,)).start()
+
