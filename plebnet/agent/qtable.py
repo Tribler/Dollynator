@@ -86,19 +86,6 @@ class QTable:
                                         bandwidth=option.bandwidth, price=option.price, memory=option.memory)
                 self.providers_offers.append(element)
 
-    # TODO: to be implemented after midterm
-    def update_values2(self, other_q_values, amount_mb_tokens_per_usd_per_day):
-        """
-        Updates the qtable following the QD-learning algorithm.
-        QD-learning update for current state (else q-value remains constant):
-            Qnew <- Qold - beta * (sum of (Qold - Qrecieved))
-                         + alpha * (reward + discount * max(action (qvalue) in next state) - Qold)
-        :param other_q_values: The list of q-values received from gossipping with its neighbours
-        :param amount_mb_tokens_per_usd_per_day: the reward of the current state at the current time
-        """
-        # self.update_alpha_and_beta()
-        pass
-
     def update_alpha_and_beta(self, provider_offer_ID):
         """
         every time we merge local QTable with remote one we want to update alpha and beta first in order to give the
