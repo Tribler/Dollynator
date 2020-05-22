@@ -1,6 +1,7 @@
+import random
 import threading
 import time
-import random
+
 import rsa
 
 from plebnet.messaging import Contact
@@ -166,7 +167,10 @@ class AddressBook(MessageConsumer):
                 return
 
     def __generate_ping_message(self):
-
+        """
+        Generates a ping message
+        :return: the generated ping message
+        """
         return {
             'command': 'ping',
             'data': None

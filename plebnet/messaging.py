@@ -1,15 +1,17 @@
-import pickle
-import socket
 import collections
+import hashlib
+import pickle
+import random
+import socket
+import string
 import threading
 import time
-import rsa
-import random
-import string
-import hashlib
-
-from cryptography.fernet import Fernet
 from datetime import datetime
+
+import rsa
+from cryptography.fernet import Fernet
+
+_ack = b'\xff'
 
 
 def now():
@@ -116,6 +118,8 @@ class MessageSender:
         """
         self.receiver = receiver
 
+        self._ack_length = len(_ack)
+
     def _build_packet(self, data, sender_id, private_key):
         """
         Builds packet header and payload to send.
@@ -179,7 +183,7 @@ class MessageSender:
             # Sending header
             s.send(header)
             s.settimeout(ack_timeout)
-            s.recv(1)
+            s.recv(self._ack_length)
 
             # Sending payload
             s.send(payload)
@@ -238,7 +242,8 @@ class MessageReceiver:
 
     def __start_notifying(self):
         """
-        Starts periodically decrypting and verifying messages, and notifies the registered message consumers.
+        Starts periodically checking the messages queue. When new messages are found, they are verified, decoded and
+        forwarded to all registered consumers.
         """
 
         while True:
@@ -248,17 +253,12 @@ class MessageReceiver:
                 while len(self.messages_queue) > 0:
                     try:
 
-                        signature, payload_key, sender_id, encrypted_pickled_message = self.messages_queue.popleft()
+                        signature, encrypted_payload_key, sender_id, payload = self.messages_queue.popleft()
 
                         # Verifying signature
-                        rsa.verify(encrypted_pickled_message, signature, self.__get_contact_public_key(sender_id))
+                        rsa.verify(payload, signature, self.__get_contact_public_key(sender_id))
 
-                        # Decrypting symmetric key
-                        symmetric_key = rsa.decrypt(payload_key, self.private_key)
-
-                        # Decrypting and unpickling message
-                        pickled_message = Fernet(symmetric_key).decrypt(encrypted_pickled_message)
-                        message = pickle.loads(pickled_message)
+                        message = self._decode_payload(encrypted_payload_key, payload)
 
                         self.__notify_consumers(message, sender_id)
 
@@ -268,8 +268,28 @@ class MessageReceiver:
 
             time.sleep(self.notify_interval)
 
-    def __get_contact_public_key(self, contact_id: str):
+    def _decode_payload(self, encrypted_payload_key, payload):
+        """
+        Decrypts and decodes the payload, using the receiver's private key to decrypt the payload key.
+        :param encrypted_payload_key: encrypted payload key, decrypted with the private key
+        :param payload: encoded encrypted payload
+        :return: decoded decrypted message
+        """
+        # Decrypting payload key
+        payload_key = rsa.decrypt(encrypted_payload_key, self.private_key)
 
+        # Decrypting and unpickling message
+        pickled_message = Fernet(payload_key).decrypt(payload)
+        message = pickle.loads(pickled_message)
+
+        return message
+
+    def __get_contact_public_key(self, contact_id: str):
+        """
+        Gets a known contact's public key. Throws exception if not found
+        :param contact_id: id of the contact to retrieve the public key of
+        :return: the retrieved public key
+        """
         for contact in self.contacts:
 
             if contact.id == contact_id:
@@ -278,18 +298,29 @@ class MessageReceiver:
         raise Exception("Contact not found " + contact_id)
 
     def kill(self):
-
+        """
+        Sets kill flag to true, effectively making the listening thread stop.
+        """
         self.kill_flag = True
+
+    def _initialize_socket(self):
+        """
+        Initializes a socket listening on the port specified at construction of the message receiver
+        :return: the initialized socket
+        """
+        s = socket.socket()
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(('', self.port))
+        s.listen(self.connections_queue_size)
+
+        return s
 
     def __start_listening(self):
         """
         Starts listening for incoming connections.
         """
 
-        s = socket.socket()
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(('', self.port))
-        s.listen(self.connections_queue_size)
+        s = self._initialize_socket()
 
         while not self.kill_flag:
 
@@ -317,7 +348,7 @@ class MessageReceiver:
 
         signature, encrypted_payload_key, payload_length, sender_id = self._parse_header(header)
 
-        connection.send(b'\xff')
+        connection.send(_ack)
 
         payload = connection.recv(payload_length)
 
