@@ -62,7 +62,7 @@ class AddressBook:
         self.receiver = MessageReceiver(self_contact.port, notify_interval=receiver_notify_interval)
 
         self.contacts = deepcopy(contacts)
-        self.receiver.register_consumer(self)
+        self.receiver.register_consumer(self, 'network')
         self.self_contact = self_contact
 
     def parse_message(self, raw_message):
