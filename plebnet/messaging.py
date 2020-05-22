@@ -116,6 +116,52 @@ class MessageSender:
         """
         self.receiver = receiver
 
+    def _build_packet(self, data, sender_id, private_key):
+        """
+        Builds packet header and payload to send.
+        :param data: content of the message sent with the packet
+        :param sender_id: id of the sender
+        :param private_key: private key of the sender to sign the message
+        :return: a tuple containing the packet header and the packet payload
+        """
+
+        symmetric_key, payload = self._build_encrypted_payload(data)
+
+        header = self._build_header(payload, symmetric_key, sender_id, private_key)
+
+        return header, payload
+
+    def _build_encrypted_payload(self, data):
+        """
+        Encodes and encrypts symmetrically encrypts payload with a generated key.
+        :param data: payload to encode (pickle) and
+        :return: a tuple containing the symmetric key used and the encoded encrypted payload
+        """
+
+        pickled_data = pickle.dumps(data)
+
+        symmetric_key = Fernet.generate_key()
+        payload = Fernet(symmetric_key).encrypt(pickled_data)
+
+        return symmetric_key, payload
+
+    def _build_header(self, payload, symmetric_key, sender_id, private_key):
+        """
+        Builds a packet header
+        :param payload: payload of the packet
+        :param symmetric_key: symmetric key used to encrypt the payload
+        :param sender_id: id of the sender of the message
+        :param private_key: private key of the sender to sign the message
+        :return: the built packet header
+        """
+
+        encrypted_symmetric_key = rsa.encrypt(symmetric_key, self.receiver.public_key)
+        signature = rsa.sign(payload, private_key, 'SHA-1')
+
+        variable = (str(len(payload)) + ':' + sender_id).encode('utf-8')
+
+        return signature + encrypted_symmetric_key + variable
+
     def send_message(self, data, sender_contact_id, private_key, ack_timeout=5.0):
         """
         Sends a message.
@@ -124,15 +170,7 @@ class MessageSender:
 
         try:
 
-            pickled_message = pickle.dumps(data)
-            symmetric_key = Fernet.generate_key()
-            encrypted_symmetric_key = rsa.encrypt(symmetric_key, self.receiver.public_key)
-            encrypted_pickled_message = Fernet(symmetric_key).encrypt(pickled_message)
-            signature = rsa.sign(encrypted_pickled_message, private_key, 'SHA-1')
-
-            variable = (str(len(encrypted_pickled_message)) + ':' + sender_contact_id).encode('utf-8')
-
-            header = signature + encrypted_symmetric_key + variable
+            header, payload = self._build_packet(data, sender_contact_id, private_key)
 
             # Connecting to receiver
             s = socket.socket()
@@ -143,8 +181,8 @@ class MessageSender:
             s.settimeout(ack_timeout)
             s.recv(1)
 
-            # Sending message
-            s.send(encrypted_pickled_message)
+            # Sending payload
+            s.send(payload)
 
             # Closing connection
             s.close()
@@ -210,13 +248,13 @@ class MessageReceiver:
                 while len(self.messages_queue) > 0:
                     try:
 
-                        signature, encrypted_symmetric_key, sender_id, encrypted_pickled_message = self.messages_queue.popleft()
+                        signature, payload_key, sender_id, encrypted_pickled_message = self.messages_queue.popleft()
 
                         # Verifying signature
                         rsa.verify(encrypted_pickled_message, signature, self.__get_contact_public_key(sender_id))
 
                         # Decrypting symmetric key
-                        symmetric_key = rsa.decrypt(encrypted_symmetric_key, self.private_key)
+                        symmetric_key = rsa.decrypt(payload_key, self.private_key)
 
                         # Decrypting and unpickling message
                         pickled_message = Fernet(symmetric_key).decrypt(encrypted_pickled_message)
@@ -258,28 +296,52 @@ class MessageReceiver:
             connection, addr = s.accept()
 
             if self.kill_flag:
+                connection.close()
                 break
 
             try:
 
-                header = connection.recv(256)
-
-                variable = header[128:]
-                variable_parts = variable.decode('utf-8').split(':')
-
-                connection.send(b'\xff')
-
-                encrypted_pickled_message = connection.recv(int(variable_parts[0]))
-
-                connection.close()
-
-                self.messages_queue.append((header[:64], header[64:128], variable_parts[1], encrypted_pickled_message))
+                self._handle_connection(connection)
 
             except:
 
-                print("Could not receive")
-
                 continue
+
+    def _handle_connection(self, connection):
+        """
+        Handles incoming connections to receive messages
+        :param connection: connection to handle
+        """
+
+        header = connection.recv(256)
+
+        signature, encrypted_payload_key, payload_length, sender_id = self._parse_header(header)
+
+        connection.send(b'\xff')
+
+        payload = connection.recv(payload_length)
+
+        connection.close()
+
+        self.messages_queue.append((signature, encrypted_payload_key, sender_id, payload))
+
+    def _parse_header(self, header):
+        """
+        Parses a message header
+        :param header: header to parse
+        :return: a tuple containing message signature, the encrypted payload key, the payload length and the sender id
+        """
+
+        signature = header[:64]
+        encrypted_payload_key = header[64:128]
+
+        variable = header[128:].decode('utf-8')
+        variable_parts = variable.split(':')
+
+        payload_length = int(variable_parts[0])
+        sender_id = variable_parts[1]
+
+        return signature, encrypted_payload_key, payload_length, sender_id
 
     def __notify_consumers(self, message, sender_id):
         """
