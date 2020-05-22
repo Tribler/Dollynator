@@ -7,10 +7,10 @@ import rsa
 import random
 import string
 import hashlib
-import sys
 
 from cryptography.fernet import Fernet
 from datetime import datetime
+
 
 def now():
     """
@@ -38,7 +38,6 @@ def generate_contact_id(parent_id: str = ""):
     random_hash = hashlib.sha256(random_seed.encode('utf-8')).hexdigest()
 
     return random_hash + timestamp
-
 
 
 class Contact:
@@ -85,6 +84,7 @@ class Contact:
 
         return self.first_failure is None
 
+
 class MessageDeliveryError(Exception):
 
     def __init__(self, *args):
@@ -95,27 +95,26 @@ class MessageDeliveryError(Exception):
 
         else:
 
-            self.mesage = "Message delivery failed"
+            self.message = "Message delivery failed"
 
 
 class MessageConsumer:
 
     def notify(self, message, sender_id):
-
         pass
 
 
 class MessageSender:
     """
     Class for sending messages to MessageReceivers.
-    """    
+    """
+
     def __init__(self, receiver: Contact):
         """
         host: Receipient host name.
         port: Receipient port
         """
         self.receiver = receiver
-        
 
     def send_message(self, data, sender_contact_id, private_key, ack_timeout=5.0):
         """
@@ -124,13 +123,13 @@ class MessageSender:
         """
 
         try:
-            
+
             pickled_message = pickle.dumps(data)
-            symmetric_key = Fernet.generate_key()  
+            symmetric_key = Fernet.generate_key()
             encrypted_symmetric_key = rsa.encrypt(symmetric_key, self.receiver.public_key)
             encrypted_pickled_message = Fernet(symmetric_key).encrypt(pickled_message)
             signature = rsa.sign(encrypted_pickled_message, private_key, 'SHA-1')
-            
+
             variable = (str(len(encrypted_pickled_message)) + ':' + sender_contact_id).encode('utf-8')
 
             header = signature + encrypted_symmetric_key + variable
@@ -150,7 +149,7 @@ class MessageSender:
             # Closing connection
             s.close()
 
-        except Exception as e:
+        except:
 
             raise MessageDeliveryError()
 
@@ -168,12 +167,12 @@ class MessageReceiver:
     """
 
     def __init__(
-        self,
-        port: int,
-        private_key: rsa.PrivateKey,
-        contacts: list,
-        connections_queue_size: int = 20,
-        notify_interval: int = 1
+            self,
+            port: int,
+            private_key: rsa.PrivateKey,
+            contacts: list,
+            connections_queue_size: int = 20,
+            notify_interval: float = 1
     ):
 
         self.port = port
@@ -181,8 +180,8 @@ class MessageReceiver:
         self.contacts = contacts
         self.connections_queue_size = connections_queue_size
         self.notify_interval = notify_interval
-            
-        self.meessages_queue = collections.deque()
+
+        self.messages_queue = collections.deque()
 
         self.message_consumers = []
 
@@ -192,7 +191,6 @@ class MessageReceiver:
 
         threading.Thread(target=self.__start_notifying).start()
 
-
     def register_consumer(self, message_consumer: MessageConsumer):
         """
         Registers a message_consumer.
@@ -200,20 +198,19 @@ class MessageReceiver:
         """
         self.message_consumers.append(message_consumer)
 
-
     def __start_notifying(self):
         """
-        Starts periodically decrypting and verifying messages, and notified the registered message consumers.
+        Starts periodically decrypting and verifying messages, and notifies the registered message consumers.
         """
 
         while True:
 
-            if len(self.meessages_queue) > 0:
+            if len(self.messages_queue) > 0:
 
-                while len(self.meessages_queue) > 0:
+                while len(self.messages_queue) > 0:
                     try:
-                        
-                        signature, encrypted_symmetric_key, sender_id, encrypted_pickled_message = self.meessages_queue.popleft()
+
+                        signature, encrypted_symmetric_key, sender_id, encrypted_pickled_message = self.messages_queue.popleft()
 
                         # Verifying signature
                         rsa.verify(encrypted_pickled_message, signature, self.__get_contact_public_key(sender_id))
@@ -222,7 +219,6 @@ class MessageReceiver:
                         symmetric_key = rsa.decrypt(encrypted_symmetric_key, self.private_key)
 
                         # Decrypting and unpickling message
-
                         pickled_message = Fernet(symmetric_key).decrypt(encrypted_pickled_message)
                         message = pickle.loads(pickled_message)
 
@@ -232,15 +228,13 @@ class MessageReceiver:
 
                         continue
 
-
             time.sleep(self.notify_interval)
 
     def __get_contact_public_key(self, contact_id: str):
 
         for contact in self.contacts:
-            
-            if contact.id == contact_id:
 
+            if contact.id == contact_id:
                 return contact.public_key
 
         raise Exception("Contact not found " + contact_id)
@@ -248,7 +242,6 @@ class MessageReceiver:
     def kill(self):
 
         self.kill_flag = True
-
 
     def __start_listening(self):
         """
@@ -259,36 +252,34 @@ class MessageReceiver:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind(('', self.port))
         s.listen(self.connections_queue_size)
-        
+
         while not self.kill_flag:
-        
+
             connection, addr = s.accept()
 
             if self.kill_flag:
-
                 break
-            
+
             try:
-                
+
                 header = connection.recv(256)
 
                 variable = header[128:]
                 variable_parts = variable.decode('utf-8').split(':')
-                
+
                 connection.send(b'\xff')
 
                 encrypted_pickled_message = connection.recv(int(variable_parts[0]))
 
                 connection.close()
-                
-                self.meessages_queue.append((header[:64], header[64:128], variable_parts[1], encrypted_pickled_message))
-                
-            except:
-                
-                print("Could not receive")
-                
-                continue
 
+                self.messages_queue.append((header[:64], header[64:128], variable_parts[1], encrypted_pickled_message))
+
+            except:
+
+                print("Could not receive")
+
+                continue
 
     def __notify_consumers(self, message, sender_id):
         """
@@ -296,12 +287,10 @@ class MessageReceiver:
         """
 
         for consumer in self.message_consumers:
-            
             consumer.notify(message, sender_id)
 
-    
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     sender_pub, sender_priv = rsa.newkeys(512)
     receiver_pub, receiver_priv = rsa.newkeys(512)
 
@@ -325,11 +314,12 @@ if __name__ == '__main__':
         [sender_contact]
     )
 
+
     class Printer(MessageConsumer):
 
         def notify(self, message, sender_id):
-
             print("Received message: " + message)
+
 
     receiver.register_consumer(Printer())
 

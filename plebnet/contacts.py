@@ -21,7 +21,7 @@ class AddressBook(MessageConsumer):
             self_contact: Contact,
             private_key: rsa.PrivateKey,
             contacts=None,
-            receiver_notify_interval=1,
+            receiver_notify_interval=1.0,
             contact_restore_timeout=3600,
             inactive_nodes_ping_interval=1799
     ):
@@ -41,9 +41,9 @@ class AddressBook(MessageConsumer):
         self.private_key = private_key
 
         self.receiver = MessageReceiver(
-            port = self_contact.port,
-            private_key = self.private_key,
-            contacts = self.contacts,
+            port=self_contact.port,
+            private_key=self.private_key,
+            contacts=self.contacts,
             notify_interval=receiver_notify_interval
         )
 
@@ -124,11 +124,11 @@ class AddressBook(MessageConsumer):
             return True
 
         except MessageDeliveryError:
-            
+
             self.__set_link_state(False, recipient)
 
             return False
-    
+
     def __set_link_state(self, link_up: bool, contact: Contact):
         """
         Sets the link with a node's state.
@@ -137,18 +137,17 @@ class AddressBook(MessageConsumer):
         """
 
         for known_contact in self.contacts:
-    
+
             if known_contact.id == contact.id:
-                
+
                 if link_up:
-    
+
                     known_contact.link_up()
 
                 else:
-        
+
                     # print("Node " + self.self_contact.id + " sees " + contact.id + " as down")
                     known_contact.link_down()
-
 
     def __delete_contact(self, contact: Contact):
         """
@@ -162,7 +161,6 @@ class AddressBook(MessageConsumer):
         for known_contact in self.contacts:
 
             if known_contact.id == contact.id:
-
                 self.contacts.remove(known_contact)
 
                 return
@@ -178,7 +176,7 @@ class AddressBook(MessageConsumer):
         """
         Starts periodically pinging inactive nodes.
         """
-        
+
         while True:
 
             time.sleep(self.inactive_nodes_ping_interval)
@@ -186,22 +184,20 @@ class AddressBook(MessageConsumer):
             for contact in self.contacts:
 
                 if not contact.is_active():
-    
+
                     ping_message = self.__generate_ping_message()
 
                     if not self.send_message_to_contact(contact, ping_message):
 
                         current_timestamp = now()
-    
+
                         if current_timestamp - contact.first_failure > self.contact_restore_timeout:
-        
-
                             self.__delete_contact(contact)
-
 
     def notify(self, message, sender_id):
         """
         Handles incoming messages.
+        :param sender_id: id of the message sender
         :param message: message to handle
         """
 
@@ -217,9 +213,6 @@ class AddressBook(MessageConsumer):
         """
 
         if self.__append_contact(contact):
-
-            # print("Node " + self.self_contact.id + " adds " + contact.id + "'s contact")
-
             self.__forward_contact(contact)
 
     def __append_contact(self, contact: Contact):
@@ -229,21 +222,19 @@ class AddressBook(MessageConsumer):
         """
 
         if contact.id == self.self_contact.id:
-
             return False
 
         for known_contact in self.contacts:
-            
+
             if known_contact.id == contact.id:
-                
                 return False
 
         self.contacts.append(contact)
 
         return True
 
+
 def __demo():
-    
     id_counter = 1
     port_counter = 8001
 
@@ -253,18 +244,18 @@ def __demo():
 
     root_pub, root_priv = rsa.newkeys(512)
     root_contact = Contact(
-        id = str(id_counter),
-        host = "127.0.0.1",
-        port = port_counter,
-        public_key = root_pub
+        id=str(id_counter),
+        host="127.0.0.1",
+        port=port_counter,
+        public_key=root_pub
     )
 
     root = AddressBook(
-        self_contact = root_contact, 
-        private_key = root_priv,
-        contact_restore_timeout = restore_timeout,
-        inactive_nodes_ping_interval = ping_interval,
-        receiver_notify_interval = receiver_notify_interval
+        self_contact=root_contact,
+        private_key=root_priv,
+        contact_restore_timeout=restore_timeout,
+        inactive_nodes_ping_interval=ping_interval,
+        receiver_notify_interval=receiver_notify_interval
     )
 
     nodes = [root]
@@ -284,19 +275,19 @@ def __demo():
         pub, priv = rsa.newkeys(512)
 
         new_node_contact = Contact(
-            id = str(id_counter),
-            host = '127.0.0.1',
-            port = port_counter,
-            public_key = pub
+            id=str(id_counter),
+            host='127.0.0.1',
+            port=port_counter,
+            public_key=pub
         )
 
         new_node = AddressBook(
-            self_contact = new_node_contact,
-            private_key = priv,
-            contacts = new_node_contact_list,
-            contact_restore_timeout = restore_timeout,
-            inactive_nodes_ping_interval = ping_interval,
-            receiver_notify_interval = receiver_notify_interval
+            self_contact=new_node_contact,
+            private_key=priv,
+            contacts=new_node_contact_list,
+            contact_restore_timeout=restore_timeout,
+            inactive_nodes_ping_interval=ping_interval,
+            receiver_notify_interval=receiver_notify_interval
         )
 
         nodes.append(new_node)
@@ -310,7 +301,6 @@ def __demo():
             contacts = ""
 
             for contact in node.contacts:
-
                 contacts += contact.id + ", "
 
             print("Node " + node.self_contact.id + " has " + str(len(node.contacts)) + " contacts: " + contacts)
@@ -318,17 +308,15 @@ def __demo():
         time.sleep(1)
 
         for i in range(int(len(nodes) / 3)):
-
             node_to_remove = random.choice(nodes)
             print("Killing node " + node_to_remove.self_contact.id)
             node_to_remove.receiver.kill()
-            nodes.remove(node_to_remove)        
+            nodes.remove(node_to_remove)
 
         time.sleep(3)
-        
+
         print("")
 
-    
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     __demo()
