@@ -43,7 +43,7 @@ class QTable:
             prov = {}
             environment_arr = {}
             for provider_offer in self.providers_offers:
-                prov[self.get_ID(provider_offer)] = self.calculate_measure(provider_offer)
+                prov[self.get_ID(provider_offer)] = 0  # self.calculate_measure(provider_offer)
                 environment_arr[self.get_ID(provider_offer)] = 0
             self.qtable[self.get_ID(provider_of)] = prov
             self.environment[self.get_ID(provider_of)] = environment_arr
@@ -105,8 +105,8 @@ class QTable:
         appropriate weight to local and remote information.
         """
         # TODO: Switch to a mathematical model update? I.e.: a modified sigmoid
-        update_purchase = self.number_of_updates[self.get_ID_from_state()][provider_offer_ID]
-        update_current_state = self.number_of_updates[self.get_ID_from_state()][self.get_ID_from_state()]
+        update_purchase = self.number_of_updates[self.get_ID_from_state()][provider_offer_ID] + 1
+        update_current_state = self.number_of_updates[self.get_ID_from_state()][self.get_ID_from_state()] + 1
         if update_purchase <= 50:
             for provider_of in self.providers_offers:
                 # update alpha and beta
@@ -296,8 +296,6 @@ class QTable:
         :param status: a boolean indicating whether the purchase was successfully executed or not.
         """
 
-        self.update_alpha_and_beta(provider_offer_ID)
-
         to_add = copy.deepcopy(self.qtable)
         for i in to_add:
             for j in to_add:
@@ -311,6 +309,8 @@ class QTable:
         for i in self.qtable:
             for j in self.qtable:
                 self.qtable[i][j] += to_add[i][j]
+
+        self.update_alpha_and_beta(provider_offer_ID)
 
     def update_remote_qtable(self, remote_qtable, provider_offer_ID, to_add):
         """
