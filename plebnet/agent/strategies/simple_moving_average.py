@@ -120,7 +120,8 @@ class SimpleMovingAverage(Strategy):
         :return: price in BTC/MB
         """
         if plebnet_settings.get_instance().wallets_testnet():
-            return float(transaction['assets']['second']['amount']) / transaction['assets']['first']['amount']
+            result = float(transaction['assets']['second']['amount']) / transaction['assets']['first']['amount']
+            return result
         return float(transaction['assets']['first']['amount'])/transaction['assets']['second']['amount']
 
     def calculate_moving_average_data(self):
