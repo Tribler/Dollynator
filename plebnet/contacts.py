@@ -135,6 +135,9 @@ class AddressBook:
         if command == 'add-contact':
             self.__add_contact(data)
 
+
+
+
     def create_new_distributed_contact(self, contact: Contact):
         """
         Adds new contact and notifies the network.

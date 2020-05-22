@@ -26,6 +26,7 @@ from plebnet.agent.strategies.last_day_sell import LastDaySell
 from plebnet.agent.strategies.constant_sell import ConstantSell
 from plebnet.agent.strategies.simple_moving_average import SimpleMovingAverage
 from plebnet.utilities.btc import satoshi_to_btc
+from plebnet.contacts import AddressBook, Contact, generate_contact_id
 
 settings = plebnet_settings.get_instance()
 log_name = "agent.core"  # Used for identifying the origin of the log message.
@@ -36,7 +37,8 @@ strategies = {
     'simple_moving_average': SimpleMovingAverage
 }
 qtable = None  # Used to store the QTable of the agent and only load once.
-
+#TODO: Init AddressBook properly
+node = AddressBook(Contact(generate_contact_id(), '127.0.0.1', 8000))
 
 def setup(args):
     """
@@ -54,6 +56,8 @@ def setup(args):
 
     # Prepare the QTable configuration
     qtable = QTable()
+
+
 
     if args.test_net:
         settings.wallets_testnet("1")
@@ -276,6 +280,39 @@ def get_reward_qlearning():
     current_vpsprovider = qtable.self_state.provider
     current_vpsoption = qtable.self_state.option
     pass
+
+# TODO: Please giec, check this out
+def get_q_tables_through_gossipping():
+    """
+    Get the qtables stored in the receiver's queue
+    :return: a list of qtable
+    """
+    remote_tables = []
+
+    # TODO: initiate consumer in setup or somewhere it could be "always listening"
+    class LearningConsumer:
+
+        def parse_message(self, raw_message):
+            """
+            Parses a raw message into command and data.
+            raw_message: raw_message to parse
+            """
+            command = raw_message['command']
+            data = raw_message['data']
+
+            return command, data
+
+
+        def notify(self, message):
+
+            command, data = self.parse_message(message)
+            if command == 'qtable':
+                remote_tables.append(data)
+
+    learning_consumer = LearningConsumer()
+    node.receiver.register_consumer(learning_consumer)
+
+    return remote_tables
 
 
 def get_q_tables_through_gossipping():
