@@ -193,7 +193,8 @@ class TestCore(unittest.TestCase):
                                                                                              price=10.0,
                                                                                              purchase_url="mock"
                                                                                              )])
-    def test_attempt_purchase(self, mock1, mock2):
+    @mock.patch('plebnet.agent.core.get_amount_mb_tokens_earned', return_value=88878356)
+    def test_attempt_purchase(self, mock1, mock2, mock3):
         self.log = logger.log
         self.testnet = plebnet_settings.Init.wallets_testnet
         self.get = PlebNetConfig.get
@@ -230,6 +231,21 @@ class TestCore(unittest.TestCase):
 
         Core.config = PlebNetConfig
         qtable_copy = copy.deepcopy(Core.qtable.qtable)
+
+        cur_option = VpsOption(
+            name="Basic",
+            storage=100,
+            cores=2,
+            memory=10,
+            bandwidth=10000,
+            connection=1,
+            price=10,
+            purchase_url="https://panel.linevast.de"
+        )
+        cloudomate_controller.get_vps_option = MagicMock(return_value=cur_option)
+        PlebNetConfig.time_to_expiration = MagicMock(return_value=1592000)
+        Core.get_q_tables_through_gossipping= MagicMock(return_value=[])
+
 
         Core.attempt_purchase()
 
