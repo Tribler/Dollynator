@@ -13,6 +13,8 @@ import re
 import subprocess
 import shutil
 
+from plebnet import messaging
+
 from plebnet.agent.qtable import QTable
 
 from plebnet.agent.config import PlebNetConfig
@@ -26,8 +28,10 @@ from plebnet.agent.strategies.last_day_sell import LastDaySell
 from plebnet.agent.strategies.constant_sell import ConstantSell
 from plebnet.agent.strategies.simple_moving_average import SimpleMovingAverage
 from plebnet.utilities.btc import satoshi_to_btc
-from plebnet.contacts import AddressBook, Contact
-from plebnet.messaging import generate_contact_id
+from plebnet.address_book import AddressBook
+from plebnet.messaging import generate_contact_id, Contact
+
+import rsa
 
 settings = plebnet_settings.get_instance()
 log_name = "agent.core"  # Used for identifying the origin of the log message.
@@ -39,8 +43,33 @@ strategies = {
 }
 qtable = None  # Used to store the QTable of the agent and only load once.
 
-#TODO: Init AddressBook properly
-node = AddressBook(Contact(generate_contact_id(), '127.0.0.1', 8000))
+receiver_port = 8000  # port used to share information among agents
+
+remote_tables = []  # list to store the remote qtables
+
+
+# TODO: initiate consumer in setup or somewhere it could be "always listening"
+class LearningConsumer(messaging.MessageConsumer):
+
+    def parse_message(self, raw_message: messaging.Message):
+        """
+         Parses a raw message into command and data.
+         raw_message: raw_message to parse
+        """
+        channel = raw_message["channel"]
+        command = raw_message['command']
+        data = raw_message['data']
+
+        return channel, command, data
+
+    def notify(self, message: messaging.Message, sender_id):
+        channel, command, data = self.parse_message(message)
+        if command == 'qtable':
+            if channel == 'qtable':
+                remote_tables.append(data)
+
+
+learning_consumer = LearningConsumer()
 
 TIME_ALIVE = 30 * plebnet_settings.TIME_IN_DAY
 average_MB_tokens_per_day = 10000  # estimate from previous reports
@@ -62,8 +91,6 @@ def setup(args):
 
     # Prepare the QTable configuration
     qtable = QTable()
-
-
 
     if args.test_net:
         settings.wallets_testnet("1")
@@ -91,6 +118,9 @@ def setup(args):
     irc_handler.start_irc_client()
 
     config.save()
+
+    # add learning_consumer as a consumer for qtable channel in addressbook
+    qtable.address_book.receiver.register_consumer("qtable", learning_consumer)
 
     logger.success("PlebNet is ready to roll!")
 
@@ -258,15 +288,13 @@ def attempt_purchase():
         logger.log("Try to buy a new server from %s" % provider, log_name)
         success = cloudomate_controller.purchase_choice(config)
         if success == plebnet_settings.SUCCESS:
-            remote_tables = get_q_tables_through_gossipping()
             # Update qtable yourself positively if you are successful
-            qtable.update_qtable(get_q_tables_through_gossipping(), provider_offer_ID, True, get_reward_qlearning())
+            qtable.update_qtable(remote_tables, provider_offer_ID, True, get_reward_qlearning())
             # purchase VPN with same config if server allows for it
             # purchase VPN with same config if server allows for it
             if cloudomate_controller.get_vps_providers()[provider].TUN_TAP_SETTINGS:
                 attempt_purchase_vpn()
         elif success == plebnet_settings.FAILURE:
-            remote_tables = get_q_tables_through_gossipping()
             # Update qtable provider negatively if not successful
             qtable.update_qtable(remote_tables, provider_offer_ID, False)
 
@@ -328,51 +356,6 @@ def get_amount_mb_tokens_earned():
     mb_tokens_earned_in_total = total_mb_tokens_sold + mb_tokens_pending + mb_tokens_available
 
     return mb_tokens_earned_in_total
-
-# TODO: Please giec, check this out
-def get_q_tables_through_gossipping():
-    """
-    Get the qtables stored in the receiver's queue
-    :return: a list of qtable
-    """
-    remote_tables = []
-
-    # TODO: initiate consumer in setup or somewhere it could be "always listening"
-    class LearningConsumer:
-
-        def parse_message(self, raw_message):
-            """
-            Parses a raw message into command and data.
-            raw_message: raw_message to parse
-            """
-            command = raw_message['command']
-            data = raw_message['data']
-
-            return command, data
-
-
-        def notify(self, message):
-
-            command, data = self.parse_message(message)
-            if command == 'qtable':
-                remote_tables.append(data)
-
-    learning_consumer = LearningConsumer()
-    node.receiver.register_consumer(learning_consumer)
-
-    return remote_tables
-
-
-def get_q_tables_through_gossipping():
-    """
-    Get the qtables stored in the receiver's queue
-    :return: a list of qtable
-    """
-    # store the received remote qtables in a list to pass to update_qtable()
-    remote_tables = []
-    while len(qtable.receiver.messages_queue) > 0:
-        remote_tables.append(qtable.receiver.messages_queue.popleft())
-    return remote_tables
 
 
 def install_vps():

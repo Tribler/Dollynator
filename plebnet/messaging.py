@@ -54,6 +54,7 @@ class Contact:
         :param id: id of the node
         :param host: host of the node
         :param port: port of the node
+        :param public_key: public_key to verify signature of messages
         :param first_failure: first time of failure of communication with the node
         """
 
@@ -144,6 +145,7 @@ class MessageSender:
 
         return header, payload
 
+    # TODO: check return statement
     def _build_encrypted_payload(self, message: Message) -> Tuple[bytes, bytearray]:
         """
         Encodes and encrypts symmetrically encrypts payload with a generated key.
@@ -298,7 +300,7 @@ class MessageReceiver:
 
             time.sleep(self.notify_interval)
 
-    def _decode_payload(self, encrypted_payload_key, payload) -> None:
+    def _decode_payload(self, encrypted_payload_key, payload):
         """
         Decrypts and decodes the payload, using the receiver's private key to decrypt the payload key.
         :param encrypted_payload_key: encrypted payload key, decrypted with the private key
@@ -460,4 +462,3 @@ if __name__ == '__main__':
 
     sender.send_message(Message("test1", "print", "Hello 1"), sender_contact.id, sender_priv)
     sender.send_message(Message("test2", "print", "Hello 2"), sender_contact.id, sender_priv)
-

@@ -4,13 +4,13 @@ import math
 import os
 import sys
 import random
-from typing import Dict, Any
+import rsa
 
 import jsonpickle
 
 from appdirs import user_config_dir
 
-from plebnet import contacts, messaging
+from plebnet import address_book, messaging
 from plebnet.controllers import cloudomate_controller
 from plebnet.settings import plebnet_settings
 
@@ -22,7 +22,7 @@ class QTable:
     INFINITY = 10000000
     start_alpha = 0.8  # between 0.5 and 1
     start_beta = 0.2  # between 0 and 0.5
-    contact_port = 8000  # port used to share information with other nodes
+    node_pub, node_priv = rsa.newkeys(512)
 
     def __init__(self):
         self.qtable = {}
@@ -38,12 +38,6 @@ class QTable:
 
     # TODO : share QTable when reproducing
     # TODO : update local qtable through remote qtables when reproducing
-
-    def init_receiver_for_remote_qtables(self):
-        """
-        This method initialises a MessageReceiver that receives the remote QTables to update the local one.
-        """
-        return messaging.MessageReceiver(self.qtable_port)
 
     def init_qtable_and_environment(self, providers):
         """
@@ -83,8 +77,8 @@ class QTable:
     def init_address_book(self, parent_id: str = ""):
         node_id = messaging.generate_contact_id(parent_id)
         # TODO : check ip and port
-        self_contact = contacts.Contact(node_id, "127.0.0.1", self.contact_port)
-        return contacts.AddressBook(self_contact)
+        self_contact = messaging.Contact(node_id, "127.0.0.1", 8000, self.node_pub)
+        return address_book.AddressBook(self_contact, self.node_priv)
 
     @staticmethod
     def calculate_measure(provider_offer):
@@ -162,9 +156,7 @@ class QTable:
                 self.providers_offers = data['providers_offers']
                 self.self_state = data['self_state']
                 self.tree = data['tree']
-
-    # def check_for_remote_qtables(self):
-    #     while len(self.receiver.messages_queue) > 0 :
+                self.address_book = data['address_book']
 
     def choose_option(self, providers):
         """
@@ -240,10 +232,11 @@ class QTable:
         This method creates a new AddressBook to pass to the child. It sets the child's contact as self_contact
         and adds the parent's contact in the contacts list.
         """
-        child_id = contacts.generate_contact_id(self.address_book.self_contact.id)
-        # TODO : handle IP
-        child_contact = contacts.Contact(child_id, "127.0.0.1", self.contact_port)
-        new_address_book = contacts.AddressBook(child_contact, self.address_book.contacts)
+        child_pub, child_priv = rsa.newkeys(512)
+        child_id = messaging.generate_contact_id(self.address_book.self_contact.id)
+        # TODO : handle IP and port
+        child_contact = messaging.Contact(child_id, "127.0.0.1", 8000, child_pub)
+        new_address_book = address_book.AddressBook(child_contact, self.address_book.contacts, child_priv)
         new_address_book.contacts.append(self.address_book.self_contact)
         return new_address_book
 
@@ -393,8 +386,9 @@ class QTable:
         """
         Method that share local QTable with n nodes when the agent tries to reproduce.
         """
+        msg = messaging.Message('qtable', 'qtable', self.qtable)
         for contact in self.address_book.contacts:
-            self.address_book.__send_message_to_contact(contact, self.qtable)
+            self.address_book.send_message_to_contact(contact, msg)
 
 
 class ProviderOffer:
