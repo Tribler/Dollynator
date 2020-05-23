@@ -23,6 +23,8 @@ class TestSimpleMovingAverage(unittest.TestCase):
         market_controller.transactions = MagicMock()
         self.strategy = SimpleMovingAverage()
 
+        plebnet_settings.Init.wallets_testnet = MagicMock(return_value=False)
+
         self.strategy.transactions = [
             {
                 'trader_id': 1,
