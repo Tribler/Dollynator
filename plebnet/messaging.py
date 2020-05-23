@@ -7,6 +7,7 @@ import string
 import threading
 import time
 from datetime import datetime
+from typing import Tuple
 
 import rsa
 from cryptography.fernet import Fernet
@@ -14,7 +15,7 @@ from cryptography.fernet import Fernet
 _ack = b'\xff'
 
 
-def now():
+def now() -> int:
     """
     Gets the current timestamp in seconds.
     :return: current timestamp as integer
@@ -22,7 +23,7 @@ def now():
     return int(datetime.timestamp(datetime.now()))
 
 
-def generate_contact_id(parent_id: str = ""):
+def generate_contact_id(parent_id: str = "") -> str:
     """
     Generates a random, virtually unique id for a new node.
     :param parent_id: id of the parent node, defaults to empty
@@ -62,7 +63,7 @@ class Contact:
         self.public_key = public_key
         self.first_failure = first_failure
 
-    def link_down(self):
+    def link_down(self) -> None:
         """
         Sets the node link as down, by storing the current time as first_failure, if not set already.
         """
@@ -70,7 +71,7 @@ class Contact:
         if self.first_failure is None:
             self.first_failure = now()
 
-    def link_up(self):
+    def link_up(self) -> None:
         """
         Sets the node link as up, by clearing the first_failure field
         """
@@ -78,7 +79,7 @@ class Contact:
         if self.first_failure is not None:
             self.first_failure = None
 
-    def is_active(self):
+    def is_active(self) -> bool:
         """
         Checks whether the contact is active.
         :return: true iff the contact is active
@@ -89,8 +90,7 @@ class Contact:
 
 class Message:
 
-    def __init__(self, channel: str, command: str, data = None):
-
+    def __init__(self, channel: str, command: str, data=None):
         self.channel = channel
         self.command = command
         self.data = data
@@ -129,7 +129,7 @@ class MessageSender:
 
         self._ack_length = len(_ack)
 
-    def _build_packet(self, message: Message, sender_id, private_key):
+    def _build_packet(self, message: Message, sender_id, private_key) -> Tuple[bytearray, bytearray]:
         """
         Builds packet header and payload to send.
         :param message: content of the message sent with the packet
@@ -144,10 +144,10 @@ class MessageSender:
 
         return header, payload
 
-    def _build_encrypted_payload(self, message: Message):
+    def _build_encrypted_payload(self, message: Message) -> Tuple[bytes, bytearray]:
         """
         Encodes and encrypts symmetrically encrypts payload with a generated key.
-        :param data: payload to encode (pickle) and
+        :param message: message to build the payload from
         :return: a tuple containing the symmetric key used and the encoded encrypted payload
         """
 
@@ -158,7 +158,7 @@ class MessageSender:
 
         return symmetric_key, payload
 
-    def _build_header(self, payload, symmetric_key, sender_id, private_key):
+    def _build_header(self, payload, symmetric_key, sender_id, private_key) -> bytearray:
         """
         Builds a packet header
         :param payload: payload of the packet
@@ -175,7 +175,13 @@ class MessageSender:
 
         return signature + encrypted_symmetric_key + variable
 
-    def send_message(self, message: Message, sender_contact_id: str, private_key: rsa.PrivateKey, ack_timeout: float = 1.0):
+    def send_message(
+            self,
+            message: Message,
+            sender_contact_id: str,
+            private_key: rsa.PrivateKey,
+            ack_timeout: float = 1.0
+    ) -> None:
         """
         Sends a message.
         :param message: message to send
@@ -203,7 +209,7 @@ class MessageSender:
             # Closing connection
             s.close()
 
-        except Exception as e:
+        except Exception:
 
             raise MessageDeliveryError()
 
@@ -221,12 +227,12 @@ class MessageReceiver:
     """
 
     def __init__(
-        self,
-        port: int,
-        private_key: rsa.PrivateKey,
-        contacts: list,
-        connections_queue_size: int = 20,
-        notify_interval: float = 1
+            self,
+            port: int,
+            private_key: rsa.PrivateKey,
+            contacts: list,
+            connections_queue_size: int = 20,
+            notify_interval: float = 1
     ):
 
         self.port = port
@@ -237,33 +243,34 @@ class MessageReceiver:
 
         self.messages_queue = collections.deque()
 
-        self.consumers = {}
+        self._consumers = {}
 
         self.kill_flag = False
 
-        threading.Thread(target=self.__start_listening).start()
+        threading.Thread(target=self._start_listening).start()
 
-        threading.Thread(target=self.__start_notifying).start()
+        threading.Thread(target=self._start_notifying).start()
 
-    def register_consumer(self, channel: str, message_consumer: MessageConsumer):
+    def register_consumer(self, channel: str, message_consumer: MessageConsumer) -> None:
         """
         Registers a message_consumer.
-        TODO: fix comment
+        :param channel: channel to register the consumer to
+        :param message_consumer: consumer to register
         """
-        
-        if channel in self.consumers:
+
+        if channel in self._consumers:
 
             # Registers consumer to existing channel
-            self.consumers[channel].append(message_consumer)
+            self._consumers[channel].append(message_consumer)
 
         else:
             # Initialize new channel
 
-            self.consumers.update({
+            self._consumers.update({
                 channel: [message_consumer]
             })
 
-    def __start_notifying(self):
+    def _start_notifying(self) -> None:
         """
         Starts periodically checking the messages queue. When new messages are found, they are verified, decoded and
         forwarded to all registered consumers.
@@ -279,11 +286,11 @@ class MessageReceiver:
                         signature, encrypted_payload_key, sender_id, payload = self.messages_queue.popleft()
 
                         # Verifying signature
-                        rsa.verify(payload, signature, self.__get_contact_public_key(sender_id))
+                        rsa.verify(payload, signature, self._get_contact_public_key(sender_id))
 
                         message = self._decode_payload(encrypted_payload_key, payload)
 
-                        self.__notify_consumers(message, sender_id)
+                        self._notify_consumers(message, sender_id)
 
                     except:
 
@@ -291,7 +298,7 @@ class MessageReceiver:
 
             time.sleep(self.notify_interval)
 
-    def _decode_payload(self, encrypted_payload_key, payload):
+    def _decode_payload(self, encrypted_payload_key, payload) -> None:
         """
         Decrypts and decodes the payload, using the receiver's private key to decrypt the payload key.
         :param encrypted_payload_key: encrypted payload key, decrypted with the private key
@@ -307,7 +314,7 @@ class MessageReceiver:
 
         return message
 
-    def __get_contact_public_key(self, contact_id: str):
+    def _get_contact_public_key(self, contact_id: str) -> Contact:
         """
         Gets a known contact's public key. Throws exception if not found
         :param contact_id: id of the contact to retrieve the public key of
@@ -320,13 +327,13 @@ class MessageReceiver:
 
         raise Exception("Contact not found " + contact_id)
 
-    def kill(self):
+    def kill(self) -> None:
         """
         Sets kill flag to true, effectively making the listening thread stop.
         """
         self.kill_flag = True
 
-    def _initialize_socket(self):
+    def _initialize_socket(self) -> socket.socket:
         """
         Initializes a socket listening on the port specified at construction of the message receiver
         :return: the initialized socket
@@ -338,7 +345,7 @@ class MessageReceiver:
 
         return s
 
-    def __start_listening(self):
+    def _start_listening(self) -> None:
         """
         Starts listening for incoming connections.
         """
@@ -361,7 +368,7 @@ class MessageReceiver:
 
                 continue
 
-    def _handle_connection(self, connection):
+    def _handle_connection(self, connection) -> None:
         """
         Handles incoming connections to receive messages
         :param connection: connection to handle
@@ -379,7 +386,7 @@ class MessageReceiver:
 
         self.messages_queue.append((signature, encrypted_payload_key, sender_id, payload))
 
-    def _parse_header(self, header):
+    def _parse_header(self, header) -> Tuple[bytes, bytes, int, str]:
         """
         Parses a message header
         :param header: header to parse
@@ -397,21 +404,20 @@ class MessageReceiver:
 
         return signature, encrypted_payload_key, payload_length, sender_id
 
-    def __notify_consumers(self, message: Message, sender_id: str):
+    def _notify_consumers(self, message: Message, sender_id: str) -> None:
         """
         Notifies all registered message consumers.
-        TODO: fix comment
+        :param message: message to notify the consumers about
+        :param sender_id: id of the sender of the message
         """
-        
-        if message.channel in self.consumers:
 
-            for consumer in self.consumers[message.channel]:
+        if message.channel in self._consumers:
 
+            for consumer in self._consumers[message.channel]:
                 consumer.notify(message, sender_id)
 
 
 if __name__ == '__main__':
-    
     sender_pub, sender_priv = rsa.newkeys(512)
     receiver_pub, receiver_priv = rsa.newkeys(512)
 
@@ -437,11 +443,11 @@ if __name__ == '__main__':
 
 
     class Printer1(MessageConsumer):
-    
+
         def notify(self, message, sender_id):
             print("Printer1 received message: " + message.data)
 
-    
+
     class Printer2(MessageConsumer):
 
         def notify(self, message, sender_id):
@@ -452,5 +458,5 @@ if __name__ == '__main__':
     receiver.register_consumer("test2", Printer2())
     sender = MessageSender(receiver_contact)
 
-    sender.send_message(Message("test1", "print", "Ciao come stai 1?"), sender_contact.id, sender_priv)
-    sender.send_message(Message("test2", "print", "Ciao come stai 2?"), sender_contact.id, sender_priv)
+    sender.send_message(Message("test1", "print", "Hello 1"), sender_contact.id, sender_priv)
+    sender.send_message(Message("test2", "print", "Hello 2"), sender_contact.id, sender_priv)
