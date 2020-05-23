@@ -37,8 +37,13 @@ strategies = {
     'simple_moving_average': SimpleMovingAverage
 }
 qtable = None  # Used to store the QTable of the agent and only load once.
+
 #TODO: Init AddressBook properly
 node = AddressBook(Contact(generate_contact_id(), '127.0.0.1', 8000))
+
+TIME_ALIVE = 30 * plebnet_settings.TIME_IN_DAY
+average_MB_tokens_per_day = 10000  # estimate from previous reports
+
 
 def setup(args):
     """
@@ -52,7 +57,7 @@ def setup(args):
     # Set general info about the PlebNet agent
     settings.irc_nick(settings.irc_nick_def() + str(random.randint(1000, 10000)))
     config = PlebNetConfig()
-    config.set('expiration_date', time.time() + 30 * plebnet_settings.TIME_IN_DAY)
+    config.set('expiration_date', time.time() + TIME_ALIVE)
 
     # Prepare the QTable configuration
     qtable = QTable()
@@ -95,6 +100,7 @@ def check():
     starting Tribler and buying servers.
     """
     global config, qtable
+    global sold_mb_tokens, previous_mb_tokens
     logger.log("Checking PlebNet", log_name)
 
     # Read general configuration
@@ -253,8 +259,8 @@ def attempt_purchase():
         if success == plebnet_settings.SUCCESS:
             remote_tables = get_q_tables_through_gossipping()
             # Update qtable yourself positively if you are successful
-            qtable.update_qtable(remote_tables, provider_offer_ID, True)
-
+            qtable.update_qtable(get_q_tables_through_gossipping(), provider_offer_ID, True, get_reward_qlearning())
+            # purchase VPN with same config if server allows for it
             # purchase VPN with same config if server allows for it
             if cloudomate_controller.get_vps_providers()[provider].TUN_TAP_SETTINGS:
                 attempt_purchase_vpn()
@@ -270,16 +276,57 @@ def attempt_purchase():
         config.save()
 
 
-# TODO: need to keep track of MB tokens traded on the marked, total MB tokens;
-#  current amount in wallet + amount of MB tokens traded for Bitcoin
 def get_reward_qlearning():
     """
-    Gets the reward for the qlearning algorithm, i.e. the amount of MB_tokens earned per day per price vps server?
+    Gets the reward for the q-learning algorithm, i.e. the amount of MB_tokens earned per day per usd
+    and normalize it to be around 0.5 given the average from previous reports
     :return: the amount of MB tokens earned per day per price current vps server
     """
+    # get the price of the current vps
     current_vpsprovider = qtable.self_state.provider
     current_vpsoption = qtable.self_state.option
-    pass
+    option = cloudomate_controller.get_vps_option(current_vpsprovider, current_vpsoption)
+    price = option.price
+
+    # get how long the agent has been alive in number of days
+    time_alive = TIME_ALIVE - config.time_to_expiration()
+    days_alive = time_alive / plebnet_settings.TIME_IN_DAY
+
+    # get the total amount of mb tokens the agent has earned up until now
+    mb_tokens_gotten = get_amount_mb_tokens_earned()
+
+    # get the amount of mb tokens per day per price of the current vps
+    reward_q_learning = mb_tokens_gotten / (price * days_alive)
+
+    # normalize it around 0.5
+    reward_q_learning /= (average_MB_tokens_per_day * 2)
+
+    return reward_q_learning
+
+
+def get_amount_mb_tokens_earned():
+    """
+    Gets amount of MB tokens earned until now
+    :return: total amount of MB tokens earned on this node until now
+    """
+    transactions_list = wallet_controller.get_MB_transactions()
+
+    # get the amount of mb tokens sold by looking at the mb wallets outgoing transactions
+    total_mb_tokens_sold = 0
+    for transaction in transactions_list:
+        if transaction["outgoing"]:
+            total_mb_tokens_sold += transaction["amount"]
+
+    # get the amount of mb tokens in the wallet on pending
+    mb_tokens_pending = wallet_controller.get_MB_balance_pending()
+
+    # get the amount of mb tokens currently in the wallet
+    mb_tokens_available = wallet_controller.get_MB_balance()
+
+    # get the balance of mb tokens in the wallet
+    mb_tokens_earned_in_total = total_mb_tokens_sold + mb_tokens_pending + mb_tokens_available
+
+    return mb_tokens_earned_in_total
 
 # TODO: Please giec, check this out
 def get_q_tables_through_gossipping():
@@ -388,7 +435,6 @@ def vpn_is_running():
         return False
 
 
-# TODO: dit moet naar agent.DNA, maar die is nu al te groot
 def select_provider():
     """
     Check whether a provider is already selected, otherwise select one based on the Qtable.
