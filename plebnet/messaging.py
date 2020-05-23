@@ -87,6 +87,15 @@ class Contact:
         return self.first_failure is None
 
 
+class Message:
+
+    def __init__(self, channel: str, command: str, data = None):
+
+        self.channel = channel
+        self.command = command
+        self.data = data
+
+
 class MessageDeliveryError(Exception):
 
     def __init__(self, *args):
@@ -102,7 +111,7 @@ class MessageDeliveryError(Exception):
 
 class MessageConsumer:
 
-    def notify(self, message, sender_id):
+    def notify(self, message: Message, sender_id):
         pass
 
 
@@ -120,32 +129,32 @@ class MessageSender:
 
         self._ack_length = len(_ack)
 
-    def _build_packet(self, data, sender_id, private_key):
+    def _build_packet(self, message: Message, sender_id, private_key):
         """
         Builds packet header and payload to send.
-        :param data: content of the message sent with the packet
+        :param message: content of the message sent with the packet
         :param sender_id: id of the sender
         :param private_key: private key of the sender to sign the message
         :return: a tuple containing the packet header and the packet payload
         """
 
-        symmetric_key, payload = self._build_encrypted_payload(data)
+        symmetric_key, payload = self._build_encrypted_payload(message)
 
         header = self._build_header(payload, symmetric_key, sender_id, private_key)
 
         return header, payload
 
-    def _build_encrypted_payload(self, data):
+    def _build_encrypted_payload(self, message: Message):
         """
         Encodes and encrypts symmetrically encrypts payload with a generated key.
         :param data: payload to encode (pickle) and
         :return: a tuple containing the symmetric key used and the encoded encrypted payload
         """
 
-        pickled_data = pickle.dumps(data)
+        pickled_message = pickle.dumps(message)
 
         symmetric_key = Fernet.generate_key()
-        payload = Fernet(symmetric_key).encrypt(pickled_data)
+        payload = Fernet(symmetric_key).encrypt(pickled_message)
 
         return symmetric_key, payload
 
@@ -166,15 +175,18 @@ class MessageSender:
 
         return signature + encrypted_symmetric_key + variable
 
-    def send_message(self, data, sender_contact_id, private_key, ack_timeout=5.0):
+    def send_message(self, message: Message, sender_contact_id: str, private_key: rsa.PrivateKey, ack_timeout: float = 1.0):
         """
         Sends a message.
-        data: message payload
+        :param message: message to send
+        :param sender_contact_id: contact id of the sender
+        :param private_key: private key of the sender, used to sign the message
+        :param ack_timeout: timeout of ack of header
         """
 
         try:
 
-            header, payload = self._build_packet(data, sender_contact_id, private_key)
+            header, payload = self._build_packet(message, sender_contact_id, private_key)
 
             # Connecting to receiver
             s = socket.socket()
@@ -191,7 +203,7 @@ class MessageSender:
             # Closing connection
             s.close()
 
-        except:
+        except Exception as e:
 
             raise MessageDeliveryError()
 
@@ -209,12 +221,12 @@ class MessageReceiver:
     """
 
     def __init__(
-            self,
-            port: int,
-            private_key: rsa.PrivateKey,
-            contacts: list,
-            connections_queue_size: int = 20,
-            notify_interval: float = 1
+        self,
+        port: int,
+        private_key: rsa.PrivateKey,
+        contacts: list,
+        connections_queue_size: int = 20,
+        notify_interval: float = 1
     ):
 
         self.port = port
@@ -225,7 +237,7 @@ class MessageReceiver:
 
         self.messages_queue = collections.deque()
 
-        self.message_consumers = []
+        self.consumers = {}
 
         self.kill_flag = False
 
@@ -233,12 +245,23 @@ class MessageReceiver:
 
         threading.Thread(target=self.__start_notifying).start()
 
-    def register_consumer(self, message_consumer: MessageConsumer):
+    def register_consumer(self, channel: str, message_consumer: MessageConsumer):
         """
         Registers a message_consumer.
-        message_consumer: message_consumer to register as a listener
+        TODO: fix comment
         """
-        self.message_consumers.append(message_consumer)
+        
+        if channel in self.consumers:
+
+            # Registers consumer to existing channel
+            self.consumers[channel].append(message_consumer)
+
+        else:
+            # Initialize new channel
+
+            self.consumers.update({
+                channel: [message_consumer]
+            })
 
     def __start_notifying(self):
         """
@@ -374,16 +397,21 @@ class MessageReceiver:
 
         return signature, encrypted_payload_key, payload_length, sender_id
 
-    def __notify_consumers(self, message, sender_id):
+    def __notify_consumers(self, message: Message, sender_id: str):
         """
         Notifies all registered message consumers.
+        TODO: fix comment
         """
+        
+        if message.channel in self.consumers:
 
-        for consumer in self.message_consumers:
-            consumer.notify(message, sender_id)
+            for consumer in self.consumers[message.channel]:
+
+                consumer.notify(message, sender_id)
 
 
 if __name__ == '__main__':
+    
     sender_pub, sender_priv = rsa.newkeys(512)
     receiver_pub, receiver_priv = rsa.newkeys(512)
 
@@ -408,14 +436,21 @@ if __name__ == '__main__':
     )
 
 
-    class Printer(MessageConsumer):
+    class Printer1(MessageConsumer):
+    
+        def notify(self, message, sender_id):
+            print("Printer1 received message: " + message.data)
+
+    
+    class Printer2(MessageConsumer):
 
         def notify(self, message, sender_id):
-            print("Received message: " + message)
+            print("Printer2 received message: " + message.data)
 
 
-    receiver.register_consumer(Printer())
-
+    receiver.register_consumer("test1", Printer1())
+    receiver.register_consumer("test2", Printer2())
     sender = MessageSender(receiver_contact)
 
-    sender.send_message("Ciao come stai?", sender_contact.id, sender_priv)
+    sender.send_message(Message("test1", "print", "Ciao come stai 1?"), sender_contact.id, sender_priv)
+    sender.send_message(Message("test2", "print", "Ciao come stai 2?"), sender_contact.id, sender_priv)
