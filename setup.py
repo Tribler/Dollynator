@@ -47,8 +47,9 @@ setup(
         'requests',
         'names',
         'faker',
-        'jsonpickle'
-
+        'jsonpickle',
+        'rsa',
+        'cryptography'
     ],
 
     extras_require={

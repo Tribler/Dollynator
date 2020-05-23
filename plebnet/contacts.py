@@ -1,87 +1,15 @@
-import hashlib
 import random
-import string
 import threading
 import time
-from datetime import datetime
 
+import rsa
+
+from plebnet.messaging import Contact
 from plebnet.messaging import MessageConsumer
 from plebnet.messaging import MessageDeliveryError
 from plebnet.messaging import MessageReceiver
 from plebnet.messaging import MessageSender
-
-
-def now():
-    """
-    Gets the current timestamp in seconds.
-    :return: current timestamp as integer
-    """
-    return int(datetime.timestamp(datetime.now()))
-
-
-def generate_contact_id(parent_id: str = ""):
-    """
-    Generates a random, virtually unique id for a new node.
-    :param parent_id: id of the parent node, defaults to empty
-    :return: the generated id
-    """
-
-    def generate_random_string(length):
-        letters = string.ascii_lowercase
-        return ''.join(random.choice(letters) for i in range(length))
-
-    timestamp = str(now())
-
-    random_seed = generate_random_string(5) + parent_id
-
-    random_hash = hashlib.sha256(random_seed.encode('utf-8')).hexdigest()
-
-    return random_hash + timestamp
-
-
-class Contact:
-    """
-    Nodes contact.
-    """
-
-    def __init__(self, id: str, host: str, port: int, first_failure=None):
-        """
-        Instantiates a contact
-        :param id: id of the node
-        :param host: host of the node
-        :param port: port of the node
-        :param first_failure: first time of failure of communication with the node
-        """
-
-        self.id = id
-        self.host = host
-        self.port = port
-
-        self.first_failure = first_failure
-
-    def link_down(self):
-        """
-        Sets the node link as down, by storing the current time as first_failure, if not set already.
-        """
-
-        if self.first_failure is None:
-            self.first_failure = now()
-
-    def link_up(self):
-        """
-        Sets the node link as up, by clearing the first_failure field
-        """
-
-        if self.first_failure is not None:
-            self.first_failure = None
-
-    def is_active(self):
-        """
-        Checks whether the contact is active.
-        :return: true iff the contact is active
-        """
-
-        return self.first_failure is None
+from plebnet.messaging import now
 
 
 class AddressBook(MessageConsumer):
@@ -92,8 +20,9 @@ class AddressBook(MessageConsumer):
     def __init__(
             self,
             self_contact: Contact,
+            private_key: rsa.PrivateKey,
             contacts=None,
-            receiver_notify_interval=1,
+            receiver_notify_interval=1.0,
             contact_restore_timeout=3600,
             inactive_nodes_ping_interval=1799
     ):
@@ -109,9 +38,16 @@ class AddressBook(MessageConsumer):
         if contacts is None:
             contacts = []
 
-        self.receiver = MessageReceiver(self_contact.port, notify_interval=receiver_notify_interval)
-
         self.contacts = contacts.copy()
+        self.private_key = private_key
+
+        self.receiver = MessageReceiver(
+            port=self_contact.port,
+            private_key=self.private_key,
+            contacts=self.contacts,
+            notify_interval=receiver_notify_interval
+        )
+
         self.receiver.register_consumer(self)
         self.self_contact = self_contact
         self.contact_restore_timeout = contact_restore_timeout
@@ -181,19 +117,19 @@ class AddressBook(MessageConsumer):
 
         try:
 
-            sender = MessageSender(recipient.host, recipient.port)
-            sender.send_message(message)
+            sender = MessageSender(recipient)
+            sender.send_message(message, self.self_contact.id, self.private_key)
 
             self.__set_link_state(True, recipient)
 
             return True
 
         except MessageDeliveryError:
-            
+
             self.__set_link_state(False, recipient)
 
             return False
-    
+
     def __set_link_state(self, link_up: bool, contact: Contact):
         """
         Sets the link with a node's state.
@@ -202,18 +138,17 @@ class AddressBook(MessageConsumer):
         """
 
         for known_contact in self.contacts:
-    
+
             if known_contact.id == contact.id:
-                
+
                 if link_up:
-    
+
                     known_contact.link_up()
 
                 else:
-        
+
                     # print("Node " + self.self_contact.id + " sees " + contact.id + " as down")
                     known_contact.link_down()
-
 
     def __delete_contact(self, contact: Contact):
         """
@@ -227,13 +162,15 @@ class AddressBook(MessageConsumer):
         for known_contact in self.contacts:
 
             if known_contact.id == contact.id:
-
                 self.contacts.remove(known_contact)
 
                 return
 
     def __generate_ping_message(self):
-
+        """
+        Generates a ping message
+        :return: the generated ping message
+        """
         return {
             'command': 'ping',
             'data': None
@@ -243,7 +180,7 @@ class AddressBook(MessageConsumer):
         """
         Starts periodically pinging inactive nodes.
         """
-        
+
         while True:
 
             time.sleep(self.inactive_nodes_ping_interval)
@@ -251,22 +188,20 @@ class AddressBook(MessageConsumer):
             for contact in self.contacts:
 
                 if not contact.is_active():
-    
+
                     ping_message = self.__generate_ping_message()
 
                     if not self.send_message_to_contact(contact, ping_message):
 
                         current_timestamp = now()
-    
-                        if current_timestamp - contact.first_failure > self.contact_restore_timeout:
-        
 
+                        if current_timestamp - contact.first_failure > self.contact_restore_timeout:
                             self.__delete_contact(contact)
 
-
-    def notify(self, message):
+    def notify(self, message, sender_id):
         """
         Handles incoming messages.
+        :param sender_id: id of the message sender
         :param message: message to handle
         """
 
@@ -282,9 +217,6 @@ class AddressBook(MessageConsumer):
         """
 
         if self.__append_contact(contact):
-
-            # print("Node " + self.self_contact.id + " adds " + contact.id + "'s contact")
-
             self.__forward_contact(contact)
 
     def __append_contact(self, contact: Contact):
@@ -294,30 +226,43 @@ class AddressBook(MessageConsumer):
         """
 
         if contact.id == self.self_contact.id:
-
             return False
 
         for known_contact in self.contacts:
-            
+
             if known_contact.id == contact.id:
-                
                 return False
 
         self.contacts.append(contact)
 
         return True
 
+
 def __demo():
-    
     id_counter = 1
     port_counter = 8001
 
     ping_interval = 1
     restore_timeout = 0
+    receiver_notify_interval = 0.5
 
-    root_contact = Contact(str(id_counter), "127.0.0.1", port_counter)
+    root_pub, root_priv = rsa.newkeys(512)
+    root_contact = Contact(
+        id=str(id_counter),
+        host="127.0.0.1",
+        port=port_counter,
+        public_key=root_pub
+    )
 
-    nodes = [AddressBook(root_contact, contact_restore_timeout=restore_timeout, inactive_nodes_ping_interval=ping_interval, receiver_notify_interval=0.01)]
+    root = AddressBook(
+        self_contact=root_contact,
+        private_key=root_priv,
+        contact_restore_timeout=restore_timeout,
+        inactive_nodes_ping_interval=ping_interval,
+        receiver_notify_interval=receiver_notify_interval
+    )
+
+    nodes = [root]
 
     while True:
 
@@ -331,9 +276,25 @@ def __demo():
         new_node_contact_list = replicating_node.contacts.copy()
         new_node_contact_list.append(replicating_node.self_contact)
 
-        new_node_contact = Contact(str(id_counter), '127.0.0.1', port_counter)
+        pub, priv = rsa.newkeys(512)
 
-        nodes.append(AddressBook(new_node_contact, new_node_contact_list, contact_restore_timeout=restore_timeout, inactive_nodes_ping_interval=ping_interval, receiver_notify_interval=0.01))
+        new_node_contact = Contact(
+            id=str(id_counter),
+            host='127.0.0.1',
+            port=port_counter,
+            public_key=pub
+        )
+
+        new_node = AddressBook(
+            self_contact=new_node_contact,
+            private_key=priv,
+            contacts=new_node_contact_list,
+            contact_restore_timeout=restore_timeout,
+            inactive_nodes_ping_interval=ping_interval,
+            receiver_notify_interval=receiver_notify_interval
+        )
+
+        nodes.append(new_node)
 
         replicating_node.create_new_distributed_contact(new_node_contact)
 
@@ -344,7 +305,6 @@ def __demo():
             contacts = ""
 
             for contact in node.contacts:
-
                 contacts += contact.id + ", "
 
             print("Node " + node.self_contact.id + " has " + str(len(node.contacts)) + " contacts: " + contacts)
@@ -352,17 +312,15 @@ def __demo():
         time.sleep(1)
 
         for i in range(int(len(nodes) / 3)):
-
             node_to_remove = random.choice(nodes)
             print("Killing node " + node_to_remove.self_contact.id)
             node_to_remove.receiver.kill()
-            nodes.remove(node_to_remove)        
+            nodes.remove(node_to_remove)
 
         time.sleep(3)
-        
+
         print("")
 
-    
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     __demo()
