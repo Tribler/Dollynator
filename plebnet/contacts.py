@@ -1,30 +1,42 @@
 import hashlib
 import random
 import string
-import calendar
+import threading
 import time
+from datetime import datetime
 
-from plebnet.messaging import MessageSender
+from plebnet.messaging import MessageConsumer
+from plebnet.messaging import MessageDeliveryError
 from plebnet.messaging import MessageReceiver
+from plebnet.messaging import MessageSender
+
+
+def now():
+    """
+    Gets the current timestamp in seconds.
+    :return: current timestamp as integer
+    """
+    return int(datetime.timestamp(datetime.now()))
 
 
 def generate_contact_id(parent_id: str = ""):
     """
-    Generates a contact id for a node children.
-    parent_id: id of the parent. Use "" if node has no parent.
+    Generates a random, virtually unique id for a new node.
+    :param parent_id: id of the parent node, defaults to empty
+    :return: the generated id
     """
-    def generate_random_string(length):
 
+    def generate_random_string(length):
         letters = string.ascii_lowercase
         return ''.join(random.choice(letters) for i in range(length))
 
-    timestamp = str(calendar.timegm(time.gmtime()))
+    timestamp = str(now())
 
     random_seed = generate_random_string(5) + parent_id
 
-    hash = hashlib.sha256(random_seed.encode('utf-8')).hexdigest()
+    random_hash = hashlib.sha256(random_seed.encode('utf-8')).hexdigest()
 
-    return hash + timestamp
+    return random_hash + timestamp
 
 
 class Contact:
@@ -32,54 +44,96 @@ class Contact:
     Nodes contact.
     """
 
-    """
-    id: id of the node.
-    host: host of the node.
-    port: message receiver listening port
-    """
-    def __init__(self, id: str, host: str, port: int):
-        
+    def __init__(self, id: str, host: str, port: int, first_failure=None):
+        """
+        Instantiates a contact
+        :param id: id of the node
+        :param host: host of the node
+        :param port: port of the node
+        :param first_failure: first time of failure of communication with the node
+        """
+
         self.id = id
         self.host = host
         self.port = port
 
+        self.first_failure = first_failure
 
-class AddressBook:
+    def link_down(self):
+        """
+        Sets the node link as down, by storing the current time as first_failure, if not set already.
+        """
+
+        if self.first_failure is None:
+            self.first_failure = now()
+
+    def link_up(self):
+        """
+        Sets the node link as up, by clearing the first_failure field
+        """
+
+        if self.first_failure is not None:
+            self.first_failure = None
+
+    def is_active(self):
+        """
+        Checks whether the contact is active.
+        :return: true iff the contact is active
+        """
+
+        return self.first_failure is None
+
+
+class AddressBook(MessageConsumer):
     """
-    Node address book.
-    Also shares new contacts with all other nodes in the network.
+    Node address book, responsible for sharing new contacts and deleting inactive ones.
     """
 
-    """
-    self_contact: contact of the owner node of the address book.
-    list: initial list of contacts
-    receiver_notify_interval: notify interval for incoming messages
-    """
-    def __init__(self, self_contact: Contact, contacts: list = [], receiver_notify_interval=1):
-        
+    def __init__(
+            self,
+            self_contact: Contact,
+            contacts=None,
+            receiver_notify_interval=1,
+            contact_restore_timeout=3600,
+            inactive_nodes_ping_interval=1799
+    ):
+        """
+        Initializes a new address book.
+        :param self_contact: contact of the owner of the address book
+        :param contacts: contacts in the address book
+        :param receiver_notify_interval: interval at which the message receiver notifies of new messages
+        :param contact_restore_timeout: timeout of pinging of inactive nodes before deletion
+        :param inactive_nodes_ping_interval: interval for pinging inactive nodes
+        """
+
+        if contacts is None:
+            contacts = []
+
         self.receiver = MessageReceiver(self_contact.port, notify_interval=receiver_notify_interval)
-        
+
         self.contacts = contacts.copy()
         self.receiver.register_consumer(self)
         self.self_contact = self_contact
+        self.contact_restore_timeout = contact_restore_timeout
+        self.inactive_nodes_ping_interval = inactive_nodes_ping_interval
 
+        threading.Thread(target=self.__start_pinging_inactive_nodes).start()
 
-    def parse_message(self, raw_message):
+    def __parse_message(self, raw_message):
         """
-        Parses a raw message into comamnd and data.
-        raw_message: raw_message to parse
+        Parses a raw message for internal processing.
+        :param raw_message: raw message to parse
         """
+
         command = raw_message['command']
         data = raw_message['data']
 
         return command, data
 
-
     def __generate_add_contact_message(self, contact: Contact):
-
         """
         Generates an "add-contact" message.
-        contact: add-contact message payload
+        :param contact: add-contact message payload
         """
 
         return {
@@ -87,137 +141,228 @@ class AddressBook:
             'data': contact
         }
 
-
     def __add_contact(self, contact: Contact):
         """
         Handles incoming "add-contacts" commands.
-        contact: contact to add
+        :param contact: contact to add
         """
 
-        if contact.id == self.self_contact.id:
-
-            # Contact is self
-            return
-
-        for known_contact in self.contacts:
-
-            if known_contact.id == contact.id:
-
-                # Contact is already known
-                return
-
-        # Contact is added and forwarded
-
-        self.contacts.append(contact)
-
-        self.__forward_contact(contact)
-
+        self.create_new_distributed_contact(contact)
 
     def __forward_contact(self, contact: Contact):
         """
-        Forwards new contact to all other known contacts.
-        contact: new contact
+        Forwards a contact to all other known contacts.
+        :param contact: contact to forward
         """
-        
+
         message = self.__generate_add_contact_message(contact)
 
         for known_contact in self.contacts:
-            
+
             # Prevent notifying a contact of themselves
             if known_contact.id == contact.id:
-                continue 
-            
-            self.__send_message_to_contact(known_contact, message)
-            
+                continue
 
-    def __send_message_to_contact(self, recipient: Contact, message):
+            # Prevent node notifying itself
+            if known_contact.id == self.self_contact.id:
+                continue
+
+            # print("Node " + self.self_contact.id + " forwards " + contact.id + "'s contact to " + known_contact.id)
+
+            self.send_message_to_contact(known_contact, message)
+
+    def send_message_to_contact(self, recipient: Contact, message):
         """
-        Sends a message to a contact.
-        recipient: recipient node's contact
-        message: message to send
+        Sends a message to a contact, and marks the link to the recipient as either up or down.
+        :param recipient: recipient node's contact
+        :param message: message to send
+        :return: True iff the delivery of the message was successful
+        """
+
+        try:
+
+            sender = MessageSender(recipient.host, recipient.port)
+            sender.send_message(message)
+
+            self.__set_link_state(True, recipient)
+
+            return True
+
+        except MessageDeliveryError:
+            
+            self.__set_link_state(False, recipient)
+
+            return False
+    
+    def __set_link_state(self, link_up: bool, contact: Contact):
+        """
+        Sets the link with a node's state.
+        :param link_up: state to set
+        :param contact: contact to set the link's state of
+        """
+
+        for known_contact in self.contacts:
+    
+            if known_contact.id == contact.id:
+                
+                if link_up:
+    
+                    known_contact.link_up()
+
+                else:
+        
+                    # print("Node " + self.self_contact.id + " sees " + contact.id + " as down")
+                    known_contact.link_down()
+
+
+    def __delete_contact(self, contact: Contact):
+        """
+        Deletes a contact from the contact list.
+        :param contact: contact to delete
+        :return:
+        """
+
+        # print("Node " + self.self_contact.id + " deletes " + contact.id + "'s contact")
+
+        for known_contact in self.contacts:
+
+            if known_contact.id == contact.id:
+
+                self.contacts.remove(known_contact)
+
+                return
+
+    def __generate_ping_message(self):
+
+        return {
+            'command': 'ping',
+            'data': None
+        }
+
+    def __start_pinging_inactive_nodes(self):
+        """
+        Starts periodically pinging inactive nodes.
         """
         
-        sender = MessageSender(recipient.host, recipient.port)
+        while True:
 
-        sender.send_message(message)
+            time.sleep(self.inactive_nodes_ping_interval)
 
+            for contact in self.contacts:
+
+                if not contact.is_active():
     
+                    ping_message = self.__generate_ping_message()
+
+                    if not self.send_message_to_contact(contact, ping_message):
+
+                        current_timestamp = now()
+    
+                        if current_timestamp - contact.first_failure > self.contact_restore_timeout:
+        
+
+                            self.__delete_contact(contact)
+
+
     def notify(self, message):
         """
         Handles incoming messages.
-        message: message to handle
+        :param message: message to handle
         """
-        command, data = self.parse_message(message)
+
+        command, data = self.__parse_message(message)
 
         if command == 'add-contact':
-
             self.__add_contact(data)
-
 
     def create_new_distributed_contact(self, contact: Contact):
         """
         Adds new contact and notifies the network.
-        contact: new contact
+        :param contact: new contact
         """
+
+        if self.__append_contact(contact):
+
+            # print("Node " + self.self_contact.id + " adds " + contact.id + "'s contact")
+
+            self.__forward_contact(contact)
+
+    def __append_contact(self, contact: Contact):
+        """
+        Appends a contact to the contacts list.
+        :param contact: contact to append to the contacts list
+        """
+
+        if contact.id == self.self_contact.id:
+
+            return False
+
+        for known_contact in self.contacts:
+            
+            if known_contact.id == contact.id:
+                
+                return False
 
         self.contacts.append(contact)
 
-        message = self.__generate_add_contact_message(contact)
-
-        for known_contact in self.contacts[:-1]:
-
-            self.__send_message_to_contact(known_contact, message)
-            
+        return True
 
 def __demo():
-
-    port_counter = 8000
+    
     id_counter = 1
+    port_counter = 8001
 
-    print("Initial node id: " + str(id_counter))
-    root_contact = Contact(str(id_counter), '127.0.0.1', port_counter)
+    ping_interval = 1
+    restore_timeout = 0
 
-    nodes = [AddressBook(root_contact, receiver_notify_interval=0.1)]
+    root_contact = Contact(str(id_counter), "127.0.0.1", port_counter)
 
-    max_nodes = 10
-    i = 0
+    nodes = [AddressBook(root_contact, contact_restore_timeout=restore_timeout, inactive_nodes_ping_interval=ping_interval, receiver_notify_interval=0.01)]
 
-    while i < max_nodes:
+    while True:
 
-        for node in nodes:
-
-            print("Node " + node.self_contact.id + " now has " + str(len(node.contacts)) + " contacts")
-
-        # Incrementing counters
         port_counter += 1
         id_counter += 1
 
-        replicating_node = nodes[random.randint(0, len(nodes) - 1)]
-        print("-----------------------------------------------------------------")
-        print("Node " + str(replicating_node.self_contact.id) + " is about to replicate:\n\n")
+        replicating_node = random.choice(nodes)
+
+        print("Node " + replicating_node.self_contact.id + " replicates: \n")
+
+        new_node_contact_list = replicating_node.contacts.copy()
+        new_node_contact_list.append(replicating_node.self_contact)
 
         new_node_contact = Contact(str(id_counter), '127.0.0.1', port_counter)
-        new_node_contacts_list = replicating_node.contacts.copy()
-        new_node_contacts_list.append(replicating_node.self_contact)
-        new_node = AddressBook(new_node_contact, new_node_contacts_list, receiver_notify_interval=0.1)
 
-        nodes.append(new_node)
+        nodes.append(AddressBook(new_node_contact, new_node_contact_list, contact_restore_timeout=restore_timeout, inactive_nodes_ping_interval=ping_interval, receiver_notify_interval=0.01))
 
-        replicating_node.create_new_distributed_contact(new_node.self_contact)
+        replicating_node.create_new_distributed_contact(new_node_contact)
 
         time.sleep(1)
 
-        i += 1
-
-    while True:
-        
-        print("-----------------------------------------------------------------")
         for node in nodes:
-            print("Node " + node.self_contact.id + " now has " + str(len(node.contacts)) + " contacts")
 
-        time.sleep(5)
+            contacts = ""
 
+            for contact in node.contacts:
 
+                contacts += contact.id + ", "
+
+            print("Node " + node.self_contact.id + " has " + str(len(node.contacts)) + " contacts: " + contacts)
+
+        time.sleep(1)
+
+        for i in range(int(len(nodes) / 3)):
+
+            node_to_remove = random.choice(nodes)
+            print("Killing node " + node_to_remove.self_contact.id)
+            node_to_remove.receiver.kill()
+            nodes.remove(node_to_remove)        
+
+        time.sleep(3)
+        
+        print("")
+
+    
 if __name__ == '__main__':
 
     __demo()
