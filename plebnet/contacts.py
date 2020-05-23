@@ -5,6 +5,7 @@ import time
 import rsa
 
 from plebnet.messaging import Contact
+from plebnet.messaging import Message
 from plebnet.messaging import MessageConsumer
 from plebnet.messaging import MessageDeliveryError
 from plebnet.messaging import MessageReceiver
@@ -16,15 +17,16 @@ class AddressBook(MessageConsumer):
     """
     Node address book, responsible for sharing new contacts and deleting inactive ones.
     """
-
+    _messaging_channel = 'network'
+    
     def __init__(
-            self,
-            self_contact: Contact,
-            private_key: rsa.PrivateKey,
-            contacts=None,
-            receiver_notify_interval=1.0,
-            contact_restore_timeout=3600,
-            inactive_nodes_ping_interval=1799
+        self,
+        self_contact: Contact,
+        private_key: rsa.PrivateKey,
+        contacts=None,
+        receiver_notify_interval=1.0,
+        contact_restore_timeout=3600,
+        inactive_nodes_ping_interval=1799
     ):
         """
         Initializes a new address book.
@@ -48,23 +50,13 @@ class AddressBook(MessageConsumer):
             notify_interval=receiver_notify_interval
         )
 
-        self.receiver.register_consumer(self)
+        self.receiver.register_consumer(channel=self._messaging_channel, message_consumer=self)
+        
         self.self_contact = self_contact
         self.contact_restore_timeout = contact_restore_timeout
         self.inactive_nodes_ping_interval = inactive_nodes_ping_interval
 
         threading.Thread(target=self.__start_pinging_inactive_nodes).start()
-
-    def __parse_message(self, raw_message):
-        """
-        Parses a raw message for internal processing.
-        :param raw_message: raw message to parse
-        """
-
-        command = raw_message['command']
-        data = raw_message['data']
-
-        return command, data
 
     def __generate_add_contact_message(self, contact: Contact):
         """
@@ -72,10 +64,11 @@ class AddressBook(MessageConsumer):
         :param contact: add-contact message payload
         """
 
-        return {
-            'command': 'add-contact',
-            'data': contact
-        }
+        return Message(
+            channel=self._messaging_channel, 
+            command='add-contact',
+            data=contact
+        )
 
     def __add_contact(self, contact: Contact):
         """
@@ -107,7 +100,7 @@ class AddressBook(MessageConsumer):
 
             self.send_message_to_contact(known_contact, message)
 
-    def send_message_to_contact(self, recipient: Contact, message):
+    def send_message_to_contact(self, recipient: Contact, message: Message):
         """
         Sends a message to a contact, and marks the link to the recipient as either up or down.
         :param recipient: recipient node's contact
@@ -171,10 +164,11 @@ class AddressBook(MessageConsumer):
         Generates a ping message
         :return: the generated ping message
         """
-        return {
-            'command': 'ping',
-            'data': None
-        }
+        
+        return Message(
+            channel=self._messaging_channel,
+            command="ping"
+        )
 
     def __start_pinging_inactive_nodes(self):
         """
@@ -198,17 +192,17 @@ class AddressBook(MessageConsumer):
                         if current_timestamp - contact.first_failure > self.contact_restore_timeout:
                             self.__delete_contact(contact)
 
-    def notify(self, message, sender_id):
+    def notify(self, message: Message, sender_id):
         """
         Handles incoming messages.
         :param sender_id: id of the message sender
         :param message: message to handle
         """
 
-        command, data = self.__parse_message(message)
-
-        if command == 'add-contact':
-            self.__add_contact(data)
+        if message.channel == self._messaging_channel:
+            
+            if message.command == 'add-contact':
+                self.__add_contact(message.data)
 
     def create_new_distributed_contact(self, contact: Contact):
         """
