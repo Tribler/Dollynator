@@ -26,7 +26,8 @@ from plebnet.agent.strategies.last_day_sell import LastDaySell
 from plebnet.agent.strategies.constant_sell import ConstantSell
 from plebnet.agent.strategies.simple_moving_average import SimpleMovingAverage
 from plebnet.utilities.btc import satoshi_to_btc
-from plebnet.contacts import AddressBook, Contact, generate_contact_id
+from plebnet.contacts import AddressBook, Contact
+from plebnet.messaging import generate_contact_id
 
 settings = plebnet_settings.get_instance()
 log_name = "agent.core"  # Used for identifying the origin of the log message.

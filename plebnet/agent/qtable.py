@@ -22,8 +22,7 @@ class QTable:
     INFINITY = 10000000
     start_alpha = 0.8  # between 0.5 and 1
     start_beta = 0.2  # between 0 and 0.5
-    contact_port = 8000  # port used to share information about other contacts
-    qtable_port = 8010  # port used to share QTables
+    contact_port = 8000  # port used to share information with other nodes
 
     def __init__(self):
         self.qtable = {}
@@ -35,10 +34,10 @@ class QTable:
         self.self_state = VPSState()
         self.tree = ""
         self.address_book = self.init_address_book()
-        self.receiver = self.init_receiver_for_remote_qtables()
         pass
 
     # TODO : share QTable when reproducing
+    # TODO : update local qtable through remote qtables when reproducing
 
     def init_receiver_for_remote_qtables(self):
         """
@@ -82,7 +81,7 @@ class QTable:
             self.number_of_updates[self.get_ID(provider_of)] = num
 
     def init_address_book(self, parent_id: str = ""):
-        node_id = contacts.generate_contact_id(parent_id)
+        node_id = messaging.generate_contact_id(parent_id)
         # TODO : check ip and port
         self_contact = contacts.Contact(node_id, "127.0.0.1", self.contact_port)
         return contacts.AddressBook(self_contact)
