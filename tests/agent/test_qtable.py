@@ -344,9 +344,6 @@ class TestQTable(unittest.TestCase):
         assert (self.qtable.betatable[provider_offer_ID_other][provider_offer_ID] == 0.2)
         assert (self.qtable.number_of_updates[provider_offer_ID_other][provider_offer_ID] == 0)
 
-
-
-
     @mock.patch('plebnet.controllers.cloudomate_controller.get_vps_providers',
                 return_value=CaseInsensitiveDict({'blueangelhost': blueAngel.BlueAngelHost}))
     @mock.patch('plebnet.controllers.cloudomate_controller.options', return_value=[VpsOption(name='Advanced',

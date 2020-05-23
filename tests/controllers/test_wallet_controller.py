@@ -111,18 +111,7 @@ class TestWalletController(unittest.TestCase):
         o.__init__(True)
         assert o.coin == 'TBTC'
 
-    def test_get_balance(self):
-        self.market = marketcontroller.get_balance
-        marketcontroller.get_balance = MagicMock(return_value=5)
-
-        r = walletcontroller.TriblerWallet()
-        r.__init__()
-
-        self.assertEquals(r.get_balance(), 5)
-
-        marketcontroller.get_balance = self.market
-
-    def test_get_balance(self):
+    def test_get_balance2(self):
         self.market = marketcontroller.get_balance
         marketcontroller.get_balance = MagicMock(return_value=5)
 
