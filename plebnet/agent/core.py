@@ -48,9 +48,9 @@ class LearningConsumer(messaging.MessageConsumer):
          Parses a raw message into command and data.
          raw_message: raw_message to parse
         """
-        channel = raw_message["channel"]
-        command = raw_message['command']
-        data = raw_message['data']
+        channel = raw_message.channel
+        command = raw_message.command
+        data = raw_message.data
 
         return channel, command, data
 
