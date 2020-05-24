@@ -15,7 +15,7 @@ from plebnet import address_book, messaging
 from plebnet.controllers import cloudomate_controller
 from plebnet.settings import plebnet_settings
 
-# TODO : decide which port to use
+
 class QTable:
     learning_rate = 0.005
     environment_lr = 0.4
@@ -24,6 +24,7 @@ class QTable:
     start_alpha = 0.8  # between 0.5 and 1
     start_beta = 0.2  # between 0 and 0.5
     node_pub, node_priv = rsa.newkeys(512)
+    port = 8000
 
     def __init__(self):
         self.qtable = {}
@@ -79,7 +80,7 @@ class QTable:
         node_id = messaging.generate_contact_id(parent_id)
         index = core.get_node_index()
         ip = self.get_node_ip(str(self.self_state.provider).lower(), index)
-        self_contact = messaging.Contact(node_id, ip, 8000, self.node_pub)
+        self_contact = messaging.Contact(node_id, ip, self.port, self.node_pub)
         return address_book.AddressBook(self_contact, self.node_priv)
 
     @staticmethod
@@ -145,6 +146,7 @@ class QTable:
             self.init_qtable_and_environment(providers)
             self.init_alpha_and_beta()
             self.create_initial_tree()
+            self.init_address_book()
             self.write_dictionary()
         else:
             with open(filename) as json_file:
@@ -237,9 +239,10 @@ class QTable:
         child_pub, child_priv = rsa.newkeys(512)
         child_id = messaging.generate_contact_id(self.address_book.self_contact.id)
         ip = self.get_node_ip(provider, child_index)
-        child_contact = messaging.Contact(child_id, ip, 8000, child_pub)
+        child_contact = messaging.Contact(child_id, ip, self.port, child_pub)
         new_address_book = address_book.AddressBook(child_contact, self.address_book.contacts, child_priv)
         new_address_book.contacts.append(self.address_book.self_contact)
+        # TODO : Add child's contact to parent's addressbook?
         return new_address_book
 
     def get_node_ip(self, provider, index):

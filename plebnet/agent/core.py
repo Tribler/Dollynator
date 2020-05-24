@@ -37,8 +37,6 @@ strategies = {
 }
 qtable = None  # Used to store the QTable of the agent and only load once.
 
-receiver_port = 8000  # port used to share information among agents
-
 remote_tables = []  # list to store the remote qtables
 
 
