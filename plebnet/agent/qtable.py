@@ -9,12 +9,13 @@ import rsa
 import jsonpickle
 
 from appdirs import user_config_dir
+from plebnet.agent import config, core
 
 from plebnet import address_book, messaging
 from plebnet.controllers import cloudomate_controller
 from plebnet.settings import plebnet_settings
 
-
+# TODO : decide which port to use
 class QTable:
     learning_rate = 0.005
     environment_lr = 0.4
@@ -76,8 +77,9 @@ class QTable:
 
     def init_address_book(self, parent_id: str = ""):
         node_id = messaging.generate_contact_id(parent_id)
-        # TODO : check ip and port
-        self_contact = messaging.Contact(node_id, "127.0.0.1", 8000, self.node_pub)
+        index = core.get_node_index()
+        ip = self.get_node_ip(str(self.self_state.provider).lower(), index)
+        self_contact = messaging.Contact(node_id, ip, 8000, self.node_pub)
         return address_book.AddressBook(self_contact, self.node_priv)
 
     @staticmethod
@@ -227,18 +229,22 @@ class QTable:
     def get_ID_from_state(self):
         return str(self.self_state.provider).lower() + "_" + str(self.self_state.option).lower()
 
-    def create_new_address_book(self):
+    def create_new_address_book(self, provider, child_index):
         """
         This method creates a new AddressBook to pass to the child. It sets the child's contact as self_contact
         and adds the parent's contact in the contacts list.
         """
         child_pub, child_priv = rsa.newkeys(512)
         child_id = messaging.generate_contact_id(self.address_book.self_contact.id)
-        # TODO : handle IP and port
-        child_contact = messaging.Contact(child_id, "127.0.0.1", 8000, child_pub)
+        ip = self.get_node_ip(provider, child_index)
+        child_contact = messaging.Contact(child_id, ip, 8000, child_pub)
         new_address_book = address_book.AddressBook(child_contact, self.address_book.contacts, child_priv)
         new_address_book.contacts.append(self.address_book.self_contact)
         return new_address_book
+
+    def get_node_ip(self, provider, index):
+        account = cloudomate_controller.child_account(index)
+        return cloudomate_controller.get_ip(provider, account)
 
     def create_child_qtable(self, provider, option, transaction_hash, child_index):
         """
@@ -251,13 +257,12 @@ class QTable:
 
         next_state = VPSState(provider=provider, option=option)
         tree = self.tree + "." + str(child_index)
-        new_address_book = self.create_new_address_book()
+        new_address_book = self.create_new_address_book(provider, child_index)
         dictionary = {
             "environment": self.environment,
             "qtable": self.qtable,
             "alphatable": self.alphatable,
             "betatable": self.betatable,
-            # TODO: Consider whether adding this information or not
             "number_of_updates": self.number_of_updates,
             "providers_offers": self.providers_offers,
             "self_state": next_state,

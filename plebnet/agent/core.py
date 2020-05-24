@@ -9,9 +9,7 @@ A package which handles the main behaviour of the PlebNet agent:
 import os
 import random
 import time
-import re
 import subprocess
-import shutil
 
 from plebnet import messaging
 
@@ -28,10 +26,6 @@ from plebnet.agent.strategies.last_day_sell import LastDaySell
 from plebnet.agent.strategies.constant_sell import ConstantSell
 from plebnet.agent.strategies.simple_moving_average import SimpleMovingAverage
 from plebnet.utilities.btc import satoshi_to_btc
-from plebnet.address_book import AddressBook
-from plebnet.messaging import generate_contact_id, Contact
-
-import rsa
 
 settings = plebnet_settings.get_instance()
 log_name = "agent.core"  # Used for identifying the origin of the log message.
@@ -296,7 +290,7 @@ def attempt_purchase():
                 attempt_purchase_vpn()
         elif success == plebnet_settings.FAILURE:
             # Update qtable provider negatively if not successful
-            qtable.update_qtable(remote_tables, provider_offer_ID, False)
+            qtable.update_qtable(remote_tables, provider_offer_ID, False, get_reward_qlearning())
 
         qtable.write_dictionary()
         config.increment_child_index()
@@ -447,3 +441,7 @@ def save_all_currency():
     # Currently, currency transfers using the Tribler API are only supported for Bitcoin,
     # but could be useful in future
     # wallet.pay(settings.wallets_mb_global(), wallet.get_balance('MB'), coin='MB')
+
+
+def get_node_index():
+    return config.get("child_index")
