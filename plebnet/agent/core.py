@@ -43,22 +43,13 @@ remote_tables = []  # list to store the remote qtables
 # TODO: initiate consumer in setup or somewhere it could be "always listening"
 class LearningConsumer(messaging.MessageConsumer):
 
-    def parse_message(self, raw_message: messaging.Message):
-        """
-         Parses a raw message into command and data.
-         raw_message: raw_message to parse
-        """
-        channel = raw_message.channel
-        command = raw_message.command
-        data = raw_message.data
-
-        return channel, command, data
-
     def notify(self, message: messaging.Message, sender_id):
-        channel, command, data = self.parse_message(message)
-        if command == 'qtable':
-            if channel == 'qtable':
-                remote_tables.append(data)
+
+        if message.command == 'qtable':
+
+            qtable = message.data
+
+            remote_tables.append(qtable)
 
 
 learning_consumer = LearningConsumer()
