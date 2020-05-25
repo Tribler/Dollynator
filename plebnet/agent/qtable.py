@@ -4,12 +4,14 @@ import math
 import os
 import sys
 import random
-from typing import Dict, Any
+import rsa
 
 import jsonpickle
 
 from appdirs import user_config_dir
+from plebnet.agent import config, core
 
+from plebnet import address_book, messaging
 from plebnet.controllers import cloudomate_controller
 from plebnet.settings import plebnet_settings
 
@@ -21,6 +23,8 @@ class QTable:
     INFINITY = 10000000
     start_alpha = 0.8  # between 0.5 and 1
     start_beta = 0.2  # between 0 and 0.5
+    node_pub, node_priv = rsa.newkeys(512)
+    port = 8000
 
     def __init__(self):
         self.qtable = {}
@@ -31,7 +35,11 @@ class QTable:
         self.providers_offers = []
         self.self_state = VPSState()
         self.tree = ""
+        self.address_book = self.init_address_book()
         pass
+
+    # TODO : share QTable when reproducing
+    # TODO : update local qtable through remote qtables when reproducing
 
     def init_qtable_and_environment(self, providers):
         """
@@ -68,10 +76,17 @@ class QTable:
             self.betatable[self.get_ID(provider_of)] = bet
             self.number_of_updates[self.get_ID(provider_of)] = num
 
+    def init_address_book(self, parent_id: str = ""):
+        node_id = messaging.generate_contact_id(parent_id)
+        index = core.get_node_index()
+        ip = self.get_node_ip(str(self.self_state.provider).lower(), index)
+        self_contact = messaging.Contact(node_id, ip, self.port, self.node_pub)
+        return address_book.AddressBook(self_contact, self.node_priv)
+
     @staticmethod
     def calculate_measure(provider_offer):
         """
-        Estimeates the starting value of the qtable.
+        Estimates the starting value of the qtable.
         """
         return 1 / (math.pow(float(provider_offer.price), 3)) * float(provider_offer.bandwidth)
 
@@ -92,20 +107,15 @@ class QTable:
         appropriate weight to local and remote information.
         """
         # TODO: Switch to a mathematical model update? I.e.: a modified sigmoid
-        update_purchase = self.number_of_updates[self.get_ID_from_state()][provider_offer_ID] + 1
         update_current_state = self.number_of_updates[self.get_ID_from_state()][self.get_ID_from_state()] + 1
-        if update_purchase <= 50:
-            for provider_of in self.providers_offers:
-                # update alpha and beta
-                self.alphatable[self.get_ID(provider_of)][provider_offer_ID] = self.start_alpha - update_purchase * 0.012  # chosen constant
-                self.betatable[self.get_ID(provider_of)][provider_offer_ID] = self.start_beta + update_purchase * 0.012  # chosen constant
-                # update number_of_updates table
-                self.number_of_updates[self.get_ID(provider_of)][provider_offer_ID] += 1
+
         if update_current_state <= 50:
             for provider_of in self.providers_offers:
                 # update alpha and beta
-                self.alphatable[self.get_ID(provider_of)][self.get_ID_from_state()] = self.start_alpha - update_current_state * 0.012  # chosen constant
-                self.betatable[self.get_ID(provider_of)][self.get_ID_from_state()] = self.start_beta + update_current_state * 0.012  # chosen constant
+                self.alphatable[self.get_ID(provider_of)][self.get_ID_from_state()] = \
+                    self.start_alpha - update_current_state * 0.012  # chosen constant
+                self.betatable[self.get_ID(provider_of)][self.get_ID_from_state()] = \
+                    self.start_beta + update_current_state * 0.012  # chosen constant
                 # update number_of_updates table
                 self.number_of_updates[self.get_ID(provider_of)][self.get_ID_from_state()] += 1
 
@@ -136,6 +146,7 @@ class QTable:
             self.init_qtable_and_environment(providers)
             self.init_alpha_and_beta()
             self.create_initial_tree()
+            self.init_address_book()
             self.write_dictionary()
         else:
             with open(filename) as json_file:
@@ -149,6 +160,7 @@ class QTable:
                 self.providers_offers = data['providers_offers']
                 self.self_state = data['self_state']
                 self.tree = data['tree']
+                self.address_book = data['address_book']
 
     def choose_option(self, providers):
         """
@@ -219,27 +231,47 @@ class QTable:
     def get_ID_from_state(self):
         return str(self.self_state.provider).lower() + "_" + str(self.self_state.option).lower()
 
+    def create_new_address_book(self, provider, child_index):
+        """
+        This method creates a new AddressBook to pass to the child. It sets the child's contact as self_contact
+        and adds the parent's contact in the contacts list.
+        """
+        child_pub, child_priv = rsa.newkeys(512)
+        child_id = messaging.generate_contact_id(self.address_book.self_contact.id)
+        ip = self.get_node_ip(provider, child_index)
+        child_contact = messaging.Contact(child_id, ip, self.port, child_pub)
+        new_address_book = address_book.AddressBook(child_contact, self.address_book.contacts, child_priv)
+        new_address_book.contacts.append(self.address_book.self_contact)
+        # TODO : Add child's contact to parent's addressbook?
+        return new_address_book
+
+    def get_node_ip(self, provider, index):
+        account = cloudomate_controller.child_account(index)
+        return cloudomate_controller.get_ip(provider, account)
+
     def create_child_qtable(self, provider, option, transaction_hash, child_index):
         """
         Creates the QTable configuration for the child agent. This is done by copying the own QTable configuration and
         including the new host provider, the parent name and the transaction hash.
+        Moreover it passes an updated AddressBook to the child.
         :param provider: the name the child tree name.
         :param transaction_hash: the transaction hash the child is bought with.
         """
 
         next_state = VPSState(provider=provider, option=option)
         tree = self.tree + "." + str(child_index)
+        new_address_book = self.create_new_address_book(provider, child_index)
         dictionary = {
             "environment": self.environment,
             "qtable": self.qtable,
             "alphatable": self.alphatable,
             "betatable": self.betatable,
-            # TODO: Consider whether adding this information or not
             "number_of_updates": self.number_of_updates,
             "providers_offers": self.providers_offers,
             "self_state": next_state,
             "transaction_hash": transaction_hash,
-            "tree": tree
+            "tree": tree,
+            "address_book": new_address_book
         }
 
         filename = os.path.join(user_config_dir(), 'Child_QTable.json')
@@ -267,7 +299,8 @@ class QTable:
             "number_of_updates": self.number_of_updates,
             "providers_offers": self.providers_offers,
             "self_state": self.self_state,
-            "tree": self.tree
+            "tree": self.tree,
+            "address_book": self.address_book
         }
         with open(filename, 'w') as json_file:
             encoded_to_save_var = jsonpickle.encode(to_save_var)
@@ -299,6 +332,7 @@ class QTable:
 
         self.update_alpha_and_beta(provider_offer_ID)
 
+    # TODO: check if formula is correct
     def update_remote_qtable(self, remote_qtable, provider_offer_ID, to_add):
         """
         Method that gets a remote QTable and updates the local one following the
@@ -309,9 +343,8 @@ class QTable:
         """
 
         for state in to_add:
-            to_add[state][provider_offer_ID] -= self.betatable[state][provider_offer_ID] \
-                                                             * self.qtable[state][provider_offer_ID] \
-                                                             - remote_qtable[state][provider_offer_ID]
+            to_add[state][provider_offer_ID] -= self.betatable[state][provider_offer_ID] * self.qtable[state][
+                provider_offer_ID] - remote_qtable[state][provider_offer_ID]
             to_add[state][self.get_ID_from_state()] -= self.betatable[state][self.get_ID_from_state()] \
                                                        * self.qtable[state][self.get_ID_from_state()] \
                                                        - remote_qtable[state][self.get_ID_from_state()]
@@ -328,16 +361,17 @@ class QTable:
 
         for provider_offer in self.providers_offers:
             learning_compound_purchase = self.environment[self.get_ID(provider_offer)][provider_offer_ID] \
-                                + self.discount * self.max_action_value(provider_offer) \
-                                - self.qtable[self.get_ID(provider_offer)][provider_offer_ID]
-            learning_compound_current = self.environment[self.get_ID(provider_offer)][self.get_ID_from_state()] \
                                          + self.discount * self.max_action_value(provider_offer) \
-                                         - self.qtable[self.get_ID(provider_offer)][self.get_ID_from_state()]
+                                         - self.qtable[self.get_ID(provider_offer)][provider_offer_ID]
+            learning_compound_current = self.environment[self.get_ID(provider_offer)][self.get_ID_from_state()] \
+                                        + self.discount * self.max_action_value(provider_offer) \
+                                        - self.qtable[self.get_ID(provider_offer)][self.get_ID_from_state()]
 
             to_add[self.get_ID(provider_offer)][provider_offer_ID] += self.alphatable[self.get_ID(provider_offer)][
                                                                           provider_offer_ID] * learning_compound_purchase
-            to_add[self.get_ID(provider_offer)][self.get_ID_from_state()] += self.alphatable[self.get_ID(provider_offer)][
-                                                                          self.get_ID_from_state()] * learning_compound_current
+            to_add[self.get_ID(provider_offer)][self.get_ID_from_state()] += \
+                self.alphatable[self.get_ID(provider_offer)][
+                    self.get_ID_from_state()] * learning_compound_current
 
     def update_environment(self, provider_offer_ID, status, MBtokens):
         """
@@ -354,6 +388,15 @@ class QTable:
             for i, actions in enumerate(self.environment):
                 self.environment[actions][provider_offer_ID] -= self.environment_lr
                 self.environment[actions][self.get_ID_from_state()] += MBtokens
+
+    # TODO : decide how many nodes to share qtable with
+    def share_qtable(self):
+        """
+        Method that share local QTable with n nodes when the agent tries to reproduce.
+        """
+        msg = messaging.Message('qtable', 'qtable', self.qtable)
+        for contact in self.address_book.contacts:
+            self.address_book.send_message_to_contact(contact, msg)
 
 
 class ProviderOffer:

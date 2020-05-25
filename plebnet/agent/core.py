@@ -9,9 +9,9 @@ A package which handles the main behaviour of the PlebNet agent:
 import os
 import random
 import time
-import re
 import subprocess
-import shutil
+
+from plebnet import messaging
 
 from plebnet.agent.qtable import QTable
 
@@ -36,6 +36,24 @@ strategies = {
     'simple_moving_average': SimpleMovingAverage
 }
 qtable = None  # Used to store the QTable of the agent and only load once.
+
+remote_tables = []  # list to store the remote qtables
+
+
+# TODO: initiate consumer in setup or somewhere it could be "always listening"
+class LearningConsumer(messaging.MessageConsumer):
+
+    def notify(self, message: messaging.Message, sender_id):
+
+        if message.command == 'qtable':
+
+            qtable = message.data
+
+            remote_tables.append(qtable)
+
+
+learning_consumer = LearningConsumer()
+
 TIME_ALIVE = 30 * plebnet_settings.TIME_IN_DAY
 average_MB_tokens_per_day = 10000  # estimate from previous reports
 
@@ -83,6 +101,9 @@ def setup(args):
     irc_handler.start_irc_client()
 
     config.save()
+
+    # add learning_consumer as a consumer for qtable channel in addressbook
+    qtable.address_book.receiver.register_consumer("qtable", learning_consumer)
 
     logger.success("PlebNet is ready to roll!")
 
@@ -245,18 +266,20 @@ def attempt_purchase():
     logger.log('Selected VPN: %s, %s BTC' % ("mullvad", vpn_price), log_name)
     logger.log("Balance: %s %s" % (btc_balance, domain), log_name)
     if btc_balance >= vps_price + vpn_price:
+        logger.log("Before trying to purchase VPS share current QTable with other agents")
+        qtable.share_qtable()
         logger.log("Try to buy a new server from %s" % provider, log_name)
         success = cloudomate_controller.purchase_choice(config)
         if success == plebnet_settings.SUCCESS:
             # Update qtable yourself positively if you are successful
-            qtable.update_qtable(get_q_tables_through_gossipping(), provider_offer_ID, True, get_reward_qlearning())
+            qtable.update_qtable(remote_tables, provider_offer_ID, True, get_reward_qlearning())
             # purchase VPN with same config if server allows for it
             # purchase VPN with same config if server allows for it
             if cloudomate_controller.get_vps_providers()[provider].TUN_TAP_SETTINGS:
                 attempt_purchase_vpn()
         elif success == plebnet_settings.FAILURE:
             # Update qtable provider negatively if not successful
-            qtable.update_qtable([], provider_offer_ID, False)
+            qtable.update_qtable(remote_tables, provider_offer_ID, False, get_reward_qlearning())
 
         qtable.write_dictionary()
         config.increment_child_index()
@@ -316,15 +339,6 @@ def get_amount_mb_tokens_earned():
     mb_tokens_earned_in_total = total_mb_tokens_sold + mb_tokens_pending + mb_tokens_available
 
     return mb_tokens_earned_in_total
-
-
-# TODO: implement this method
-def get_q_tables_through_gossipping():
-    """
-    Gossip with neighbours to get a list of q-tables to use for q-learning
-    :return: a list of q-tables
-    """
-    pass
 
 
 def install_vps():
@@ -416,3 +430,7 @@ def save_all_currency():
     # Currently, currency transfers using the Tribler API are only supported for Bitcoin,
     # but could be useful in future
     # wallet.pay(settings.wallets_mb_global(), wallet.get_balance('MB'), coin='MB')
+
+
+def get_node_index():
+    return config.get("child_index")
