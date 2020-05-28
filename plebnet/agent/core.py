@@ -9,9 +9,9 @@ A package which handles the main behaviour of the PlebNet agent:
 import os
 import random
 import time
-import re
 import subprocess
-import shutil
+
+from plebnet import messaging
 
 from plebnet.agent.qtable import QTable
 
@@ -37,6 +37,26 @@ strategies = {
 }
 qtable = None  # Used to store the QTable of the agent and only load once.
 
+remote_tables = []  # list to store the remote qtables
+
+
+# TODO: initiate consumer in setup or somewhere it could be "always listening"
+class LearningConsumer(messaging.MessageConsumer):
+
+    def notify(self, message: messaging.Message, sender_id):
+
+        if message.command == 'qtable':
+
+            qtable = message.data
+
+            remote_tables.append(qtable)
+
+
+learning_consumer = LearningConsumer()
+
+TIME_ALIVE = 30 * plebnet_settings.TIME_IN_DAY
+average_MB_tokens_per_day = 10000  # estimate from previous reports
+
 
 def setup(args):
     """
@@ -50,7 +70,7 @@ def setup(args):
     # Set general info about the PlebNet agent
     settings.irc_nick(settings.irc_nick_def() + str(random.randint(1000, 10000)))
     config = PlebNetConfig()
-    config.set('expiration_date', time.time() + 30 * plebnet_settings.TIME_IN_DAY)
+    config.set('expiration_date', time.time() + TIME_ALIVE)
 
     # Prepare the QTable configuration
     qtable = QTable()
@@ -82,6 +102,9 @@ def setup(args):
 
     config.save()
 
+    # add learning_consumer as a consumer for qtable channel in addressbook
+    qtable.address_book.receiver.register_consumer("qtable", learning_consumer)
+
     logger.success("PlebNet is ready to roll!")
 
 
@@ -91,6 +114,7 @@ def check():
     starting Tribler and buying servers.
     """
     global config, qtable
+    global sold_mb_tokens, previous_mb_tokens
     logger.log("Checking PlebNet", log_name)
 
     # Read general configuration
@@ -242,23 +266,79 @@ def attempt_purchase():
     logger.log('Selected VPN: %s, %s BTC' % ("mullvad", vpn_price), log_name)
     logger.log("Balance: %s %s" % (btc_balance, domain), log_name)
     if btc_balance >= vps_price + vpn_price:
+        logger.log("Before trying to purchase VPS share current QTable with other agents")
+        qtable.share_qtable()
         logger.log("Try to buy a new server from %s" % provider, log_name)
         success = cloudomate_controller.purchase_choice(config)
         if success == plebnet_settings.SUCCESS:
             # Update qtable yourself positively if you are successful
-            qtable.update_values(provider_offer_ID,True)
+            qtable.update_qtable(remote_tables, provider_offer_ID, True, get_reward_qlearning())
+            # purchase VPN with same config if server allows for it
             # purchase VPN with same config if server allows for it
             if cloudomate_controller.get_vps_providers()[provider].TUN_TAP_SETTINGS:
                 attempt_purchase_vpn()
         elif success == plebnet_settings.FAILURE:
             # Update qtable provider negatively if not successful
-            qtable.update_values(provider_offer_ID,False)
+            qtable.update_qtable(remote_tables, provider_offer_ID, False, get_reward_qlearning())
 
         qtable.write_dictionary()
         config.increment_child_index()
         fake_generator.generate_child_account()
         config.set('chosen_provider', None)
         config.save()
+
+
+def get_reward_qlearning():
+    """
+    Gets the reward for the q-learning algorithm, i.e. the amount of MB_tokens earned per day per usd
+    and normalize it to be around 0.5 given the average from previous reports
+    :return: the amount of MB tokens earned per day per price current vps server
+    """
+    # get the price of the current vps
+    current_vpsprovider = qtable.self_state.provider
+    current_vpsoption = qtable.self_state.option
+    option = cloudomate_controller.get_vps_option(current_vpsprovider, current_vpsoption)
+    price = option.price
+
+    # get how long the agent has been alive in number of days
+    time_alive = TIME_ALIVE - config.time_to_expiration()
+    days_alive = time_alive / plebnet_settings.TIME_IN_DAY
+
+    # get the total amount of mb tokens the agent has earned up until now
+    mb_tokens_gotten = get_amount_mb_tokens_earned()
+
+    # get the amount of mb tokens per day per price of the current vps
+    reward_q_learning = mb_tokens_gotten / (price * days_alive)
+
+    # normalize it around 0.5
+    reward_q_learning /= (average_MB_tokens_per_day * 2)
+
+    return reward_q_learning
+
+
+def get_amount_mb_tokens_earned():
+    """
+    Gets amount of MB tokens earned until now
+    :return: total amount of MB tokens earned on this node until now
+    """
+    transactions_list = wallet_controller.get_MB_transactions()
+
+    # get the amount of mb tokens sold by looking at the mb wallets outgoing transactions
+    total_mb_tokens_sold = 0
+    for transaction in transactions_list:
+        if transaction["outgoing"]:
+            total_mb_tokens_sold += transaction["amount"]
+
+    # get the amount of mb tokens in the wallet on pending
+    mb_tokens_pending = wallet_controller.get_MB_balance_pending()
+
+    # get the amount of mb tokens currently in the wallet
+    mb_tokens_available = wallet_controller.get_MB_balance()
+
+    # get the balance of mb tokens in the wallet
+    mb_tokens_earned_in_total = total_mb_tokens_sold + mb_tokens_pending + mb_tokens_available
+
+    return mb_tokens_earned_in_total
 
 
 def install_vps():
@@ -322,7 +402,6 @@ def vpn_is_running():
         return False
 
 
-# TODO: dit moet naar agent.DNA, maar die is nu al te groot
 def select_provider():
     """
     Check whether a provider is already selected, otherwise select one based on the Qtable.
@@ -351,3 +430,7 @@ def save_all_currency():
     # Currently, currency transfers using the Tribler API are only supported for Bitcoin,
     # but could be useful in future
     # wallet.pay(settings.wallets_mb_global(), wallet.get_balance('MB'), coin='MB')
+
+
+def get_node_index():
+    return config.get("child_index")

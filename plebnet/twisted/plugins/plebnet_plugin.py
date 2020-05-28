@@ -15,8 +15,7 @@ from Tribler.Core.Config.tribler_config import TriblerConfig
 from Tribler.Core.Modules.process_checker import ProcessChecker
 from Tribler.Core.Session import Session
 # Register yappi profiler
-from Tribler.community.market.community import MarketCommunity
-
+#from Tribler.community.market.community import MarketCommunity
 
 class Options(usage.Options):
     optParameters = [
@@ -59,8 +58,8 @@ class MarketServiceMaker(object):
         Load the Market community
         """
         msg("Loading market community...")
-        self.market_community = self.session.get_dispersy_instance().define_auto_load(
-            MarketCommunity, self.session.dispersy_member, load=True, kargs={'tribler_session': self.session})
+        #self.market_community = self.session.get_dispersy_instance().define_auto_load(
+        #    MarketCommunity, self.session.dispersy_member, load=True, kargs={'tribler_session': self.session})
 
     def start_tribler(self, options):
         """
