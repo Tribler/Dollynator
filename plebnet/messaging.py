@@ -22,7 +22,7 @@ def now() -> int:
     """
     return int(datetime.timestamp(datetime.now()))
 
-
+    
 def generate_contact_id(parent_id: str = "") -> str:
     """
     Generates a random, virtually unique id for a new node.
@@ -95,6 +95,12 @@ class Message:
         self.channel = channel
         self.command = command
         self.data = data
+
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, Message) \
+            and o.channel == self.channel \
+            and o.command == self.command \
+            and o.data == self.data
 
 
 class MessageDeliveryError(Exception):
@@ -277,7 +283,7 @@ class MessageReceiver:
         forwarded to all registered consumers.
         """
 
-        while True:
+        while not self.kill_flag:
 
             if len(self.messages_queue) > 0:
 
@@ -333,6 +339,10 @@ class MessageReceiver:
         Sets kill flag to true, effectively making the listening thread stop.
         """
         self.kill_flag = True
+
+        s = socket.socket()
+        s.connect(("127.0.0.1", self.port))
+        s.close()
 
     def _initialize_socket(self) -> socket.socket:
         """
