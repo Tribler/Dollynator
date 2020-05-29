@@ -389,6 +389,11 @@ class MessageReceiver:
 
                 continue
 
+        try:
+            s.shutdown(socket.SHUT_RDWR)
+        finally:
+            s.close()
+
     def _handle_connection(self, connection) -> None:
         """
         Handles incoming connections to receive messages
