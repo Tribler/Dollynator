@@ -239,7 +239,7 @@ class AddressBook(MessageConsumer):
         return True
 
 
-def _demo():
+def _demo():  # pragma: no cover
     id_counter = 1
     port_counter = 8001
 
@@ -323,5 +323,5 @@ def _demo():
         print("")
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     _demo()

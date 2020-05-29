@@ -438,7 +438,7 @@ class MessageReceiver:
                 consumer.notify(message, sender_id)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     sender_pub, sender_priv = generate_contact_key_pair()
     receiver_pub, receiver_priv = generate_contact_key_pair()
 
