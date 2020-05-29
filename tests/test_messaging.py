@@ -1,5 +1,4 @@
 import unittest
-import rsa
 import time
 from plebnet.messaging import Contact
 from plebnet.messaging import Message
@@ -7,6 +6,7 @@ from plebnet.messaging import MessageConsumer
 from plebnet.messaging import MessageReceiver
 from plebnet.messaging import MessageSender
 from plebnet.messaging import MessageDeliveryError
+from plebnet.messaging import generate_contact_key_pair
 
 
 class DebugConsumer(MessageConsumer):
@@ -23,7 +23,6 @@ class DebugConsumer(MessageConsumer):
 class TestMessaging(unittest.TestCase):
 
     port_range_min = 8000
-    rsa_key_size = 512
     notify_interval = 0.01
     localhost = "127.0.0.1"
 
@@ -46,8 +45,8 @@ class TestMessaging(unittest.TestCase):
         Basic messaging test.
         """
 
-        receiver_public, receiver_private = rsa.newkeys(self.rsa_key_size)
-        sender_public, sender_private = rsa.newkeys(self.rsa_key_size)
+        receiver_public, receiver_private = generate_contact_key_pair()
+        sender_public, sender_private = generate_contact_key_pair()
 
         sender_contact = Contact(
             id="sender",
@@ -105,8 +104,8 @@ class TestMessaging(unittest.TestCase):
         Messaging test with multiple channels.
         """
 
-        receiver_public, receiver_private = rsa.newkeys(self.rsa_key_size)
-        sender_public, sender_private = rsa.newkeys(self.rsa_key_size)
+        receiver_public, receiver_private = generate_contact_key_pair()
+        sender_public, sender_private = generate_contact_key_pair()
 
         sender_contact = Contact(
             id="sender",
@@ -175,7 +174,7 @@ class TestMessaging(unittest.TestCase):
         """
         Tests that a receiver can be open and appropriately killed.
         """
-        pub, priv = rsa.newkeys(self.rsa_key_size)
+        pub, priv = generate_contact_key_pair()
 
         receiver = MessageReceiver(
             self.port_range_min,
@@ -192,10 +191,10 @@ class TestMessaging(unittest.TestCase):
         Tests that sending message with wrong key results in MessageDeliveryError.
         """
 
-        receiver_public, receiver_private = rsa.newkeys(self.rsa_key_size)
-        sender_public, sender_private = rsa.newkeys(self.rsa_key_size)
+        receiver_public, receiver_private = generate_contact_key_pair()
+        sender_public, sender_private = generate_contact_key_pair()
 
-        wrong_public, wrong_private = rsa.newkeys(self.rsa_key_size)
+        wrong_public, wrong_private = generate_contact_key_pair()
 
         sender_contact = Contact(
             id="sender",
@@ -247,10 +246,10 @@ class TestMessaging(unittest.TestCase):
         Tests that sending message with wrong key results in MessageDeliveryError.
         """
 
-        receiver_public, receiver_private = rsa.newkeys(self.rsa_key_size)
-        sender_public, sender_private = rsa.newkeys(self.rsa_key_size)
+        receiver_public, receiver_private = generate_contact_key_pair()
+        sender_public, sender_private = generate_contact_key_pair()
 
-        wrong_public, wrong_private = rsa.newkeys(self.rsa_key_size)
+        wrong_public, wrong_private = generate_contact_key_pair()
 
         sender_contact = Contact(
             id="sender",
