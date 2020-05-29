@@ -37,7 +37,7 @@ apt-get update
 # Requiring manual configuration after installation
 # && apt-get -y upgrade
 
-apt-get install -y python3.6
+apt-get install -y python3
 
 # Reinstall pip
 apt-get remove --purge -y python-pip
@@ -46,7 +46,7 @@ python3 get-pip.py
 
 pip3 install -U wheel setuptools
 
-#(echo "alias pip='python -m pip'" | tee -a ~/.bashrc) && source ~/.bashrc
+#(echo "alias pip3='python3 -m pip'" | tee -a ~/.bashrc) && source ~/.bashrc
 
 # Fix paths
 echo "fixing paths"
@@ -83,7 +83,7 @@ apt-get install -y \
     python-dnspython \
     python-jsonrpclib \
     python-networkx \
-    python-scipy \
+    python3-scipy \
     python-wxtools \
     git \
     python-lxml
