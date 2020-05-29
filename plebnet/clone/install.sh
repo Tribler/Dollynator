@@ -38,6 +38,7 @@ apt-get update
 # && apt-get -y upgrade
 
 apt-get install -y python3
+apt-get install python3-distutils
 
 # Reinstall pip
 apt-get remove --purge -y python-pip
