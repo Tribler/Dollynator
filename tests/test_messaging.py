@@ -294,3 +294,7 @@ class TestMessaging(unittest.TestCase):
             assert len(consumer.messages) == 0
 
         self.assert_and_kill_receiver(assertions, receiver)
+
+
+if __name__ == 'main':
+    unittest.main()
