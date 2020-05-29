@@ -31,19 +31,24 @@ DEBIAN_FRONTEND=noninteractive
 echo force-confold >> /etc/dpkg/dpkg.cfg
 echo force-confdef >> /etc/dpkg/dpkg.cfg
 
+# Add Python 3.6 repo
+add-apt-repository ppa:jonathonf/python-3.6
 # Upgrade system
 apt-get update
 # Do not upgrade for now as in some VPS it will cause for example grub to update
 # Requiring manual configuration after installation
 # && apt-get -y upgrade
 
-apt-get install -y python3
-apt-get install -y python3-distutils
+apt-get install -y python3.6
+apt-get install -y python3.6-distutils
 
 # Reinstall pip
 apt-get remove --purge -y python-pip
 wget https://bootstrap.pypa.io/get-pip.py
-python3 get-pip.py
+python3.6 get-pip.py
+
+ln -s /usr/bin/python3.6 /usr/local/bin/python3
+ln -s /usr/local/bin/pip /usr/local/bin/pip3
 
 pip3 install -U wheel setuptools
 
