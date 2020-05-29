@@ -43,6 +43,14 @@ def generate_contact_id(parent_id: str = "") -> str:
     return random_hash + timestamp
 
 
+def generate_contact_key_pair() -> Tuple[rsa.PublicKey, rsa.PrivateKey]:
+    """
+    Generates a key pair.
+    :return: a tuple containing the generated public and private keys
+    """
+    return rsa.newkeys(512)
+
+
 class Contact:
     """
     Nodes contact.
@@ -429,8 +437,8 @@ class MessageReceiver:
 
 
 if __name__ == '__main__':
-    sender_pub, sender_priv = rsa.newkeys(512)
-    receiver_pub, receiver_priv = rsa.newkeys(512)
+    sender_pub, sender_priv = generate_contact_key_pair()
+    receiver_pub, receiver_priv = generate_contact_key_pair()
 
     receiver_contact = Contact(
         generate_contact_id(),

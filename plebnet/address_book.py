@@ -12,6 +12,7 @@ from plebnet.messaging import MessageDeliveryError
 from plebnet.messaging import MessageReceiver
 from plebnet.messaging import MessageSender
 from plebnet.messaging import now
+from plebnet.messaging import generate_contact_key_pair
 
 
 class AddressBook(MessageConsumer):
@@ -59,6 +60,11 @@ class AddressBook(MessageConsumer):
         self._inactive_nodes_ping_interval = inactive_nodes_ping_interval
 
         threading.Thread(target=self._start_pinging_inactive_nodes).start()
+
+    def kill(self):
+
+        self.receiver.kill()
+
 
     def _generate_add_contact_message(self, contact: Contact) -> Message:
         """
@@ -172,9 +178,12 @@ class AddressBook(MessageConsumer):
         Starts periodically pinging inactive nodes.
         """
 
-        while True:
+        while not self.receiver.kill_flag:
 
             time.sleep(self._inactive_nodes_ping_interval)
+
+            if self.receiver.kill_flag:
+                return
 
             for contact in self.contacts:
 
@@ -214,6 +223,7 @@ class AddressBook(MessageConsumer):
         """
         Appends a contact to the contacts list.
         :param contact: contact to append to the contacts list
+        :return: true iff the contact list has changed as a result of the operation
         """
 
         if contact.id == self.self_contact.id:
@@ -237,7 +247,7 @@ def _demo():
     restore_timeout = 0
     receiver_notify_interval = 0.5
 
-    root_pub, root_priv = rsa.newkeys(512)
+    root_pub, root_priv = generate_contact_key_pair()
     root_contact = Contact(
         id=str(id_counter),
         host="127.0.0.1",
@@ -267,7 +277,7 @@ def _demo():
         new_node_contact_list = replicating_node.contacts.copy()
         new_node_contact_list.append(replicating_node.self_contact)
 
-        pub, priv = rsa.newkeys(512)
+        pub, priv = generate_contact_key_pair()
 
         new_node_contact = Contact(
             id=str(id_counter),

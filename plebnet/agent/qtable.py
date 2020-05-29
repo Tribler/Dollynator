@@ -4,7 +4,6 @@ import math
 import os
 import sys
 import random
-import rsa
 
 import jsonpickle
 
@@ -23,7 +22,7 @@ class QTable:
     INFINITY = 10000000
     start_alpha = 0.8  # between 0.5 and 1
     start_beta = 0.2  # between 0 and 0.5
-    node_pub, node_priv = rsa.newkeys(512)
+    node_pub, node_priv = messaging.generate_contact_key_pair()
     port = 8000
 
     def __init__(self):
@@ -236,7 +235,7 @@ class QTable:
         This method creates a new AddressBook to pass to the child. It sets the child's contact as self_contact
         and adds the parent's contact in the contacts list.
         """
-        child_pub, child_priv = rsa.newkeys(512)
+        child_pub, child_priv = messaging.generate_contact_key_pair()
         child_id = messaging.generate_contact_id(self.address_book.self_contact.id)
         ip = self.get_node_ip(provider, child_index)
         child_contact = messaging.Contact(child_id, ip, self.port, child_pub)
