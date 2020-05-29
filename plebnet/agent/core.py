@@ -25,6 +25,7 @@ from plebnet.utilities import logger, fake_generator
 from plebnet.agent.strategies.last_day_sell import LastDaySell
 from plebnet.agent.strategies.constant_sell import ConstantSell
 from plebnet.agent.strategies.simple_moving_average import SimpleMovingAverage
+from plebnet.agent.strategies.crossover_moving_averages import CrossoversMovingAverages
 from plebnet.utilities.btc import satoshi_to_btc
 
 settings = plebnet_settings.get_instance()
@@ -33,7 +34,8 @@ config = None  # Used to store the configuration and only load once.
 strategies = {
     'last_day_sell': LastDaySell,
     'constant_sell': ConstantSell,
-    'simple_moving_average': SimpleMovingAverage
+    'simple_moving_average': SimpleMovingAverage,
+    'crossovers_moving_averages': CrossoversMovingAverages
 }
 qtable = None  # Used to store the QTable of the agent and only load once.
 TIME_ALIVE = 30 * plebnet_settings.TIME_IN_DAY
