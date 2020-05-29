@@ -74,8 +74,10 @@ class TestAddressBook(unittest.TestCase):
         finally:
 
             for node in nodes:
-
-                node.kill()
+                try:
+                    node.kill()
+                except:
+                    continue
 
     def test_contact_removal_unexpected_death(self):
 
@@ -110,3 +112,53 @@ class TestAddressBook(unittest.TestCase):
                     node.kill()
                 except:
                     continue
+
+    def test_link_down_and_up(self):
+
+        nodes = []
+
+        try:
+
+            nodes.append(self.new_node(self.port_range_min))
+
+            nodes.append(self.new_node(self.port_range_min + 1, nodes[0]))
+
+            time.sleep(self.receiver_notify_interval * 2)
+
+            for node in nodes:
+
+                assert len(node.contacts) == 1
+
+            nodes[1].kill()
+
+            nodes[0].send_message_to_contact(nodes[1].self_contact, Message(
+                channel="test",
+                command="test"
+            ))
+
+            assert not nodes[0].contacts[0].is_active()
+
+            nodes[1] = AddressBook(
+                self_contact=nodes[1].self_contact,
+                private_key=nodes[1]._private_key,
+                contacts=nodes[1].contacts,
+                receiver_notify_interval=nodes[1].receiver.notify_interval,
+                contact_restore_timeout=nodes[1]._contact_restore_timeout,
+                inactive_nodes_ping_interval=nodes[1]._inactive_nodes_ping_interval
+            )
+
+            time.sleep(self.inactive_node_ping_interval * 1.5)
+
+            assert nodes[0].contacts[0].is_active()
+
+        finally:
+
+            for node in nodes:
+                try:
+                    node.kill()
+                except:
+                    continue
+
+
+if __name__ == 'main':
+    unittest.main()
