@@ -62,45 +62,50 @@ ln -s "$(which openvpn)" /usr/bin/openvpn
 
 # Install dependencies
 apt-get install -y \
-    python-crypto \
-    python-pyasn1 \
-    python-twisted \
-    python-meliae \
-    python-libtorrent \
-    python-apsw \
-    python-chardet \
-    python-cherrypy3 \
-    python-m2crypto \
-    python-configobj \
-    python-netifaces \
-    python-leveldb \
-    python-decorator \
-    python-feedparser \
-    python-keyring \
-    python-ecdsa \
-    python-pbkdf2 \
-    python-requests \
-    python-protobuf \
-    python-dnspython \
-    python-jsonrpclib \
-    python-networkx \
+    python3-crypto \
+    python3-pyasn1 \
+    python3-twisted \
+    python3-libtorrent \
+    python3-apsw \
+    python3-chardet \
+    python3-configobj \
+    python3-netifaces \
+    python3-leveldb \
+    python3-decorator \
+    python3-feedparser \
+    python3-keyring \
+    python3-ecdsa \
+    python3-pbkdf2 \
+    python3-requests \
+    python3-protobuf \
+    python3-dnspython \
+    python3-networkx \
     python3-scipy \
     python-wxtools \
     git \
-    python-lxml
+    python3-lxml \
+    build-essential \
+    libssl-dev \
+    swig \
+    python3-dev
+
+pip3 install meliae
+pip3 install cherrypy
+pip3 install M2Crypto
+pip3 install jsonrpclib-pelix
 
 pip3 install pyaes psutil
 pip3 install -U pyopenssl
 
 echo "Install Crypto, pynacl, libsodium"
-apt-get install -y python-cryptography \
-python-nacl \
-python-libnacl \
-keyrings.alt
+apt-get install -y python3-cryptography \
+python3-nacl \
+python3-libnacl \
+python3-keyrings.alt
 
 # python-socks needed? It's going to be installed by pip later
 
-apt-get install -y build-essential libssl-dev libffi-dev python-dev software-properties-common
+apt-get install -y libffi-dev software-properties-common
 pip3 install cryptography
 pip3 install pynacl
 pip3 install pysocks
@@ -141,7 +146,7 @@ mv Dollynator PlebNet
 #   this is because the child's cloned repo also needs these values updated
 sed -i -E "s/(BRANCH\s*=\s*\")(.+)(\")/\1${BRANCH}\3/" $CREATECHILD && echo "Updated branch to $BRANCH in file ($CREATECHILD)";
 
-python3 -m pip3 install --upgrade ./PlebNet
+pip3 install --upgrade ./PlebNet
 cd PlebNet
 
 pip3 install ./cloudomate
