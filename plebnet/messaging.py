@@ -211,6 +211,7 @@ class MessageSender:
 
             # Connecting to receiver
             s = socket.socket()
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.connect((self.receiver.host, self.receiver.port))
 
             # Sending header
@@ -349,6 +350,7 @@ class MessageReceiver:
         self.kill_flag = True
 
         s = socket.socket()
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.connect(("127.0.0.1", self.port))
         s.close()
 
