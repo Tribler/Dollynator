@@ -81,7 +81,6 @@ apt-get install -y \
     python3-dnspython \
     python3-networkx \
     python3-scipy \
-    python-wxtools \
     git \
     python3-lxml \
     build-essential \
@@ -93,6 +92,7 @@ pip3 install meliae
 pip3 install cherrypy
 pip3 install M2Crypto
 pip3 install jsonrpclib-pelix
+pip3 install wxPython
 
 pip3 install pyaes psutil
 pip3 install -U pyopenssl
@@ -138,7 +138,7 @@ then
     echo "default-keyring=keyrings.alt.file.PlaintextKeyring" >> $KRCFG
 fi
 
-[ ! -d "PlebNet" ] && git clone -b $BRANCH --recurse-submodules https://github.com/GioAc96/Dollynator
+[ ! -d "PlebNet" ] && git clone -b $BRANCH https://github.com/GioAc96/Dollynator
 
 mv Dollynator PlebNet
 
@@ -149,24 +149,30 @@ sed -i -E "s/(BRANCH\s*=\s*\")(.+)(\")/\1${BRANCH}\3/" $CREATECHILD && echo "Upd
 pip3 install --upgrade ./PlebNet
 cd PlebNet
 
+git submodule init && git submodule update --remote --recursive
+
 pip3 install ./cloudomate
 
 # Install tribler
 pip3 install pony
-pip3 install ./tribler
+pip3 install -r ./tribler/src/requirements.txt
 cd ..
 
 # Install bitcoinlib
 # pip install bitcoinlib==0.4.4
+apt-get install -y libgmp-dev
 git clone https://github.com/1200wd/bitcoinlib.git
 pip3 install ./bitcoinlib
 
 # Install electrum as it is required by cloudomate and not included in tribler anymore
-git clone -b 2.9.x https://github.com/spesmilo/electrum.git
-cd electrum
-python3 setup.py install
-sudo apt-get -y install protobuf-compiler
-protoc --proto_path=lib/ --python_out=lib/ lib/paymentrequest.proto
+# git clone -b 2.9.x https://github.com/spesmilo/electrum.git
+# cd electrum
+# python3 setup.py install
+# sudo apt-get -y install protobuf-compiler
+# protoc --proto_path=lib/ --python_out=lib/ lib/paymentrequest.proto
+apt-get install -y python3-pyqt5
+wget https://download.electrum.org/3.3.8/Electrum-3.3.8.tar.gz
+pip3 install Electrum-3.3.8.tar.gz[fast]
 
 cd /root
 
