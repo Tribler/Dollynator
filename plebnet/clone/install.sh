@@ -37,7 +37,7 @@ apt-get update
 # Requiring manual configuration after installation
 # && apt-get -y upgrade
 
-apt-get install -y python
+apt-get install -y python3.6
 
 # Reinstall pip
 apt-get remove --purge -y python-pip
@@ -132,7 +132,9 @@ then
     echo "default-keyring=keyrings.alt.file.PlaintextKeyring" >> $KRCFG
 fi
 
-[ ! -d "PlebNet" ] && git clone -b $BRANCH --recurse-submodules https://github.com/Tribler/PlebNet
+[ ! -d "PlebNet" ] && git clone -b $BRANCH --recurse-submodules https://github.com/GioAc96/Dollynator
+
+mv Dollynator PlebNet
 
 # when branch is given, this create-child.sh's default branch value will be updated
 #   this is because the child's cloned repo also needs these values updated
