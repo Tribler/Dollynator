@@ -157,6 +157,12 @@ cd PlebNet
 
 git submodule init && git submodule update --remote --recursive
 
+# Add paths to internal modules
+(echo "export PYTHONPATH=$PYTHONPATH:$HOME/PlebNet/tribler/src/pyipv8:$HOME/PlebNet/tribler/src/anydex:$HOME/PlebNet/tribler/src/tribler-common:$HOME/PlebNet/tribler/src/tribler-core:$HOME/PlebNet/tribler/src/tribler-gui" | tee -a ~/.bashrc) && source ~/.bashrc
+
+# Install Firefox for cloudomate
+apt-get install -y firefox
+
 pip3 install ./cloudomate
 
 # Install tribler
