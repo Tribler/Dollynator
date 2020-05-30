@@ -5,10 +5,9 @@ import unittest
 from unittest.mock import MagicMock
 import unittest.mock as mock
 
-from plebnet.agent import core
 from plebnet.agent.strategies.last_day_sell import LastDaySell
 from plebnet.agent.strategies.simple_moving_average import SimpleMovingAverage, MAX_ACCUMULATION_TIME, \
-                                                            ITERATION_TIME_DIFF, MINUTES_IN_DAY
+    ITERATION_TIME_DIFF, MINUTES_IN_DAY
 from plebnet.controllers import market_controller
 
 from plebnet.settings import plebnet_settings
@@ -72,8 +71,8 @@ class TestSimpleMovingAverage(unittest.TestCase):
         self.strategy.parts_sold_today = 0
 
         self.strategy.process_last_bid(self.strategy.transactions[0], bid_size, bid_time)
-        self.assertEqual(self.strategy.time_accumulated, initial_time + bid_time/2)
-        self.assertEqual(self.strategy.parts_sold_today, bid_size/2)
+        self.assertEqual(self.strategy.time_accumulated, initial_time + bid_time / 2)
+        self.assertEqual(self.strategy.parts_sold_today, bid_size / 2)
 
     def test_process_last_bid_not_fulfilled(self):
         bid_time = 10
@@ -107,30 +106,30 @@ class TestSimpleMovingAverage(unittest.TestCase):
 
     def create_transaction(self, timestamp, price=1):
         return {
-                'trader_id': 1,
-                'order_number': 1,
-                'timestamp': timestamp,
-                'assets': {
-                    'first': {
-                        'amount': 10*price,
-                        'type': 'BTC'
-                    },
-                    'second': {
-                        'amount': 10,
-                        'type': 'MB'
-                    }
+            'trader_id': 1,
+            'order_number': 1,
+            'timestamp': timestamp,
+            'assets': {
+                'first': {
+                    'amount': 10 * price,
+                    'type': 'BTC'
                 },
-                'transferred': {
-                    'first': {
-                        'amount': 10*price,
-                        'type': 'BTC'
-                    },
-                    'second': {
-                        'amount': 10,
-                        'type': 'MB'
-                    }
+                'second': {
+                    'amount': 10,
+                    'type': 'MB'
+                }
+            },
+            'transferred': {
+                'first': {
+                    'amount': 10 * price,
+                    'type': 'BTC'
+                },
+                'second': {
+                    'amount': 10,
+                    'type': 'MB'
                 }
             }
+        }
 
     def test_closing_transactions(self):
         closing_timestamps = []
@@ -138,8 +137,8 @@ class TestSimpleMovingAverage(unittest.TestCase):
         num_days = 3
         start_date = datetime.today() - timedelta(days=num_days)
         for i in range(0, num_days):
-            t1 = time.mktime((start_date.year, start_date.month, start_date.day+i, 15, 0, 0, 0, 0, -1))
-            t2 = time.mktime((start_date.year, start_date.month, start_date.day+i, 20, 0, 0, 0, 0, -1))
+            t1 = time.mktime((start_date.year, start_date.month, start_date.day + i, 15, 0, 0, 0, 0, -1))
+            t2 = time.mktime((start_date.year, start_date.month, start_date.day + i, 20, 0, 0, 0, 0, -1))
             closing_timestamps.append(t2)
             self.strategy.transactions.append(self.create_transaction(t1))
             self.strategy.transactions.append(self.create_transaction(t2))
@@ -221,7 +220,7 @@ class TestSimpleMovingAverage(unittest.TestCase):
         self.strategy.calculate_moving_average_data = MagicMock(return_value=(mean, std_dev))
         self.strategy.get_available_mb = MagicMock(return_value=100)
         self.strategy.get_reputation_gain_rate = MagicMock(return_value=5)
-        self.strategy.calculate_price = MagicMock(return_value=mean+std_dev*times_above_mean)
+        self.strategy.calculate_price = MagicMock(return_value=mean + std_dev * times_above_mean)
         self.strategy.update_accumulated_time = MagicMock()
         self.strategy.update_offer = MagicMock()
         self.strategy.time_accumulated = MAX_ACCUMULATION_TIME - 1
@@ -244,7 +243,7 @@ class TestSimpleMovingAverage(unittest.TestCase):
         self.strategy.calculate_moving_average_data = MagicMock(return_value=(mean, std_dev))
         self.strategy.get_available_mb = MagicMock(return_value=100)
         self.strategy.get_reputation_gain_rate = MagicMock(return_value=5)
-        self.strategy.calculate_price = MagicMock(return_value=mean+std_dev*times_above_mean)
+        self.strategy.calculate_price = MagicMock(return_value=mean + std_dev * times_above_mean)
         self.strategy.update_accumulated_time = MagicMock()
         self.strategy.update_offer = MagicMock()
         self.strategy.time_accumulated = MAX_ACCUMULATION_TIME - 1
@@ -256,7 +255,7 @@ class TestSimpleMovingAverage(unittest.TestCase):
         self.strategy.get_available_mb.assert_called_once()
         self.strategy.get_reputation_gain_rate.assert_called_once()
         self.strategy.update_accumulated_time.assert_called_once()
-        self.strategy.update_offer.assert_called_with(self.strategy.get_reputation_gain_rate()*times_above_mean,
+        self.strategy.update_offer.assert_called_with(self.strategy.get_reputation_gain_rate() * times_above_mean,
                                                       ITERATION_TIME_DIFF * 60)
         self.assertEqual(self.strategy.bid_size, times_above_mean)
 
@@ -267,7 +266,7 @@ class TestSimpleMovingAverage(unittest.TestCase):
         self.strategy.calculate_moving_average_data = MagicMock(return_value=(mean, std_dev))
         self.strategy.get_available_mb = MagicMock(return_value=100)
         self.strategy.get_reputation_gain_rate = MagicMock(return_value=5)
-        self.strategy.calculate_price = MagicMock(return_value=mean+std_dev*times_above_mean)
+        self.strategy.calculate_price = MagicMock(return_value=mean + std_dev * times_above_mean)
         self.strategy.update_accumulated_time = MagicMock()
         self.strategy.update_offer = MagicMock()
         self.strategy.time_accumulated = MAX_ACCUMULATION_TIME - 1
