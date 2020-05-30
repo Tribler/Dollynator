@@ -73,13 +73,12 @@ class MovingAverage(Strategy):
                 'bid_size': self.bid_size
             }, json_file)
 
-    # TODO: make flexible number of days
-    def calculate_moving_average_data(self):
+    def calculate_moving_average_data(self, days):
         """
         Calculates the moving average data: mean and standard deviation from the closing transactions
         :return: moving_average (or mean) and standard_deviation
         """
-        closing_transactions = self.get_closing_transactions()
+        closing_transactions = self.get_closing_transactions(days)
 
         moving_average = 0.0
         for date, transaction in closing_transactions.items():
@@ -108,7 +107,7 @@ class MovingAverage(Strategy):
             return result
         return float(transaction['assets']['first']['amount']) / transaction['assets']['second']['amount']
 
-    def get_closing_transactions(self):
+    def get_closing_transactions(self, days):
         """
         Gets the closing (last) transactions for each period (using a day as a period), max last 30 periods
         :return: dictionary with the transactions with date YYYY-MM-DD as key
@@ -128,7 +127,11 @@ class MovingAverage(Strategy):
                 if today > date.date() > thirty_days_ago:
                     closing_transactions[date_str] = transaction
 
-        return closing_transactions
+        to_return = {}
+        for x in range(days):
+            to_return[x] = closing_transactions.popitem()
+
+        return to_return
 
     def get_reputation_gain_rate(self, time_unit_minutes=MINUTES_IN_DAY):
         """

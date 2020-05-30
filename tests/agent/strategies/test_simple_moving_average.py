@@ -143,7 +143,7 @@ class TestSimpleMovingAverage(unittest.TestCase):
             self.strategy.transactions.append(self.create_transaction(t1))
             self.strategy.transactions.append(self.create_transaction(t2))
 
-        closing_transactions = self.strategy.get_closing_transactions()
+        closing_transactions = self.strategy.get_closing_transactions(3)
 
         self.assertEqual(len(closing_transactions), num_days)
         for closing_transaction in closing_transactions.values():
@@ -160,7 +160,7 @@ class TestSimpleMovingAverage(unittest.TestCase):
             'c': self.create_transaction(time.mktime((2019, 1, 3, 15, 0, 0, 0, 0, -1)), 3)
         })
 
-        mean, std_dev = self.strategy.calculate_moving_average_data()
+        mean, std_dev = self.strategy.calculate_moving_average_data(3)
 
         self.assertEqual(mean, 2)
         self.assertEqual(std_dev, 1)

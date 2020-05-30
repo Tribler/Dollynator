@@ -6,6 +6,8 @@ MINUTES_IN_DAY = 24 * 60
 MAX_ACCUMULATION_TIME = 3 * MINUTES_IN_DAY
 ITERATION_TIME_DIFF = 5
 
+number_days = 3
+
 
 class SimpleMovingAverage(MovingAverage):
     """
@@ -38,7 +40,7 @@ class SimpleMovingAverage(MovingAverage):
         Then update the market offer selling the adequate number of MBs
         :return:
         """
-        moving_average, std_deviation = self.calculate_moving_average_data()
+        moving_average, std_deviation = self.calculate_moving_average_data(number_days)
 
         last_price = self.calculate_price(self.transactions[-1])
         if last_price < moving_average:
