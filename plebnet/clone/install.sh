@@ -93,6 +93,8 @@ apt-get install -y \
     libssl-dev \
     swig
 
+pip3 install six
+
 pip3 install protobuf \
     meliae \
     cherrypy \
