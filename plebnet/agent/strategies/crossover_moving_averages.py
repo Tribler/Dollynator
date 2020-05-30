@@ -11,6 +11,7 @@ from plebnet.agent.strategies.strategy import Strategy
 from datetime import datetime, timedelta
 from plebnet.utilities import logger
 from plebnet.utilities.btc import satoshi_to_btc
+from math import sqrt
 
 short_term = 3
 long_term = 10
@@ -29,7 +30,6 @@ class CrossoversMovingAverages(Strategy):
     """
 
     def __init__(self):
-        # to apply
         Strategy.__init__(self)
         self.time_accumulated = 0
         self.bid = None
@@ -100,8 +100,8 @@ class CrossoversMovingAverages(Strategy):
         Then update the market offer selling the adequate number of MBs
         :return:
         """
-        moving_average_short = self.calculate_moving_average_data(3)
-        moving_average_long = self.calculate_moving_average_data(10)
+        moving_average_short, std_average_short = self.calculate_moving_average_data(3)
+        moving_average_long, std_average_long = self.calculate_moving_average_data(10)
 
         if moving_average_short >= moving_average_long:
             # golden cross: indication of a growth in the market. Wait to sell.
@@ -109,7 +109,14 @@ class CrossoversMovingAverages(Strategy):
                 return None
             self.bid_size = 1 - self.parts_sold_today
         else:  # death cross: market is shifting down. sell now.
-            self.bid_size = 1 - self.parts_sold_today
+            if moving_average_short < moving_average_long - 3 * std_average_long:
+                # the trend is downwards but still close to average, sell more parts to avoid losing money in next sell
+                self.bid_size = 3 - self.parts_sold_today
+            if moving_average_short < moving_average_long - 2 * std_average_long:
+                self.bid_size = 3 - self.parts_sold_today
+            else:
+                # price is not convenient, sell only one part.
+                self.bid_size = 1 - self.parts_sold_today
 
         if self.bid_size <= 0:
             return None
@@ -132,7 +139,15 @@ class CrossoversMovingAverages(Strategy):
             moving_average += price
         moving_average /= len(closing_transactions)
 
-        return moving_average
+        variance = 0.0
+        for date, transaction in closing_transactions.items():
+            price = self.calculate_price(transaction)
+            variance += (price - moving_average) ** 2
+        if variance != 0:
+            variance /= (len(closing_transactions) - 1)
+        std_deviation = sqrt(variance)
+
+        return moving_average, std_deviation
 
     def get_reputation_gain_rate(self, time_unit_minutes=MINUTES_IN_DAY):
         """
@@ -188,8 +203,8 @@ class CrossoversMovingAverages(Strategy):
     def create_offer(self, amount_mb, timeout):
         """
         Retrieve the price of the chosen server to buy and make a new offer on the Tribler marketplace.
-        :param amount_mb:
-        :param timeout: offer to
+        :param amount_mb: amount of mb to sell.
+        :param timeout: timeout for the offer.
         :return: None
         """
         if not self.config.get('chosen_provider'):
