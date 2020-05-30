@@ -32,7 +32,8 @@ echo force-confold >> /etc/dpkg/dpkg.cfg
 echo force-confdef >> /etc/dpkg/dpkg.cfg
 
 # Add Python 3.6 repo
-add-apt-repository ppa:jonathonf/python-3.6
+sudo add-apt-repository ppa:deadsnakes/ppa
+
 # Upgrade system
 apt-get update
 # Do not upgrade for now as in some VPS it will cause for example grub to update
@@ -40,15 +41,16 @@ apt-get update
 # && apt-get -y upgrade
 
 apt-get install -y python3.6
-apt-get install -y python3.6-distutils
+apt-get install -y python3.6-dev
+# Needed?
+# apt-get install -y python3.6-distutils
+
+ln -s /usr/bin/python3.6 /usr/local/bin/python3
 
 # Reinstall pip
 apt-get remove --purge -y python-pip
 wget https://bootstrap.pypa.io/get-pip.py
-python3.6 get-pip.py
-
-ln -s /usr/bin/python3.6 /usr/local/bin/python3
-ln -s /usr/local/bin/pip /usr/local/bin/pip3
+python3 get-pip.py
 
 pip3 install -U wheel setuptools
 
@@ -82,7 +84,6 @@ apt-get install -y \
     python3-ecdsa \
     python3-pbkdf2 \
     python3-requests \
-    python3-protobuf \
     python3-dnspython \
     python3-networkx \
     python3-scipy \
@@ -90,38 +91,40 @@ apt-get install -y \
     python3-lxml \
     build-essential \
     libssl-dev \
-    swig \
-    python3-dev
+    swig
 
-pip3 install meliae
-pip3 install cherrypy
-pip3 install M2Crypto
-pip3 install jsonrpclib-pelix
-pip3 install wxPython
+pip3 install protobuf \
+    meliae \
+    cherrypy \
+    M2Crypto \
+    jsonrpclib-pelix
 
+pip install -U \
+    -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-16.04 \
+    wxPython
 pip3 install pyaes psutil
 pip3 install -U pyopenssl
 
 echo "Install Crypto, pynacl, libsodium"
 apt-get install -y python3-cryptography \
-python3-nacl \
-python3-libnacl \
-python3-keyrings.alt
+    python3-nacl \
+    python3-libnacl \
+    python3-keyrings.alt
 
 # python-socks needed? It's going to be installed by pip later
 
 apt-get install -y libffi-dev software-properties-common
-pip3 install cryptography
-pip3 install pynacl
-pip3 install pysocks
-pip3 install keyrings.alt
-pip3 install libnacl
+pip3 install cryptography \
+    pynacl \
+    pysocks \
+    keyrings.alt \
+    libnacl
 
 # add-apt-repository -y ppa:chris-lea/libsodium;
 # echo "deb http://ppa.launchpad.net/chris-lea/libsodium/ubuntu trusty main" >> /etc/apt/sources.list;
 # echo "deb-src http://ppa.launchpad.net/chris-lea/libsodium/ubuntu trusty main" >> /etc/apt/sources.list;
 # apt-get update
-apt-get install -y libsodium-dev;
+apt-get install -y libsodium-dev
 
 # Update pip to avoid locale errors in certain configurations
 #echo "upgrading pip"
