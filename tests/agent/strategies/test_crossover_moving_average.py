@@ -6,21 +6,21 @@ from unittest.mock import MagicMock
 import unittest.mock as mock
 
 from plebnet.agent.strategies.last_day_sell import LastDaySell
-from plebnet.agent.strategies.simple_moving_average import SimpleMovingAverage, MAX_ACCUMULATION_TIME, \
+from plebnet.agent.strategies.crossover_moving_averages import CrossoversMovingAverages, MAX_ACCUMULATION_TIME, \
     ITERATION_TIME_DIFF, MINUTES_IN_DAY
 from plebnet.controllers import market_controller
 
 from plebnet.settings import plebnet_settings
 
 
-class TestSimpleMovingAverage(unittest.TestCase):
+class TestCrossoverMovingAverage(unittest.TestCase):
 
     def setUp(self):
-        self.read = SimpleMovingAverage.read_last_iteration_info
+        self.read = CrossoversMovingAverages.read_last_iteration_info
         self.tra = market_controller.transactions
-        SimpleMovingAverage.read_last_iteration_info = MagicMock()
+        CrossoversMovingAverages.read_last_iteration_info = MagicMock()
         market_controller.transactions = MagicMock()
-        self.strategy = SimpleMovingAverage()
+        self.strategy = CrossoversMovingAverages()
 
         plebnet_settings.Init.wallets_testnet = MagicMock(return_value=False)
 
@@ -53,7 +53,7 @@ class TestSimpleMovingAverage(unittest.TestCase):
 
     def tearDown(self):
         del self.strategy
-        SimpleMovingAverage.read_last_iteration_info = self.read
+        CrossoversMovingAverages.read_last_iteration_info = self.read
         market_controller.transactions = self.tra
 
     def test_process_last_bid_fulfilled(self):
@@ -183,108 +183,15 @@ class TestSimpleMovingAverage(unittest.TestCase):
 
         self.strategy.sell_reputation()
 
-        self.strategy.calculate_moving_average_data.assert_called_once()
-        self.strategy.calculate_price.assert_called_once()
+        self.assertEqual(self.strategy.calculate_moving_average_data.call_count, 2)
         self.strategy.update_accumulated_time.assert_not_called()
         self.strategy.get_available_mb.assert_not_called()
         self.strategy.get_reputation_gain_rate.assert_not_called()
         self.strategy.update_offer.assert_not_called()
 
-    def test_sell_reputation_below_mean_outside_accumulation_zone(self):
-        mean = 5
-        std_dev = 2
-        self.strategy.calculate_moving_average_data = MagicMock(return_value=(mean, std_dev))
-        self.strategy.get_available_mb = MagicMock(return_value=100)
-        self.strategy.get_reputation_gain_rate = MagicMock(return_value=5)
-        self.strategy.calculate_price = MagicMock(return_value=2)
-        self.strategy.update_accumulated_time = MagicMock()
-        self.strategy.update_offer = MagicMock()
-        self.strategy.time_accumulated = MAX_ACCUMULATION_TIME + 1
-        self.strategy.current_hour = 23
-
-        self.strategy.sell_reputation()
-
-        self.strategy.calculate_moving_average_data.assert_called_once()
-        self.strategy.calculate_price.assert_called_once()
-        self.strategy.get_available_mb.assert_called_once()
-        self.strategy.get_reputation_gain_rate.assert_called_once()
-        self.strategy.update_accumulated_time.assert_called_once()
-        self.strategy.update_offer.assert_called_with(self.strategy.get_reputation_gain_rate(),
-                                                      ITERATION_TIME_DIFF * 60)
-        self.assertEqual(self.strategy.bid_size, 1)
-
-    def test_sell_reputation_once_above_mean(self):
-        mean = 5
-        std_dev = 2
-        times_above_mean = 1
-        self.strategy.calculate_moving_average_data = MagicMock(return_value=(mean, std_dev))
-        self.strategy.get_available_mb = MagicMock(return_value=100)
-        self.strategy.get_reputation_gain_rate = MagicMock(return_value=5)
-        self.strategy.calculate_price = MagicMock(return_value=mean + std_dev * times_above_mean)
-        self.strategy.update_accumulated_time = MagicMock()
-        self.strategy.update_offer = MagicMock()
-        self.strategy.time_accumulated = MAX_ACCUMULATION_TIME - 1
-
-        self.strategy.sell_reputation()
-
-        self.strategy.calculate_moving_average_data.assert_called_once()
-        self.strategy.calculate_price.assert_called_once()
-        self.strategy.get_available_mb.assert_called_once()
-        self.strategy.get_reputation_gain_rate.assert_called_once()
-        self.strategy.update_accumulated_time.assert_called_once()
-        self.strategy.update_offer.assert_called_with(self.strategy.get_reputation_gain_rate(),
-                                                      ITERATION_TIME_DIFF * 60)
-        self.assertEqual(self.strategy.bid_size, times_above_mean)
-
-    def test_sell_reputation_spike(self):
-        mean = 5
-        std_dev = 2
-        times_above_mean = 2
-        self.strategy.calculate_moving_average_data = MagicMock(return_value=(mean, std_dev))
-        self.strategy.get_available_mb = MagicMock(return_value=100)
-        self.strategy.get_reputation_gain_rate = MagicMock(return_value=5)
-        self.strategy.calculate_price = MagicMock(return_value=mean + std_dev * times_above_mean)
-        self.strategy.update_accumulated_time = MagicMock()
-        self.strategy.update_offer = MagicMock()
-        self.strategy.time_accumulated = MAX_ACCUMULATION_TIME - 1
-
-        self.strategy.sell_reputation()
-
-        self.strategy.calculate_moving_average_data.assert_called_once()
-        self.strategy.calculate_price.assert_called_once()
-        self.strategy.get_available_mb.assert_called_once()
-        self.strategy.get_reputation_gain_rate.assert_called_once()
-        self.strategy.update_accumulated_time.assert_called_once()
-        self.strategy.update_offer.assert_called_with(self.strategy.get_reputation_gain_rate() * times_above_mean,
-                                                      ITERATION_TIME_DIFF * 60)
-        self.assertEqual(self.strategy.bid_size, times_above_mean)
-
-    def test_sell_reputation_big_spike(self):
-        mean = 5
-        std_dev = 2
-        times_above_mean = 3
-        self.strategy.calculate_moving_average_data = MagicMock(return_value=(mean, std_dev))
-        self.strategy.get_available_mb = MagicMock(return_value=100)
-        self.strategy.get_reputation_gain_rate = MagicMock(return_value=5)
-        self.strategy.calculate_price = MagicMock(return_value=mean + std_dev * times_above_mean)
-        self.strategy.update_accumulated_time = MagicMock()
-        self.strategy.update_offer = MagicMock()
-        self.strategy.time_accumulated = MAX_ACCUMULATION_TIME - 1
-
-        self.strategy.sell_reputation()
-
-        self.strategy.calculate_moving_average_data.assert_called_once()
-        self.strategy.calculate_price.assert_called_once()
-        self.strategy.get_available_mb.assert_called_once()
-        self.strategy.get_reputation_gain_rate.assert_called_once()
-        self.strategy.update_accumulated_time.assert_called_once()
-        self.strategy.update_offer.assert_called_with(self.strategy.get_reputation_gain_rate() * times_above_mean,
-                                                      ITERATION_TIME_DIFF * 60)
-        self.assertEqual(self.strategy.bid_size, times_above_mean)
-
     def test_create_offer_no_provider(self):
         amount_mb = 1
-        self.strategy = SimpleMovingAverage()
+        self.strategy = CrossoversMovingAverages()
         self.po = self.strategy.place_offer
         self.grp = self.strategy.get_replication_price
 
