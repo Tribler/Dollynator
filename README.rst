@@ -73,7 +73,8 @@ Communication between nodes is carried out using socket technology, and each nod
 Each node makes sure to keep its list updated and dependable exchanging information about the network  with the rest of the nodes.
 
 **Secure messaging**
-A secure communication is guaranteed by the use of both RSA (asymmetrical) and Advanced Encryption Standard (symmetrical) cryptographic algorithm.
+
+A secure communication is guaranteed by the use of both RSA (asymmetrical) and Advanced Encryption Standard (symmetrical) cryptographic algorithms.
 RSA is used to safely share symmetric keys for AES encryption and to sign messages across the network.
 
 
