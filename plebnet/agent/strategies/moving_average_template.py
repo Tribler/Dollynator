@@ -17,7 +17,7 @@ ITERATION_TIME_DIFF = 5
 
 class MovingAverage(Strategy):
     """
-    Strategy explanation: https://github.com/Tribler/PlebNet/issues/44#issuecomment-446222944
+    Class that serves as template for strategies that are based on the moving average concept
     """
 
     def __init__(self):

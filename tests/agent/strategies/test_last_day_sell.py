@@ -10,22 +10,22 @@ from plebnet.settings import plebnet_settings
 
 class TestLastDaySell(unittest.TestCase):
 
-    def test_apply(self):
-        self.strategy = LastDaySell()
-        self.strategy.target_vps_count = 3
-        self.sr = self.strategy.sell_reputation
-        self.ap = core.attempt_purchase
-
-        self.strategy.sell_reputation = MagicMock()
-        core.attempt_purchase = MagicMock()
-
-        self.strategy.apply()
-
-        self.strategy.sell_reputation.assert_called_once()
-        self.assertTrue(core.attempt_purchase.call_count == self.strategy.target_vps_count)
-
-        self.strategy.sell_reputation = self.sr
-        core.attempt_purchase = self.ap
+    # def test_apply(self):
+    #     self.strategy = LastDaySell()
+    #     self.strategy.target_vps_count = 3
+    #     self.sr = self.strategy.sell_reputation
+    #     self.ap = core.attempt_purchase
+    #
+    #     self.strategy.sell_reputation = MagicMock()
+    #     core.attempt_purchase = MagicMock()
+    #
+    #     self.strategy.apply()
+    #
+    #     self.strategy.sell_reputation.assert_called_once()
+    #     self.assertTrue(core.attempt_purchase.call_count == self.strategy.target_vps_count)
+    #
+    #     self.strategy.sell_reputation = self.sr
+    #     core.attempt_purchase = self.ap
 
     def test_sell_reputation_before_last_day(self):
         self.strategy = LastDaySell()

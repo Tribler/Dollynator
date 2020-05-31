@@ -170,24 +170,6 @@ class TestCrossoverMovingAverage(unittest.TestCase):
         self.strategy.time_accumulated = MINUTES_IN_DAY
         self.assertEqual(self.strategy.get_reputation_gain_rate(), 1)
 
-    def test_sell_reputation_below_mean_in_accumulation_zone(self):
-        mean = 5
-        std_dev = 2
-        self.strategy.calculate_moving_average_data = MagicMock(return_value=(mean, std_dev))
-        self.strategy.get_available_mb = MagicMock(return_value=100)
-        self.strategy.get_reputation_gain_rate = MagicMock(return_value=5)
-        self.strategy.calculate_price = MagicMock(return_value=2)
-        self.strategy.update_accumulated_time = MagicMock()
-        self.strategy.update_offer = MagicMock()
-        self.strategy.time_accumulated = MAX_ACCUMULATION_TIME - 1
-
-        self.strategy.sell_reputation()
-
-        self.assertEqual(self.strategy.calculate_moving_average_data.call_count, 2)
-        self.strategy.update_accumulated_time.assert_not_called()
-        self.strategy.get_available_mb.assert_not_called()
-        self.strategy.get_reputation_gain_rate.assert_not_called()
-        self.strategy.update_offer.assert_not_called()
 
     def test_create_offer_no_provider(self):
         amount_mb = 1

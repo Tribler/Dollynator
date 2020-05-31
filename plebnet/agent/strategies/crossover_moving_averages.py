@@ -45,17 +45,18 @@ class CrossoversMovingAverages(MovingAverage):
         moving_average_short, std_average_short = self.calculate_moving_average_data(short_term)
         moving_average_long, std_average_long = self.calculate_moving_average_data(long_term)
 
+        # TODO: at later stage we can consider to sell and buy bitcoins to maximise income
         if moving_average_short >= moving_average_long:
             # golden cross: indication of a growth in the market. Wait to sell.
             if self.time_accumulated <= MAX_ACCUMULATION_TIME:
                 return None
             self.bid_size = 1 - self.parts_sold_today
         else:  # death cross: market is shifting down. sell now.
-            if moving_average_short < moving_average_long - 3 * std_average_long:
+            if moving_average_short < moving_average_long - std_average_long:
                 # the trend is downwards but still close to average, sell more parts to avoid losing money in next sell
                 self.bid_size = 3 - self.parts_sold_today
             if moving_average_short < moving_average_long - 2 * std_average_long:
-                self.bid_size = 3 - self.parts_sold_today
+                self.bid_size = 2 - self.parts_sold_today
             else:
                 # price is not convenient, sell only one part.
                 self.bid_size = 1 - self.parts_sold_today
