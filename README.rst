@@ -55,6 +55,28 @@ The whole lifecycle is then managed by the ``check`` command. First, it ensures 
 
 Finally, it connects to the purchased server over SSH, downloads the latest source code from GitHub, install required dependencies, sets up VPN, and runs ``plebnet setup`` to bring the child to life. At that moment, the parent selects a new candidate VPS and continues to maximize its offspring until the end of its own contract expiration.
 
+Gossiping
+======================
+
+Information is shared across the network through gossiping.
+
+**What is gossiping**
+
+Gossiping or epidemic protocols have been around for decades now and they have shown to have many desirable properties for data dissemination, fast convergence, load sharing, robustness and resilience to failures.
+Although there are many variants of the gossiping protocol available, both traditional and not protocols adhere to the same basic gossiping framework.
+
+Each node of the system maintains a partial view of the environment. Interactions between peers are periodic and pairwise exchange of data among peers that is organised as follows: every node selects a partner to gossip with among all its acquaintances in the network and it selects the information to be exchanged. The partner proceeds to the same steps, resulting in a bidirectional exchange between partner nodes.
+
+**Direct communication between nodes**
+
+Communication between nodes is carried out using socket technology, and each node maintains a list of contacts, containing the necessary information to reach a number of nodes in the botnet using Berkeley Socket API.
+Each node makes sure to keep its list updated and dependable exchanging information about the network  with the rest of the nodes.
+
+**Secure messaging**
+A secure communication is guaranteed by the use of both RSA (asymmetrical) and Advanced Encryption Standard (symmetrical) cryptographic algorithm.
+RSA is used to safely share symmetric keys for AES encryption and to sign messages across the network.
+
+
 
 Reinforcement Learning
 ======================
