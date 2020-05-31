@@ -230,7 +230,6 @@ The HTTP server is running on the port ``5500``.
 Future Work
 ===========
 
-- Gossip learning protocol using IPv8 overlay: enable collective learning by sharing QTable updates with a secure message authentication
 - Q-Table for VPN selection: learn which VPN works the best and which VPS providers ignore DMCA notices and thus do not require VPN
 - Market strategies based on other financial analysis' (i.e: other moving averages may be interesting)
 - Market strategy based on deep learning
