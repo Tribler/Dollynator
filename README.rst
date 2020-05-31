@@ -69,7 +69,7 @@ Each node of the system maintains a partial view of the environment. Interaction
 
 **Direct communication between nodes**
 
-Communication between nodes is carried out using socket technology, and each node maintains a list of contacts, containing the necessary information to reach a number of nodes in the botnet using Berkeley Socket API.
+Communication between nodes is carried out using socket technology; each node maintains a list of contacts, containing the necessary information to reach a number of nodes in the botnet using Berkeley Socket API.
 Each node makes sure to keep its list updated and dependable exchanging information about the network  with the rest of the nodes.
 
 **Secure messaging**
