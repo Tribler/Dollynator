@@ -54,6 +54,7 @@ class Contact:
         :param id: id of the node
         :param host: host of the node
         :param port: port of the node
+        :param public_key: public key of the contact
         :param first_failure: first time of failure of communication with the node
         """
 
@@ -298,7 +299,7 @@ class MessageReceiver:
 
             time.sleep(self.notify_interval)
 
-    def _decode_payload(self, encrypted_payload_key, payload) -> None:
+    def _decode_payload(self, encrypted_payload_key, payload) -> Message:
         """
         Decrypts and decodes the payload, using the receiver's private key to decrypt the payload key.
         :param encrypted_payload_key: encrypted payload key, decrypted with the private key
