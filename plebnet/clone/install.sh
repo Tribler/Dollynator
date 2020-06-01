@@ -93,9 +93,9 @@ apt-get install -y \
     libssl-dev \
     swig
 
-pip3 install six
+pip3 install -U six
 
-pip3 install protobuf \
+pip3 install -U protobuf \
     meliae \
     cherrypy \
     M2Crypto \
@@ -104,7 +104,7 @@ pip3 install protobuf \
 pip install -U \
     -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-16.04 \
     wxPython
-pip3 install pyaes psutil
+pip3 install -U pyaes psutil
 pip3 install -U pyopenssl
 
 echo "Install Crypto, pynacl, libsodium"
@@ -116,7 +116,7 @@ apt-get install -y python3-cryptography \
 # python-socks needed? It's going to be installed by pip later
 
 apt-get install -y libffi-dev software-properties-common
-pip3 install cryptography \
+pip3 install -U cryptography \
     pynacl \
     pysocks \
     keyrings.alt \
