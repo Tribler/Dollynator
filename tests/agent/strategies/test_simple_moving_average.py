@@ -305,3 +305,26 @@ class TestSimpleMovingAverage(unittest.TestCase):
 
         self.strategy.create_offer(amount_mb, plebnet_settings.TIME_IN_HOUR)
         self.strategy.place_offer.assert_called_once()
+
+    def test_exp_moving_average_differs_from_simple(self):
+        self.strategy = SimpleMovingAverage()
+
+        self.strategy.get_closing_transactions = MagicMock(return_value={
+            'a': self.create_transaction(time.mktime((2019, 1, 1, 15, 0, 0, 0, 0, -1)), 1),
+            'b': self.create_transaction(time.mktime((2019, 1, 2, 15, 0, 0, 0, 0, -1)), 2),
+            'c': self.create_transaction(time.mktime((2019, 1, 3, 15, 0, 0, 0, 0, -1)), 3),
+            'd': self.create_transaction(time.mktime((2019, 1, 4, 15, 0, 0, 0, 0, -1)), 4),
+            'e': self.create_transaction(time.mktime((2019, 1, 5, 15, 0, 0, 0, 0, -1)), 5),
+            'f': self.create_transaction(time.mktime((2019, 1, 6, 15, 0, 0, 0, 0, -1)), 6),
+            'g': self.create_transaction(time.mktime((2019, 1, 7, 15, 0, 0, 0, 0, -1)), 7),
+            'h': self.create_transaction(time.mktime((2019, 1, 8, 15, 0, 0, 0, 0, -1)), 8),
+            'i': self.create_transaction(time.mktime((2019, 1, 9, 15, 0, 0, 0, 0, -1)), 9),
+            'j': self.create_transaction(time.mktime((2019, 1, 10, 15, 0, 0, 0, 0, -1)), 10),
+            'k': self.create_transaction(time.mktime((2019, 1, 11, 15, 0, 0, 0, 0, -1)), 11),
+            'l': self.create_transaction(time.mktime((2019, 1, 12, 15, 0, 0, 0, 0, -1)), 12)
+        })
+
+        mean, std_dev = self.strategy.calculate_moving_average_data(12)
+
+        
+

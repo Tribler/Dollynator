@@ -1,3 +1,5 @@
+from math import sqrt
+
 from plebnet.agent.strategies.last_day_sell import LastDaySell
 from plebnet.utilities import logger
 from plebnet.agent.strategies.moving_average_template import MovingAverage
@@ -14,11 +16,14 @@ class SimpleMovingAverage(MovingAverage):
     Strategy explanation: https://github.com/Tribler/PlebNet/issues/44#issuecomment-446222944
     """
 
-    def __init__(self):
+    def __init__(self, exp=False):
         MovingAverage.__init__(self)
         self.file_name = 'simple_moving_average.json'
         self.log_name = "agent.strategies.simple_moving_average"
         self.read_last_iteration_info()
+        self.exp = exp  # boolean that decides if use linear moving average or exponential one. The exp gives more
+        # weight to recent values and therefore is more sensible to changes. Implemented description at following link
+        # https://www.investopedia.com/terms/e/ema.asp
 
     def apply(self):
         """
@@ -40,6 +45,8 @@ class SimpleMovingAverage(MovingAverage):
         Then update the market offer selling the adequate number of MBs
         :return:
         """
+        if self.exp:
+            moving_average, std_deviation = self.calculate_exp_moving_average_data(12)  # common value for exp average
         moving_average, std_deviation = self.calculate_moving_average_data(number_days)
 
         last_price = self.calculate_price(self.transactions[-1])
@@ -63,3 +70,26 @@ class SimpleMovingAverage(MovingAverage):
         self.update_accumulated_time()
 
         return self.update_offer(mb_to_sell, ITERATION_TIME_DIFF * 60)
+
+    def calculate_exp_moving_average_data(self):
+        """
+        Calculate moving_average and std_deviation for the exponential moving average.
+        """
+        closing_transactions = self.get_closing_transactions(12)
+        moving_average_yesterday, std_deviation_yesterday = self.calculate_moving_average_data(12)
+        price_today = self.calculate_price(self.transactions[-1])
+        smoothing = 2  # standard value for exp moving average
+
+        moving_average = (price_today * (smoothing / (1 + 12))
+                          + moving_average_yesterday * (1 - (smoothing / (1 + 12))))
+
+        variance = 0.0
+        for date, transaction in closing_transactions.items():
+            price = self.calculate_price(transaction)
+            variance += (price - moving_average) ** 2
+        if variance != 0:
+            variance /= (len(closing_transactions) - 1)
+        std_deviation = sqrt(variance)
+
+        return moving_average, std_deviation
+
