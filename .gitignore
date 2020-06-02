@@ -12,3 +12,5 @@ __pycache__/
 .pypirc
 .pytest_cache/
 dropin.cache
+
+.coverage
