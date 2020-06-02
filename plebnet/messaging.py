@@ -22,7 +22,7 @@ def now() -> int:
     """
     return int(datetime.timestamp(datetime.now()))
 
-
+    
 def generate_contact_id(parent_id: str = "") -> str:
     """
     Generates a random, virtually unique id for a new node.
@@ -41,6 +41,14 @@ def generate_contact_id(parent_id: str = "") -> str:
     random_hash = hashlib.sha256(random_seed.encode('utf-8')).hexdigest()
 
     return random_hash + timestamp
+
+
+def generate_contact_key_pair() -> Tuple[rsa.PublicKey, rsa.PrivateKey]:
+    """
+    Generates a key pair.
+    :return: a tuple containing the generated public and private keys
+    """
+    return rsa.newkeys(512)
 
 
 class Contact:
@@ -95,6 +103,12 @@ class Message:
         self.channel = channel
         self.command = command
         self.data = data
+
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, Message) \
+            and o.channel == self.channel \
+            and o.command == self.command \
+            and o.data == self.data
 
 
 class MessageDeliveryError(Exception):
@@ -197,6 +211,7 @@ class MessageSender:
 
             # Connecting to receiver
             s = socket.socket()
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.connect((self.receiver.host, self.receiver.port))
 
             # Sending header
@@ -277,7 +292,7 @@ class MessageReceiver:
         forwarded to all registered consumers.
         """
 
-        while True:
+        while not self.kill_flag:
 
             if len(self.messages_queue) > 0:
 
@@ -334,6 +349,11 @@ class MessageReceiver:
         """
         self.kill_flag = True
 
+        s = socket.socket()
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.connect(("127.0.0.1", self.port))
+        s.close()
+
     def _initialize_socket(self) -> socket.socket:
         """
         Initializes a socket listening on the port specified at construction of the message receiver
@@ -368,6 +388,11 @@ class MessageReceiver:
             except:
 
                 continue
+
+        try:
+            s.shutdown(socket.SHUT_RDWR)
+        finally:
+            s.close()
 
     def _handle_connection(self, connection) -> None:
         """
@@ -418,9 +443,9 @@ class MessageReceiver:
                 consumer.notify(message, sender_id)
 
 
-if __name__ == '__main__':
-    sender_pub, sender_priv = rsa.newkeys(512)
-    receiver_pub, receiver_priv = rsa.newkeys(512)
+if __name__ == '__main__':  # pragma: no cover
+    sender_pub, sender_priv = generate_contact_key_pair()
+    receiver_pub, receiver_priv = generate_contact_key_pair()
 
     receiver_contact = Contact(
         generate_contact_id(),

@@ -31,13 +31,21 @@ DEBIAN_FRONTEND=noninteractive
 echo force-confold >> /etc/dpkg/dpkg.cfg
 echo force-confdef >> /etc/dpkg/dpkg.cfg
 
+# Add Python 3.6 repo
+sudo add-apt-repository ppa:deadsnakes/ppa
+
 # Upgrade system
 apt-get update
 # Do not upgrade for now as in some VPS it will cause for example grub to update
 # Requiring manual configuration after installation
 # && apt-get -y upgrade
 
-apt-get install -y python
+apt-get install -y python3.6
+apt-get install -y python3.6-dev
+# Needed?
+# apt-get install -y python3.6-distutils
+
+ln -s /usr/bin/python3.6 /usr/local/bin/python3
 
 # Reinstall pip
 apt-get remove --purge -y python-pip
@@ -46,7 +54,7 @@ python3 get-pip.py
 
 pip3 install -U wheel setuptools
 
-#(echo "alias pip='python -m pip'" | tee -a ~/.bashrc) && source ~/.bashrc
+#(echo "alias pip3='python3 -m pip'" | tee -a ~/.bashrc) && source ~/.bashrc
 
 # Fix paths
 echo "fixing paths"
@@ -61,55 +69,64 @@ ln -s "$(which openvpn)" /usr/bin/openvpn
 
 # Install dependencies
 apt-get install -y \
-    python-crypto \
-    python-pyasn1 \
-    python-twisted \
-    python-meliae \
-    python-libtorrent \
-    python-apsw \
-    python-chardet \
-    python-cherrypy3 \
-    python-m2crypto \
-    python-configobj \
-    python-netifaces \
-    python-leveldb \
-    python-decorator \
-    python-feedparser \
-    python-keyring \
-    python-ecdsa \
-    python-pbkdf2 \
-    python-requests \
-    python-protobuf \
-    python-dnspython \
-    python-jsonrpclib \
-    python-networkx \
-    python-scipy \
-    python-wxtools \
+    python3-crypto \
+    python3-pyasn1 \
+    python3-twisted \
+    python3-libtorrent \
+    python3-apsw \
+    python3-chardet \
+    python3-configobj \
+    python3-netifaces \
+    python3-leveldb \
+    python3-decorator \
+    python3-feedparser \
+    python3-keyring \
+    python3-ecdsa \
+    python3-pbkdf2 \
+    python3-requests \
+    python3-dnspython \
+    python3-networkx \
+    python3-scipy \
     git \
-    python-lxml
+    python3-lxml \
+    build-essential \
+    libssl-dev \
+    swig
 
-pip3 install pyaes psutil
+pip3 install -U six
+
+pip3 install -U protobuf \
+    meliae \
+    cherrypy \
+    M2Crypto \
+    jsonrpclib-pelix
+
+pip install -U \
+    -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-16.04 \
+    wxPython
+pip3 install -U pyaes psutil
 pip3 install -U pyopenssl
 
 echo "Install Crypto, pynacl, libsodium"
-apt-get install -y python-cryptography \
-python-nacl \
-python-libnacl \
-keyrings.alt
+apt-get install -y python3-cryptography \
+    python3-nacl \
+    python3-libnacl \
+    python3-keyrings.alt
 
 # python-socks needed? It's going to be installed by pip later
 
-apt-get install -y build-essential libssl-dev libffi-dev python-dev software-properties-common
-pip3 install cryptography
-pip3 install pynacl
-pip3 install pysocks
-pip3 install keyrings.alt
-pip3 install libnacl
-add-apt-repository -y ppa:chris-lea/libsodium;
-echo "deb http://ppa.launchpad.net/chris-lea/libsodium/ubuntu trusty main" >> /etc/apt/sources.list;
-echo "deb-src http://ppa.launchpad.net/chris-lea/libsodium/ubuntu trusty main" >> /etc/apt/sources.list;
-apt-get update
-apt-get install -y libsodium-dev;
+apt-get install -y libffi-dev software-properties-common
+pip3 install -U cryptography \
+    pynacl \
+    pysocks \
+    keyrings.alt \
+    libnacl
+
+# add-apt-repository -y ppa:chris-lea/libsodium;
+# echo "deb http://ppa.launchpad.net/chris-lea/libsodium/ubuntu trusty main" >> /etc/apt/sources.list;
+# echo "deb-src http://ppa.launchpad.net/chris-lea/libsodium/ubuntu trusty main" >> /etc/apt/sources.list;
+# apt-get update
+apt-get install -y libsodium-dev
 
 # Update pip to avoid locale errors in certain configurations
 #echo "upgrading pip"
@@ -132,33 +149,47 @@ then
     echo "default-keyring=keyrings.alt.file.PlaintextKeyring" >> $KRCFG
 fi
 
-[ ! -d "PlebNet" ] && git clone -b $BRANCH --recurse-submodules https://github.com/Tribler/PlebNet
+[ ! -d "PlebNet" ] && git clone -b $BRANCH https://github.com/GioAc96/Dollynator
+
+mv Dollynator PlebNet
 
 # when branch is given, this create-child.sh's default branch value will be updated
 #   this is because the child's cloned repo also needs these values updated
 sed -i -E "s/(BRANCH\s*=\s*\")(.+)(\")/\1${BRANCH}\3/" $CREATECHILD && echo "Updated branch to $BRANCH in file ($CREATECHILD)";
 
-python3 -m pip3 install --upgrade ./PlebNet
+pip3 install --upgrade ./PlebNet
 cd PlebNet
+
+git submodule init && git submodule update --remote --recursive
+
+# Add paths to internal modules
+(echo "export PYTHONPATH=$PYTHONPATH:$HOME/PlebNet/tribler/src/pyipv8:$HOME/PlebNet/tribler/src/anydex:$HOME/PlebNet/tribler/src/tribler-common:$HOME/PlebNet/tribler/src/tribler-core:$HOME/PlebNet/tribler/src/tribler-gui" | tee -a ~/.bashrc) && source ~/.bashrc
+
+# Install Firefox for cloudomate
+apt-get install -y firefox
 
 pip3 install ./cloudomate
 
 # Install tribler
 pip3 install pony
-pip3 install ./tribler
+pip3 install -r ./tribler/src/requirements.txt
 cd ..
 
 # Install bitcoinlib
 # pip install bitcoinlib==0.4.4
+apt-get install -y libgmp-dev
 git clone https://github.com/1200wd/bitcoinlib.git
 pip3 install ./bitcoinlib
 
 # Install electrum as it is required by cloudomate and not included in tribler anymore
-git clone -b 2.9.x https://github.com/spesmilo/electrum.git
-cd electrum
-python3 setup.py install
-sudo apt-get -y install protobuf-compiler
-protoc --proto_path=lib/ --python_out=lib/ lib/paymentrequest.proto
+# git clone -b 2.9.x https://github.com/spesmilo/electrum.git
+# cd electrum
+# python3 setup.py install
+# sudo apt-get -y install protobuf-compiler
+# protoc --proto_path=lib/ --python_out=lib/ lib/paymentrequest.proto
+apt-get install -y python3-pyqt5
+wget https://download.electrum.org/3.3.8/Electrum-3.3.8.tar.gz
+pip3 install Electrum-3.3.8.tar.gz[fast]
 
 cd /root
 
