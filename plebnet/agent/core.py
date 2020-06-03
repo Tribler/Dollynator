@@ -116,7 +116,6 @@ def check():
     starting Tribler and buying servers.
     """
     global config, qtable
-    global sold_mb_tokens, previous_mb_tokens
     logger.log("Checking PlebNet", log_name)
 
     # Read general configuration

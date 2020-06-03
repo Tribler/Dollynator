@@ -81,7 +81,7 @@ class QTable:
         index = core.get_node_index()
         ip = get('https://api.ipify.org').text
         self_contact = messaging.Contact(node_id, ip, self.port, self.node_pub)
-        return address_book.AddressBook(self_contact, self.node_priv)
+        self.address_book = address_book.AddressBook(self_contact, self.node_priv)
 
     @staticmethod
     def calculate_measure(provider_offer):
