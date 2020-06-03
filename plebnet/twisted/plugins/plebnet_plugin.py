@@ -9,7 +9,7 @@ from twisted.internet import reactor
 from twisted.plugin import IPlugin
 from twisted.python import usage
 from twisted.python.log import msg
-from zope.interface import implements
+from zope.interface import implements, implementer
 
 from tribler_core.config.tribler_config import TriblerConfig
 from tribler_core.modules.process_checker import ProcessChecker
@@ -32,7 +32,7 @@ class Options(usage.Options):
 
 
 class MarketServiceMaker(object):
-    implements(IServiceMaker, IPlugin)
+    implementer(IServiceMaker, IPlugin)
     tapname = "plebnet"
     description = "headless tribler for plebnet agent"
     options = Options
