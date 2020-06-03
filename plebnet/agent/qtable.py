@@ -9,6 +9,7 @@ import jsonpickle
 
 from appdirs import user_config_dir
 from plebnet.agent import config, core
+from requests import get
 
 from plebnet import address_book, messaging
 from plebnet.controllers import cloudomate_controller
@@ -34,7 +35,7 @@ class QTable:
         self.providers_offers = []
         self.self_state = VPSState()
         self.tree = ""
-        self.address_book = self.init_address_book()
+        self.address_book = None
         pass
 
     # TODO : share QTable when reproducing
@@ -78,7 +79,7 @@ class QTable:
     def init_address_book(self, parent_id: str = ""):
         node_id = messaging.generate_contact_id(parent_id)
         index = core.get_node_index()
-        ip = self.get_node_ip(str(self.self_state.provider).lower(), index)
+        ip = get('https://api.ipify.org').text
         self_contact = messaging.Contact(node_id, ip, self.port, self.node_pub)
         return address_book.AddressBook(self_contact, self.node_priv)
 
