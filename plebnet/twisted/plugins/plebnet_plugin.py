@@ -17,6 +17,7 @@ from tribler_core.session import Session
 # Register yappi profiler
 from tribler.src.anydex.anydex.core.community import MarketCommunity
 
+
 class Options(usage.Options):
     optParameters = [
         ["statedir", "s", None, "Use an alternate statedir", str],
@@ -58,8 +59,8 @@ class MarketServiceMaker(object):
         Load the Market community
         """
         msg("Loading market community...")
-        #self.market_community = self.session.get_dispersy_instance().define_auto_load(
-        #    MarketCommunity, self.session.dispersy_member, load=True, kargs={'tribler_session': self.session})
+        self.market_community = self.session.get_dispersy_instance().define_auto_load(
+            MarketCommunity, self.session.dispersy_member, load=True, kargs={'tribler_session': self.session})
 
     def start_tribler(self, options):
         """
