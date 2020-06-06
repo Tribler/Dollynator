@@ -63,8 +63,10 @@ class AddressBook(MessageConsumer):
 
     def kill(self):
 
-        self.receiver.kill()
-
+        try:
+            self.receiver.kill()
+        except:
+            pass            
 
     def _generate_add_contact_message(self, contact: Contact) -> Message:
         """
@@ -196,6 +198,7 @@ class AddressBook(MessageConsumer):
                         current_timestamp = now()
 
                         if current_timestamp - contact.first_failure > self._contact_restore_timeout:
+
                             self._delete_contact(contact)
 
     def notify(self, message: Message, sender_id) -> None:
@@ -205,10 +208,8 @@ class AddressBook(MessageConsumer):
         :param message: message to handle
         """
 
-        if message.channel == self._messaging_channel:
-
-            if message.command == 'add-contact':
-                self._add_contact(message.data)
+        if message.command == 'add-contact':
+            self._add_contact(message.data)
 
     def create_new_distributed_contact(self, contact: Contact) -> None:
         """
