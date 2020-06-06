@@ -61,12 +61,14 @@ class AddressBook(MessageConsumer):
 
         threading.Thread(target=self._start_pinging_inactive_nodes).start()
 
-    def kill(self):
-
+    def kill(self) -> None:
+        """
+        Kills the AddressBook by killing its MessageReceiver.    
+        """
         try:
             self.receiver.kill()
         except:
-            pass            
+            pass
 
     def _generate_add_contact_message(self, contact: Contact) -> Message:
         """
