@@ -161,6 +161,9 @@ pip3 install --upgrade ./PlebNet
 cd PlebNet
 
 git submodule init && git submodule update --remote --recursive
+cd tribler
+git submodule init && git submodule update --remote --recursive
+cd ..
 
 # Add paths to internal modules
 (echo "export PYTHONPATH=$PYTHONPATH:$HOME/PlebNet/tribler/src/pyipv8:$HOME/PlebNet/tribler/src/anydex:$HOME/PlebNet/tribler/src/tribler-common:$HOME/PlebNet/tribler/src/tribler-core:$HOME/PlebNet/tribler/src/tribler-gui" | tee -a ~/.bashrc) && source ~/.bashrc
