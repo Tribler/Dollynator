@@ -8,7 +8,7 @@ import random
 import jsonpickle
 
 from appdirs import user_config_dir
-from plebnet.agent import config
+from plebnet.agent.config import PlebNetConfig
 from requests import get
 
 from plebnet import address_book, messaging
@@ -78,6 +78,7 @@ class QTable:
 
     def init_address_book(self, parent_id: str = ""):
         node_id = messaging.generate_contact_id(parent_id)
+        config = PlebNetConfig()
         index = config.get("child_index")
         ip = get('https://api.ipify.org').text
         self_contact = messaging.Contact(node_id, ip, self.port, self.node_pub)
