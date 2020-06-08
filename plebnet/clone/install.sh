@@ -69,29 +69,30 @@ ln -s "$(which openvpn)" /usr/bin/openvpn
 
 # Install dependencies
 apt-get install -y \
-    python3-crypto \
-    python3-pyasn1 \
-    python3-twisted \
     python3-libtorrent \
-    python3-apsw \
-    python3-chardet \
-    python3-configobj \
-    python3-netifaces \
-    python3-leveldb \
-    python3-decorator \
-    python3-feedparser \
-    python3-keyring \
-    python3-ecdsa \
-    python3-pbkdf2 \
-    python3-requests \
-    python3-dnspython \
-    python3-networkx \
-    python3-scipy \
     git \
-    python3-lxml \
     build-essential \
     libssl-dev \
     swig
+
+pip3 install -U crypto \
+    pyasn1 \
+    twisted \
+    apsw \
+    chardet \
+    configobj \
+    netifaces \
+    leveldb \
+    decorator \
+    feedparser \
+    keyring \
+    ecdsa \
+    pbkdf2 \
+    requests \
+    dnspython \
+    networkx \
+    scipy \
+    lxml
 
 pip3 install -U six
 
