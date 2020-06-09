@@ -195,8 +195,6 @@ class AddressBook(MessageConsumer):
 
                     ping_message = self._generate_ping_message()
 
-                    print("Node " + self.self_contact.id + " pinging " + contact.id)            
-
                     if not self.send_message_to_contact(contact, ping_message):
 
                         current_timestamp = now()
