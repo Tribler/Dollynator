@@ -195,6 +195,8 @@ class AddressBook(MessageConsumer):
 
                     ping_message = self._generate_ping_message()
 
+                    print("Node " + self.self_contact.id + " pinging " + contact.id)            
+
                     if not self.send_message_to_contact(contact, ping_message):
 
                         current_timestamp = now()
@@ -240,6 +242,19 @@ class AddressBook(MessageConsumer):
         self.contacts.append(contact)
 
         return True
+
+    def send_message_to_all_contacts(self, message: Message) -> bool:
+
+        result = True
+
+        for contact in self.contacts:
+
+            result = result and self.send_message_to_contact(
+                contact,
+                message
+            )
+
+        return result
 
 
 def _demo():  # pragma: no cover

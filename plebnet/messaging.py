@@ -391,6 +391,8 @@ class MessageReceiver:
 
         try:
             s.shutdown(socket.SHUT_RDWR)
+        except:
+            pass
         finally:
             s.close()
 

@@ -1,35 +1,102 @@
-from plebnet.messaging import Message, Contact, MessageConsumer, generate_contact_key_pair
+from plebnet.messaging import *
 from plebnet.address_book import AddressBook
 import random
 import threading
 import time
 from cloudomate.hoster.vps.vps_hoster import VpsOption
-from plebnet.agent.qtable import ProviderOffer, VPSState
 import math
 import os
 import jsonpickle
 import copy
+import sys
+import cloudomate.hoster.vps.blueangelhost as blueAngel
+import cloudomate.hoster.vps.linevast as lineVast
 
 from typing import Tuple
+from CaseInsensitiveDict import CaseInsensitiveDict
 
+default_messaging_channel = 'learning'
+
+vps_options = [
+    VpsOption(
+        name='Advanced',
+        storage=2,
+        cores=2,
+        memory=2,
+        bandwidth="mock",
+        connection="1",
+        price=8.0,
+        purchase_url="mock"
+    ),
+    VpsOption(
+        name='Basic Plan',
+        storage=2,
+        cores=2,
+        memory=2,
+        bandwidth="mock",
+        connection="1",
+        price=12.0,
+        purchase_url="mock"
+    )
+]
+
+vps_providers = CaseInsensitiveDict({
+    'blueangelhost': blueAngel.BlueAngelHost,
+    'linevast': lineVast.LineVast
+})
+
+def get_provider_offer_id(provider_offer):
+    return str(provider_offer.provider_name).lower() + "_" + str(provider_offer.name).lower()
+
+class ProviderOffer:
+    UNLIMITED_BANDWIDTH = 10
+
+    def __init__(self, provider_name="", name="", bandwidth="", price=0, memory=0):
+        self.provider_name = provider_name
+        self.name = name
+        self.price = price
+        self.memory = memory
+        try:
+            bandwidth = float(bandwidth)
+            if bandwidth < sys.maxsize:
+                self.bandwidth = bandwidth
+            else:
+                self.bandwidth = self.UNLIMITED_BANDWIDTH
+        except:
+            self.bandwidth = self.UNLIMITED_BANDWIDTH
+
+
+class VPSState:
+    def __init__(self, provider="", option=""):
+        self.provider = provider
+        self.option = option
+
+            
 class QTableDemo:
     learning_rate = 0.005
     environment_lr = 0.4
     discount = 0.05
     INFINITY = 10000000
-    start_alpha = 0.8  # between 0.5 and 1.
-    start_beta = 0.2  # between 0 and 0.5
+    start_alpha = 0.8
+    start_beta = 0.2
 
-    def __init__(self, replications = 0):
+    def __init__(
+        self,
+        replications = 0,
+        messaging_channel=default_messaging_channel
+    ):
         self.qtable = {}
         self.environment = {}
-        self.alphatable = {}
-        self.betatable = {}
+        self.alpha_table = {}
+        self.beta_table = {}
         self.number_of_updates = {}
         self.providers_offers = []
         self.self_state = VPSState()
 
+        self.remote_qtables = []
+
         self.replications = replications
+        self.messaging_channel = messaging_channel
 
         pass
 
@@ -37,16 +104,16 @@ class QTableDemo:
         """
         Initializes the qtable and environment with their respective starting values.
         """
-        self.init_providers_offers(providers)
+        self._init_providers_offers(providers)
 
         for provider_of in self.providers_offers:
             prov = {}
             environment_arr = {}
             for provider_offer in self.providers_offers:
-                prov[self.get_ID(provider_offer)] = 0
-                environment_arr[self.get_ID(provider_offer)] = 0
-            self.qtable[self.get_ID(provider_of)] = prov
-            self.environment[self.get_ID(provider_of)] = environment_arr
+                prov[get_provider_offer_id(provider_offer)] = 0
+                environment_arr[get_provider_offer_id(provider_offer)] = 0
+            self.qtable[get_provider_offer_id(provider_of)] = prov
+            self.environment[get_provider_offer_id(provider_of)] = environment_arr
 
     def init_alpha_and_beta(self):
         """
@@ -54,26 +121,32 @@ class QTableDemo:
         Arrays and not table because every column of the QTable is going to have the same
         alpha and beta values since we never update only one cell but the whole column.
         """
-        # self.alphatable = {i: self.start_alpha for i in self.providers_offers}
-        # self.betatable = {i: self.start_beta for i in self.providers_offers}
+        # self.alpha_table = {i: self.start_alpha for i in self.providers_offers}
+        # self.beta_table = {i: self.start_beta for i in self.providers_offers}
         for provider_of in self.providers_offers:
-            alph = {}
-            bet = {}
+            
+            alpha = {}
+            beta = {}
             num = {}
+            
             for provider_offer in self.providers_offers:
-                alph[self.get_ID(provider_offer)] = self.start_alpha
-                bet[self.get_ID(provider_offer)] = self.start_beta
-                num[self.get_ID(provider_offer)] = 0
-            self.alphatable[self.get_ID(provider_of)] = alph
-            self.betatable[self.get_ID(provider_of)] = bet
-            self.number_of_updates[self.get_ID(provider_of)] = num
+                alpha[get_provider_offer_id(provider_offer)] = self.start_alpha
+                beta[get_provider_offer_id(provider_offer)] = self.start_beta
+                num[get_provider_offer_id(provider_offer)] = 0
+            
+            self.alpha_table[get_provider_offer_id(provider_of)] = alpha
+            self.beta_table[get_provider_offer_id(provider_of)] = beta
+            self.number_of_updates[get_provider_offer_id(provider_of)] = num
 
-    def init_providers_offers(self, providers):
+    def _init_providers_offers(self, providers):
         """
         Gets all the available provider offers to choose from.
         """
         for i, id in enumerate(providers):
-            options = cloudomate_controller.options(providers[id])
+            # options = cloudomate_controller.options(providers[id])
+
+            options = vps_options
+
             for i, option in enumerate(options):
                 element = ProviderOffer(provider_name=providers[id].get_metadata()[0], name=str(option.name),
                                         bandwidth=option.bandwidth, price=option.price, memory=option.memory)
@@ -89,22 +162,22 @@ class QTableDemo:
 
         if update_current_state <= 50:
             for provider_of in self.providers_offers:
-                self.alphatable[self.get_ID(provider_of)][self.get_ID_from_state()] = \
+                self.alpha_table[get_provider_offer_id(provider_of)][self.get_ID_from_state()] = \
                     self.start_alpha - update_current_state * 0.012  # chosen constant
-                self.betatable[self.get_ID(provider_of)][self.get_ID_from_state()] = \
+                self.beta_table[get_provider_offer_id(provider_of)][self.get_ID_from_state()] = \
                     self.start_beta + update_current_state * 0.012  # chosen constant
-                self.number_of_updates[self.get_ID(provider_of)][self.get_ID_from_state()] += 1
+                self.number_of_updates[get_provider_offer_id(provider_of)][self.get_ID_from_state()] += 1
 
         else:
             for provider_of in self.providers_offers:
-                self.alphatable[self.get_ID(provider_of)][provider_offer_ID] = 0.2
-                self.betatable[self.get_ID(provider_of)][provider_offer_ID] = 0.8
+                self.alpha_table[get_provider_offer_id(provider_of)][provider_offer_ID] = 0.2
+                self.beta_table[get_provider_offer_id(provider_of)][provider_offer_ID] = 0.8
 
     def max_action_value(self, provider):
         max_value = -self.INFINITY
         for i, provider_offer in enumerate(self.qtable):
-            if max_value < self.qtable[provider_offer][self.get_ID(provider)]:
-                max_value = self.qtable[provider_offer][self.get_ID(provider)]
+            if max_value < self.qtable[provider_offer][get_provider_offer_id(provider)]:
+                max_value = self.qtable[provider_offer][get_provider_offer_id(provider)]
         return max_value
 
     def choose_option(self, providers):
@@ -134,7 +207,8 @@ class QTableDemo:
                 provider = self.find_provider(offer_name)
                 candidate["provider_name"] = provider
                 candidate["option_name"] = self.find_offer(offer_name, provider)
-        options = cloudomate_controller.options(providers[candidate["provider_name"]])
+        # options = cloudomate_controller.options(providers[candidate["provider_name"]])
+        options = vps_options
 
         for i, option in enumerate(options):
             if option.name == candidate["option_name"]:
@@ -154,26 +228,29 @@ class QTableDemo:
 
     def find_provider(self, offer_name):
         for offer in self.providers_offers:
-            if self.get_ID(offer) == offer_name:
+            if get_provider_offer_id(offer) == offer_name:
                 return offer.provider_name.lower()
         raise ValueError("Can't find provider for " + offer_name)
 
     def find_offer(self, offer_name, provider):
         for offer in self.providers_offers:
-            if self.get_ID(offer) == offer_name and provider.lower() == offer.provider_name.lower():
+            if get_provider_offer_id(offer) == offer_name and provider.lower() == offer.provider_name.lower():
                 return offer.name
         raise ValueError("Can't find offer for " + offer_name)
 
     def set_self_state(self, self_state):
         self.self_state = self_state
-
-    def get_ID(self, provider_offer):
-        return str(provider_offer.provider_name).lower() + "_" + str(provider_offer.name).lower()
-
+        
     def get_ID_from_state(self):
         return str(self.self_state.provider).lower() + "_" + str(self.self_state.option).lower()
 
-    def update_qtable(self, received_qtables, provider_offer_ID, status=False, MBtokens=0):
+    def update_qtable(
+        self,
+        received_qtables,
+        provider_offer_ID,
+        status=False,
+        MBtokens=0
+    ):
         """
         Updates an agent's QTable by considering the QTables received from other nodes through gossiping
         and its own informations, according to an adapted version of the QD-Learning algorithm.
@@ -210,9 +287,9 @@ class QTableDemo:
         """
 
         for state in to_add:
-            to_add[state][provider_offer_ID] -= self.betatable[state][provider_offer_ID] * self.qtable[state][
+            to_add[state][provider_offer_ID] -= self.beta_table[state][provider_offer_ID] * self.qtable[state][
                 provider_offer_ID] - remote_qtable[state][provider_offer_ID]
-            to_add[state][self.get_ID_from_state()] -= self.betatable[state][self.get_ID_from_state()] \
+            to_add[state][self.get_ID_from_state()] -= self.beta_table[state][self.get_ID_from_state()] \
                                                        * self.qtable[state][self.get_ID_from_state()] \
                                                        - remote_qtable[state][self.get_ID_from_state()]
 
@@ -227,17 +304,17 @@ class QTableDemo:
         self.update_environment(provider_offer_ID, status, MBtokens)
 
         for provider_offer in self.providers_offers:
-            learning_compound_purchase = self.environment[self.get_ID(provider_offer)][provider_offer_ID] \
+            learning_compound_purchase = self.environment[get_provider_offer_id(provider_offer)][provider_offer_ID] \
                                          + self.discount * self.max_action_value(provider_offer) \
-                                         - self.qtable[self.get_ID(provider_offer)][provider_offer_ID]
-            learning_compound_current = self.environment[self.get_ID(provider_offer)][self.get_ID_from_state()] \
+                                         - self.qtable[get_provider_offer_id(provider_offer)][provider_offer_ID]
+            learning_compound_current = self.environment[get_provider_offer_id(provider_offer)][self.get_ID_from_state()] \
                                         + self.discount * self.max_action_value(provider_offer) \
-                                        - self.qtable[self.get_ID(provider_offer)][self.get_ID_from_state()]
+                                        - self.qtable[get_provider_offer_id(provider_offer)][self.get_ID_from_state()]
 
-            to_add[self.get_ID(provider_offer)][provider_offer_ID] += self.alphatable[self.get_ID(provider_offer)][
+            to_add[get_provider_offer_id(provider_offer)][provider_offer_ID] += self.alpha_table[get_provider_offer_id(provider_offer)][
                                                                           provider_offer_ID] * learning_compound_purchase
-            to_add[self.get_ID(provider_offer)][self.get_ID_from_state()] += \
-                self.alphatable[self.get_ID(provider_offer)][
+            to_add[get_provider_offer_id(provider_offer)][self.get_ID_from_state()] += \
+                self.alpha_table[get_provider_offer_id(provider_offer)][
                     self.get_ID_from_state()] * learning_compound_current
 
     def update_environment(self, provider_offer_ID, status, MBtokens):
@@ -256,196 +333,25 @@ class QTableDemo:
                 self.environment[actions][provider_offer_ID] -= self.environment_lr
                 self.environment[actions][self.get_ID_from_state()] += MBtokens
 
-
-def log(node, message):
-
-    print("Node " + node.self_contact.id + ": " + message)
-
-
-vps_options = [
-    VpsOption(
-        name='Advanced',
-        storage=2,
-        cores=2,
-        memory=2,
-        bandwidth="mock",
-        connection="1",
-        price=100.0,
-        purchase_url="mock"
-    ),
-    VpsOption(
-        name='Basic Plan',
-        storage=2,
-        cores=2,
-        memory=2,
-        bandwidth="mock",
-        connection="1",
-        price=10.0,
-        purchase_url="mock"
-    )
-]
-
-
-def generate_new_node(
-        replicating_node: Tuple[AddressBook, QTableDemo],
-        port: int,
-        id: str
-    ):
-
-    replicating_ab, replicating_qt = replicating_node
-
-    replicating_option = replicating_qt.choose_option()
-
-    pub, priv = generate_contact_key_pair()
-
-    new_node_contact = Contact(
-        id=str(id),
-        host='127.0.0.1',
-        port=port,
-        public_key=pub
-    )
-
-    new_node_ab = AddressBook(
-        self_contact=new_node_contact,
-        private_key=priv
-    )
-
-    replicating_ab.create_new_distributed_contact(new_node_contact)
-    
-    new_node_qt = copy.deepcopy(replicating_qt)
-
-    new_node_qt.replications += 1
-
-    new_node_qt.self_state = VPSState(replicating_option.provider_name, replicating_option.option_name)
-    
-    return new_node_ab, new_node_qt
-
-
-def demo():
-    
-    global nodes
-    nodes = []
-
-    def start_replicating(
-        ports_range = 8000,
-        replicating_interval = 1,
-        ping_interval = 1,
-        restore_timeout = 2,
-        receiver_notify_interval = 0.001
-    ):
-
-        id_counter = 1
-
-        root_pub, root_priv = generate_contact_key_pair()
-        root_contact = Contact(
-            id=str(id_counter),
-            host="127.0.0.1",
-            port=ports_range,
-            public_key=root_pub
+    def share_qtable(self, address_book: AddressBook) -> bool:
+        
+        message = Message(
+            channel=self.messaging_channel,
+            command='qtable',
+            data=self.qtable
         )
 
-        root = AddressBook(
-            self_contact=root_contact,
-            private_key=root_priv,
-            contact_restore_timeout=restore_timeout,
-            inactive_nodes_ping_interval=ping_interval,
-            receiver_notify_interval=receiver_notify_interval
-        )
+        return address_book.send_message_to_all_contacts(message)
+        
 
-        global nodes
-        nodes.append(root)
+class LearningConsumer(MessageConsumer):
 
-        while True:
+    def __init__(self, qtable: QTableDemo):
 
-            ports_range += 1
-            id_counter += 1
+        self.qtable = qtable
 
-            replicating_node = random.choice(nodes)
+    def notify(self, message: Message, sender_id):
 
-            log(replicating_node, "Replicating")
+        if message.command == 'qtable':
 
-            new_node_contact_list = replicating_node.contacts.copy()
-            new_node_contact_list.append(replicating_node.self_contact)
-
-            pub, priv = generate_contact_key_pair()
-
-            new_node_contact = Contact(
-                id=str(id_counter),
-                host='127.0.0.1',
-                port=ports_range,
-                public_key=pub
-            )
-
-            new_node = AddressBook(
-                self_contact=new_node_contact,
-                private_key=priv,
-                contacts=new_node_contact_list,
-                contact_restore_timeout=restore_timeout,
-                inactive_nodes_ping_interval=ping_interval,
-                receiver_notify_interval=receiver_notify_interval
-            )
-
-            nodes.append(new_node)
-
-            replicating_node.create_new_distributed_contact(new_node_contact)
-
-            time.sleep(replicating_interval)
-
-    def start_killing(
-        nodes_threshold = 5,
-        killing_interval = 2
-    ):
-        global nodes
-
-        while True:
-
-            time.sleep(killing_interval)
-
-            if (len(nodes) < nodes_threshold):
-
-                continue
-
-            kill_probability = 1 / 6
-
-            for node in nodes:
-
-                if random.uniform(0, 1) <= kill_probability:
-
-                    log(node, "dying")
-
-                    node.kill()
-                    nodes.remove(node)
-
-    def print_snapshots(
-        print_interval = 3
-    ):
-
-        global nodes
-
-        while True:
-            
-            time.sleep(print_interval)
-
-            print("\n=====================================================")
-
-            for node in nodes:
-                
-                contacts_list = ""
-
-                for contact in node.contacts:
-
-                    contacts_list += str(contact.id) + ", "
-
-                print("Node " + node.self_contact.id + " has " + str(len(node.contacts)) + " contacts: " + contacts_list)
-
-            print("=====================================================\n")
-
-
-
-    threading.Thread(target=start_replicating).start()
-    threading.Thread(target=start_killing).start()
-    threading.Thread(target=print_snapshots).start()
-
-
-if __name__ == "__main__":
-    demo()
+            qtable.remote_qtables.append(message.data)
