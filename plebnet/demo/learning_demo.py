@@ -163,6 +163,8 @@ def replicate_nodes(
             port_counter += 1
             id_counter += 1
 
+            node.qtable.share_qtable(node.address_book)
+
             nodes.append(make_node_replicate(
                 replicating_node=node,
                 replicating_option=replicate_option,
@@ -206,7 +208,7 @@ def kill_nodes(
 def demo(
     notify_interval = 0.01,
     contact_restore_timeout=1,
-    inactive_nodes_ping_interval=1.01,
+    inactive_nodes_ping_interval=1,
     tick=1,
     max_node_age=15
 ) -> None:
@@ -225,10 +227,17 @@ def demo(
     nodes = [root]
 
     while True:
-        
+
         # Update nodes btc balance
         update_nodes_balance(nodes)
 
+
+        # Killing expired nodes
+        kill_nodes(
+            nodes,
+            max_node_age
+        )
+       
         # Making nodes replicate
         port_counter, id_counter = replicate_nodes(
             nodes=nodes,
@@ -238,13 +247,7 @@ def demo(
             contact_restore_timeout=contact_restore_timeout,
             inactive_nodes_ping_interval=inactive_nodes_ping_interval
         )
-
-        # Killing expired nodes
-        kill_nodes(
-            nodes,
-            max_node_age
-        )
-
+        
         # Incrementing node age
         for node in nodes:
 
