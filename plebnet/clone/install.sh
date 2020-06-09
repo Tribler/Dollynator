@@ -31,6 +31,9 @@ DEBIAN_FRONTEND=noninteractive
 echo force-confold >> /etc/dpkg/dpkg.cfg
 echo force-confdef >> /etc/dpkg/dpkg.cfg
 
+# Install apt-utils and software-properties-common
+apt-get -f -y install
+apt install -y software-properties-common
 
 # Add bionic repo
 add-apt-repository 'deb http://it.archive.ubuntu.com/ubuntu/ bionic main universe restricted multiverse'
@@ -40,12 +43,16 @@ apt update
 apt install python3-libtorrent=1.1.5-1build1 -y
 
 # Restoring apt
-wget -O /tmp/apt_1.6.12ubuntu0.1_amd64.deb http://security.ubuntu.com/ubuntu/pool/main/a/apt/apt_1.6.12ubuntu0.1_amd64.deb
-wget -O /tmp/libapt-pkg5.0_1.6.12ubuntu0.1_amd64.deb http://security.ubuntu.com/ubuntu/pool/main/a/apt/libapt-pkg5.0_1.6.12ubuntu0.1_amd64.deb
+wget -O /tmp/libc6_2.23-0ubuntu10_amd64.deb http://security.ubuntu.com/ubuntu/pool/main/g/glibc/libc6_2.23-0ubuntu10_amd64.deb
+wget -O /tmp/libapt-pkg5.0_1.2.32ubuntu0.1_amd64.deb http://security.ubuntu.com/ubuntu/pool/main/a/apt/libapt-pkg5.0_1.2.32ubuntu0.1_amd64.deb
+wget -O /tmp/apt_1.2.32ubuntu0.1_amd64.deb http://security.ubuntu.com/ubuntu/pool/main/a/apt/apt_1.2.32ubuntu0.1_amd64.deb
 
-dpkg -i /tmp/{apt,libapt-pkg5.0}_*.deb
+dpkg -i /tmp/libc6_2.23-0ubuntu10_amd64.deb
+dpkg -i /tmp/libapt-pkg5.0_1.2.32ubuntu0.1_amd64.deb
+dpkg -i /tmp/apt_1.2.32ubuntu0.1_amd64.deb
 
 apt update
+apt-get -f -y install
 
 # Linking python3 to 3.6
 rm /usr/local/bin/python3
