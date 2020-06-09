@@ -31,26 +31,36 @@ DEBIAN_FRONTEND=noninteractive
 echo force-confold >> /etc/dpkg/dpkg.cfg
 echo force-confdef >> /etc/dpkg/dpkg.cfg
 
-# Add Python 3.6 repo
-sudo add-apt-repository ppa:deadsnakes/ppa
 
-# Upgrade system
-apt-get update
-# Do not upgrade for now as in some VPS it will cause for example grub to update
-# Requiring manual configuration after installation
-# && apt-get -y upgrade
+# Add bionic repo
+add-apt-repository 'deb http://it.archive.ubuntu.com/ubuntu/ bionic main universe restricted multiverse'
+apt update
 
-apt-get install -y python3.6
-apt-get install -y python3.6-dev
-# Needed?
-# apt-get install -y python3.6-distutils
+# Install libtorrent
+apt install python3-libtorrent=1.1.5-1build1 -y
 
+# Restoring apt
+wget -O /tmp/apt_1.6.12ubuntu0.1_amd64.deb http://security.ubuntu.com/ubuntu/pool/main/a/apt/apt_1.6.12ubuntu0.1_amd64.deb
+wget -O /tmp/libapt-pkg5.0_1.6.12ubuntu0.1_amd64.deb http://security.ubuntu.com/ubuntu/pool/main/a/apt/libapt-pkg5.0_1.6.12ubuntu0.1_amd64.deb
+
+dpkg -i /tmp/{apt,libapt-pkg5.0}_*.deb
+
+apt update
+
+# Linking python3 to 3.6
+rm /usr/local/bin/python3
 ln -s /usr/bin/python3.6 /usr/local/bin/python3
 
-# Reinstall pip
-apt-get remove --purge -y python-pip
-wget https://bootstrap.pypa.io/get-pip.py
-python3 get-pip.py
+# Remove previous pip
+apt-get remove --purge -y python-pip python3-pip
+
+# Installing pip
+apt install python3-distutils -y
+wget -O /tmp/get-pip.py https://bootstrap.pypa.io/get-pip.py
+python3 /tmp/get-pip.py
+
+# Clearing temp folder
+rm /tmp/*
 
 pip3 install -U wheel setuptools
 
@@ -69,7 +79,6 @@ ln -s "$(which openvpn)" /usr/bin/openvpn
 
 # Install dependencies
 apt-get install -y \
-    python3-libtorrent \
     git \
     build-essential \
     libssl-dev \
