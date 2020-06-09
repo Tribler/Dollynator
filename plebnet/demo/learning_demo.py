@@ -12,6 +12,9 @@ from plebnet.messaging import *
 from plebnet.demo.qtable_demo import *
 from typing import List, Tuple
 
+def colored(r, g, b, text):
+    return "\033[38;2;{};{};{}m{} \033[38;2;255;255;255m".format(r, g, b, text)
+
 def generate_new_node_ab(
     port: int,
     new_node_id: str,
@@ -107,6 +110,9 @@ def make_node_replicate(
 
     replicating_node.btc_balance -= replicating_option.price
 
+    debug = "Node " + replicating_node.address_book.self_contact.id + " replicated spending " + str(replicating_option.price)
+    print(colored(0, 255, 0, debug))
+
     return new_node
 
 def generate_root_node(
@@ -152,8 +158,8 @@ def update_nodes_balance(
 
     for node in nodes:
 
-        node.btc_balance += 1
-        node.mb_tokens += 1
+        node.earn_mb_tokens()
+        node.earn_bitcoins()
 
 def replicate_nodes(
     nodes: List[Node],
@@ -183,8 +189,6 @@ def replicate_nodes(
                 inactive_nodes_ping_interval=inactive_nodes_ping_interval
             ))
 
-
-
     return port_counter, id_counter
 
 
@@ -211,6 +215,9 @@ def kill_nodes(
             node.address_book.kill()
             nodes.remove(node)
 
+            debug = colored(255, 0, 0, "Node " + node.address_book.self_contact.id + " died of old age")
+
+            print(debug)
 
 
 def demo(
@@ -218,7 +225,7 @@ def demo(
     contact_restore_timeout=1,
     inactive_nodes_ping_interval=1,
     tick=1,
-    max_node_age=15
+    max_node_age=18
 ) -> None:
 
     id_counter = 1

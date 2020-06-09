@@ -19,7 +19,17 @@ default_messaging_channel = 'learning'
 
 vps_options = [
     VpsOption(
-        name='Advanced',
+        name='Option 1',
+        storage=2,
+        cores=2,
+        memory=2,
+        bandwidth="mock",
+        connection="1",
+        price=11.5,
+        purchase_url="mock"
+    ),
+    VpsOption(
+        name='Option 2',
         storage=2,
         cores=2,
         memory=2,
@@ -29,13 +39,23 @@ vps_options = [
         purchase_url="mock"
     ),
     VpsOption(
-        name='Basic Plan',
+        name='Option 3',
         storage=2,
         cores=2,
         memory=2,
         bandwidth="mock",
         connection="1",
-        price=12.0,
+        price=10.5,
+        purchase_url="mock"
+    ),
+    VpsOption(
+        name='Option 4',
+        storage=2,
+        cores=2,
+        memory=2,
+        bandwidth="mock",
+        connection="1",
+        price=11.0,
         purchase_url="mock"
     )
 ]
