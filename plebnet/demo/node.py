@@ -8,13 +8,15 @@ class Node:
         address_book: AddressBook,
         qtable: QTableDemo,
         age: int = 0,
-        btc_balance: int = 0
+        btc_balance: int = 0,
+        mb_tokens: int = 0
     ):
 
         self.address_book = address_book
         self.qtable = qtable
         self.age = age
         self.btc_balance = btc_balance
+        self.mb_tokens = mb_tokens
 
     def print_node(self):
 

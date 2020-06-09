@@ -52,8 +52,8 @@ def generate_new_node_qt(
     new_node_qt.replications += 1
 
     new_node_state = VPSState(
-        replicating_option['provider_name'],
-        replicating_option['option_name']
+        replicating_option.provider_name,
+        replicating_option.offer_name
     )
 
     new_node_qt.set_self_state(new_node_state)
@@ -63,13 +63,22 @@ def generate_new_node_qt(
 
 def make_node_replicate(
         replicating_node: Node,
-        replicating_option: dict,
+        replicating_option: ProviderOffer,
         port: int,
         new_node_id: str,
         notify_interval,
         contact_restore_timeout,
         inactive_nodes_ping_interval
     ) -> Node:
+
+    # Sharing qtable
+    replicating_node.qtable.share_qtable(replicating_node.address_book)
+
+    replicating_node.qtable.update_qtable(
+        replicating_option.get_offer_id(),
+        True,
+        replicating_node.mb_tokens
+    )
     
     # Generating new node address book and creating distributed contact
     new_node_ab = generate_new_node_ab(
@@ -96,7 +105,7 @@ def make_node_replicate(
         new_node_qt
     )
 
-    replicating_node.btc_balance -= replicating_option['price']
+    replicating_node.btc_balance -= replicating_option.price
 
     return new_node
 
@@ -144,6 +153,7 @@ def update_nodes_balance(
     for node in nodes:
 
         node.btc_balance += 1
+        node.mb_tokens += 1
 
 def replicate_nodes(
     nodes: List[Node],
@@ -158,12 +168,10 @@ def replicate_nodes(
 
         replicate_option = node.qtable.choose_option(vps_providers)
 
-        if node.btc_balance >= replicate_option['price']:
+        if node.btc_balance >= replicate_option.price:
 
             port_counter += 1
             id_counter += 1
-
-            node.qtable.share_qtable(node.address_book)
 
             nodes.append(make_node_replicate(
                 replicating_node=node,
