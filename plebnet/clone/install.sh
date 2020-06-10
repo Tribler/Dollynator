@@ -58,6 +58,9 @@ apt-get -f -y install
 rm /usr/local/bin/python3
 ln -s /usr/bin/python3.6 /usr/local/bin/python3
 
+# Install Python 3.6 dev files
+apt install -y python3-dev
+
 # Remove previous pip
 apt-get remove --purge -y python-pip python3-pip
 
