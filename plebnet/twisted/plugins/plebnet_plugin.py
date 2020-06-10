@@ -15,7 +15,7 @@ from tribler_core.config.tribler_config import TriblerConfig
 from tribler_core.modules.process_checker import ProcessChecker
 from tribler_core.session import Session
 # Register yappi profiler
-from tribler.src.anydex.anydex.core.community import MarketCommunity
+from anydex.core.community import MarketCommunity
 
 
 class Options(usage.Options):
