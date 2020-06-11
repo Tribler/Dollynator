@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# coding: utf-8
 """
 This twistd plugin enables to start Tribler headless using the twistd command.
 """
@@ -31,9 +33,9 @@ class Options(usage.Options):
         ["dummy", "f", "Use dummy wallets"],
     ]
 
-
+@implementer(IServiceMaker, IPlugin)
 class MarketServiceMaker(object):
-    implementer(IServiceMaker, IPlugin)
+    # implementer(IServiceMaker, IPlugin)
     tapname = "plebnet"
     description = "headless tribler for plebnet agent"
     options = Options
