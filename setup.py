@@ -41,7 +41,7 @@ setup(
 
     keywords='botnet',
 
-    packages=find_packages(exclude=['docs']) + ['plebnet.twisted.plugins'],,
+    packages=find_packages(exclude=['docs']) + ['plebnet.twisted.plugins'],
 
     install_requires=[
         'twisted',
