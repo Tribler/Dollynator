@@ -44,11 +44,13 @@ def start():
     :return: boolean representing the success of starting Tribler
     """
     env = os.environ.copy()
-    env['PYTHONPATH'] = os.path.join(setup.plebnet_home(), 'plebnet')
-    env['PYTHONPATH'] = os.path.join(setup.plebnet_home(), 'plebnet/tribler/src/tribler-core')
-    env['PYTHONPATH'] = os.path.join(setup.plebnet_home(), 'plebnet/tribler/src/tribler-common')
-    env['PYTHONPATH'] = os.path.join(setup.plebnet_home(), 'plebnet/tribler/src/tribler-anydex')
-    env['PYTHONPATH'] = os.path.join(setup.plebnet_home(), 'plebnet/tribler/src/tribler-pyipv8')
+    env['PYTHONPATH'] = os.path.join(setup.plebnet_home(), 'plebnet') + ":"
+    env['PYTHONPATH'] += os.path.join(setup.plebnet_home(), 'plebnet/tribler/src/tribler-pyipv8') + ":"
+    env['PYTHONPATH'] += os.path.join(setup.plebnet_home(), 'plebnet/tribler/src/tribler-anydex') + ":"
+    env['PYTHONPATH'] += os.path.join(setup.plebnet_home(), 'plebnet/tribler/src/tribler-common') + ":"
+    env['PYTHONPATH'] += os.path.join(setup.plebnet_home(), 'plebnet/tribler/src/tribler-core')
+    
+    print(env['PYTHONPATH'])
 
     command = ['twistd', '--pidfile='+setup.tribler_pid(), 'plebnet', '-p', '8085']
 
