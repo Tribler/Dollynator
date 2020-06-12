@@ -194,6 +194,8 @@ pip3 install ./cloudomate
 pip3 install pony
 pip3 install -r ./tribler/src/requirements.txt
 cd ..
+pip3 install lz4
+pip3 install aiohttp_apispec
 
 # Install bitcoinlib
 # pip install bitcoinlib==0.4.4
