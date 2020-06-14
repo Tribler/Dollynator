@@ -58,8 +58,10 @@ class AddressBook(MessageConsumer):
         self.self_contact = self_contact
         self._contact_restore_timeout = contact_restore_timeout
         self._inactive_nodes_ping_interval = inactive_nodes_ping_interval
-
-        threading.Thread(target=self._start_pinging_inactive_nodes).start()
+        
+        thread = threading.Thread(target=self._start_pinging_inactive_nodes)
+        thread.daemon = True
+        thread.start()
 
     def kill(self):
 
