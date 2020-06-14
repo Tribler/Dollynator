@@ -241,7 +241,9 @@ class QTable:
         child_id = messaging.generate_contact_id(self.address_book.self_contact.id)
         ip = self.get_node_ip(provider, child_index)
         child_contact = messaging.Contact(child_id, ip, self.port, child_pub)
-        new_address_book = address_book.AddressBook(child_contact, self.address_book.contacts, child_priv)
+        new_address_book = address_book.AddressBook(self_contact=child_contact,
+                                                    private_key=child_priv,
+                                                    contacts=self.address_book.contacts)
         new_address_book.contacts.append(self.address_book.self_contact)
         # TODO : Add child's contact to parent's addressbook?
         return new_address_book
