@@ -435,3 +435,6 @@ def save_all_currency():
 
 def get_node_index():
     return config.get("child_index")
+
+if __name__ == '__main__':
+    check()

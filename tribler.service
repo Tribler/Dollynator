@@ -1,0 +1,13 @@
+[Unit]
+Description=Tribler Market Service
+
+[Service]
+User=root
+Type=simple
+RemainAfterExit=yes
+ExecStart=/usr/bin/python3 -m run_tribler_headless -p 8085
+Environment=PYTHONPATH=:/root/PlebNet/tribler/src/pyipv8:/root/PlebNet/tribler/src/anydex:/root/PlebNet/tribler/src/tribler-common:/root/PlebNet/tribler/src/tribler-core:/root/PlebNet/tribler/src/tribler-gui
+
+
+[Install]
+WantedBy=multi-user.target
