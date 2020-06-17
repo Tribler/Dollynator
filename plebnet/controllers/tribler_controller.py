@@ -7,13 +7,10 @@ If Tribler alters its call methods, this should be the only file which needs to 
 
 import os
 import subprocess
-import threading
 
 import requests
 
 from requests.exceptions import ConnectionError
-from src.run_tribler import start_tribler_core
-from tribler_core.utilities.osutils import get_root_state_directory
 
 from plebnet.utilities import logger
 from plebnet.settings import plebnet_settings
