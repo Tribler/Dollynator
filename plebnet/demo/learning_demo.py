@@ -1,6 +1,8 @@
 import random
 import threading
 import time
+import argparse
+import json
 
 import unittest.mock as mock
 
@@ -65,6 +67,8 @@ def generate_new_node_qt(
 
 
 def make_node_replicate(
+        print_format: str,
+        output,
         replicating_node: Node,
         replicating_option: ProviderOffer,
         port: int,
@@ -110,8 +114,28 @@ def make_node_replicate(
 
     replicating_node.btc_balance -= replicating_option.price
 
-    debug = "Node " + replicating_node.address_book.self_contact.id + " replicated spending " + str(replicating_option.price)
-    print(colored(0, 255, 0, debug))
+    if print_format == 'print':
+        
+        debug = "Node " + replicating_node.address_book.self_contact.id + " replicated spending " + str(replicating_option.price)
+        debug = colored(0, 255, 0, debug)
+
+    elif print_format == 'json':
+
+        debug = json.dumps({
+            'event_type': 'node_replication',
+            'timestamp': time.time(),
+            'replicating_node': replicating_node.address_book.self_contact.id,
+            'new_node': new_node_ab.self_contact.id,
+            'replication_cost': str(replicating_option.price),
+            'provider_name': replicating_option.provider_name,
+            'offer_name': replicating_option.offer_name
+        })
+
+    print(debug)
+
+    if output is not None:
+
+        output.write(debug + "\n")
 
     return new_node
 
@@ -153,15 +177,19 @@ def generate_root_node(
 
 
 def update_nodes_balance(
+    print_format: str,
+    output,
     nodes: List[Node]
 ) -> None:
 
     for node in nodes:
 
-        node.earn_mb_tokens()
-        node.earn_bitcoins()
+        node.earn_mb_tokens(print_format, output)
+        node.earn_bitcoins(print_format, output)
 
 def replicate_nodes(
+    print_format: str,
+    output,
     nodes: List[Node],
     port_counter: int,
     id_counter: int,
@@ -180,6 +208,8 @@ def replicate_nodes(
             id_counter += 1
 
             nodes.append(make_node_replicate(
+                print_format=print_format,
+                output=output,
                 replicating_node=node,
                 replicating_option=replicate_option,
                 port=port_counter,
@@ -193,7 +223,7 @@ def replicate_nodes(
 
 
 def print_botnet_state(
-    nodes: List[Node]
+    nodes: List[Node],
 ) -> None:
 
     print("\n==============================")
@@ -204,6 +234,8 @@ def print_botnet_state(
 
 
 def kill_nodes(
+    print_format: str,
+    output,
     nodes: List[Node], 
     max_node_age: int
 ) -> None:
@@ -215,12 +247,28 @@ def kill_nodes(
             node.address_book.kill()
             nodes.remove(node)
 
-            debug = colored(255, 0, 0, "Node " + node.address_book.self_contact.id + " died of old age")
+            if print_format == 'print':
+                
+                debug = colored(255, 0, 0, "Node " + node.address_book.self_contact.id + " died of old age")
+
+            else:
+                debug = json.dumps({
+                    'event_type': 'node_death',
+                    'timestamp': time.time(),
+                    'death_cause': 'age',
+                    'node': node.address_book.self_contact.id
+                })
 
             print(debug)
 
+            if output is not None:
+
+                output.write(debug + "\n")
+
 
 def demo(
+    print_format,
+    output=None,
     notify_interval = 0.01,
     contact_restore_timeout=1,
     inactive_nodes_ping_interval=1,
@@ -244,17 +292,20 @@ def demo(
     while True:
 
         # Update nodes btc balance
-        update_nodes_balance(nodes)
-
+        update_nodes_balance(print_format, output, nodes)
 
         # Killing expired nodes
         kill_nodes(
+            print_format,
+            output,
             nodes,
             max_node_age
         )
        
         # Making nodes replicate
         port_counter, id_counter = replicate_nodes(
+            print_format=print_format,
+            output=output,
             nodes=nodes,
             port_counter=port_counter,
             id_counter=id_counter,
@@ -268,10 +319,34 @@ def demo(
 
             node.age += 1
 
-        print_botnet_state(nodes)
+        if print_format == 'print':
+
+            print_botnet_state(nodes)
 
         time.sleep(tick)
     
 
 if __name__ == "__main__":
-    demo()
+
+    parser = argparse.ArgumentParser(description="Learning and gossiping demo")
+
+    formats = ['print', 'json']
+
+    parser.add_argument('-f --format', dest='format', choices=formats, default=formats[0])
+    parser.add_argument('-o --output', dest='output', default=None)
+
+    args = parser.parse_args()
+
+    if args.output != None:
+
+        f = open(args.output, 'w')
+        f.write("")
+        f.close()
+
+        f = open(args.output, 'a')
+
+        demo(args.format, f)
+
+    else :
+
+        demo(args.format, None)
