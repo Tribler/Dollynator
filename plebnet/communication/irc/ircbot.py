@@ -36,6 +36,7 @@ class Create(object):
         self.port = settings.irc_port()
 
         self.nick = settings.irc_nick()
+        nick_number = self.nick[len(settings.irc_nick_def()):]
         self.ident = "plebber"
         self.gecos = "Plebbot version 2.15"
 
@@ -45,22 +46,23 @@ class Create(object):
 
         # prep reply functions
         self.responses = {}
-        self.add_response("alive",        self.msg_alive)
-        self.add_response("error",        self.msg_error)
-        self.add_response("init",         self.msg_init)
-        self.add_response("joke",         self.msg_joke)
-        self.add_response("MB_wallet",    self.msg_MB_wallet)
-        self.add_response("BTC_wallet",   self.msg_BTC_wallet)
-        self.add_response("TBTC_wallet",  self.msg_TBTC_wallet)
-        self.add_response("MB_balance",   self.msg_MB_balance)
-        self.add_response("BTC_balance",  self.msg_BTC_balance)
-        self.add_response("TBTC_balance", self.msg_TBTC_balance)
-        self.add_response("matchmakers",  self.msg_match_makers)
-        self.add_response("uploaded",     self.msg_uploaded)
-        self.add_response("downloaded",   self.msg_downloaded)
-        self.add_response("general",      self.msg_general)
-        self.add_response("helped",       self.msg_helped)
-        self.add_response("helped_by",    self.msg_helped_by)
+        self.add_response("alive",                      self.msg_alive)
+        self.add_response("error",                      self.msg_error)
+        self.add_response("init",                       self.msg_init)
+        self.add_response("joke",                       self.msg_joke)
+        self.add_response("MB_wallet",                  self.msg_MB_wallet)
+        self.add_response("BTC_wallet",                 self.msg_BTC_wallet)
+        self.add_response("TBTC_wallet",                self.msg_TBTC_wallet)
+        self.add_response("MB_balance",                 self.msg_MB_balance)
+        self.add_response("BTC_balance",                self.msg_BTC_balance)
+        self.add_response("TBTC_balance",               self.msg_TBTC_balance)
+        self.add_response("matchmakers",                self.msg_match_makers)
+        self.add_response("uploaded",                   self.msg_uploaded)
+        self.add_response("downloaded",                 self.msg_downloaded)
+        self.add_response("general",                    self.msg_general)
+        self.add_response("helped",                     self.msg_helped)
+        self.add_response("helped_by",                  self.msg_helped_by)
+        self.add_response("qtables" + str(nick_number), self.msg_qtable)
 
         # start running the IRC server
         self.init_irc()
@@ -236,6 +238,51 @@ class Create(object):
             'exitnode': plebnet_settings.get_instance().tribler_exitnode()
         }
         self.send_msg("general: %s" % data)
+
+    def msg_qtable(self):
+        qtable = QTable()
+        qtable.read_dictionary()
+        headers = ["-"]
+        table = []
+        header_dict = {}
+        # get all the available vps options
+        for k, v in qtable.qtable.items():
+            shorter_item = k.split(" ")[0].split("_")[0] + "1"
+            num = 1
+            while shorter_item in headers:
+                num += 1
+                shorter_item = shorter_item.replace(shorter_item[-1], str(num))
+            headers.append(shorter_item)
+            header_dict[k] = shorter_item
+
+        # get the rest of the table
+        index = 0
+        for k, v in qtable.qtable.items():
+            table.append([header_dict[k]])
+            for k2, v2 in v.items():
+                table[index].append(str(v2))
+            index += 1
+
+        # get the format string used for each line in the table
+        formatt = "{:<%i} "
+        max_len = 20
+        for vps_service in headers[1:]:
+            max_len = max(len(vps_service) + 2, max_len)
+            formatt += "{:<%i} " % max(20, (len(vps_service) + 2))
+        formatt = formatt % max_len
+        formatt = formatt[:-1]
+        headers[0] *= (max_len - 2)
+
+        # send individual messages for each line of the qtable
+        # , because IRC only supports up until 512 characters per message
+        self.send_msg(formatt.format(*headers))
+        # message = formatt.format(*headers)
+        time.sleep(3)
+        for line in table:
+            time.sleep(3)
+            # message += formatt.format(*line)
+            self.send_msg(formatt.format(*line))
+        # self.send_msg(message)
 
 
 if __name__ == '__main__':
