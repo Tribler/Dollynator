@@ -81,7 +81,7 @@ RSA is used to safely share symmetric keys for AES encryption and to sign messag
 
 Reinforcement Learning
 ======================
-The choice of the next VPS to buy is dictated by the Q-Learning technique.
+The choice of the next VPS to buy is dictated by a modification of the QD-Learning algorithm, a technique that scales Q-Learning onto distributed newtorks.
 
 .. TODO: what can we learn about providers? VPS option can be out of stock/Cloudomate broken/provider IP subnet blocked/find most efficient configurations
 
@@ -90,7 +90,7 @@ The choice of the next VPS to buy is dictated by the Q-Learning technique.
 Q-Learning is a reinforcement learning technique. The aim of this technique
 is to learn how to act in the environment. The decision process is based on a data structure called Q-Table, which encodes rewards given by the environment when specific actions are performed in different states.
 
-The values in Q-Table are updated as follows:
+In a regular Q-Learning scenario, the values in Q-Table are updated as follows:
 
 .. image:: http://latex.codecogs.com/gif.latex?Q_%7Bnew%7D%28s_%7Bt%7D%2Ca_%7Bt%7D%29%5Cleftarrow%20%281-lr%29&plus;lr*%28reward%20&plus;discount%20*%5Cmax_%7Ba%7D%28s_%7Bt&plus;1%7D%2Ca%29%29
 
@@ -98,50 +98,66 @@ The values in Q-Table are updated as follows:
 
 ``lr`` is a learning rate
 
-``st`` is a current state
+``s(t)`` is a current state
 
-``s(t+1)`` is a next step
+``s(t+1)`` is a subsequent state
+
+``a`` is an action, leading to a next state
+
+**What is QD-Learning?**
+
+QD-Learning scales the knowledge provided by Q-Learning techniques on a distributed network of agents. Its goal it exploiting single agents' experiences to have them investigate on their own Q-Tables, whilst at every iteration of the algorithm have every node collaborate with each other by merging their Q-Table with their gossiping neighbour's. The QD-Learning algorithm proposed by Soummya Kar, José M. F. Moura and H. Vincent Poor in `their paper`__ performs two types of updates on a node's Q-Table whenever the agent completes an action:
+
+- it updates its Q-Table cells objects of the completed action by merging the corresponding cells of received Q-Tables from other peers
+- it updates first its environment, then its Q-Table based on its own experience gained over time
+
+The two steps of the QD-Learning algorithm update are weighted by time-dependent factors, respectively beta and alpha, which grow inversely proportional over time to ensure eventual convergence to a single *optimal* Q-Table for every agent. More specifically, at the beginning the update algorithm values higher individual exploration of agents over information coming from remote Q-Tables (thus alpha >> beta), although as time and updates progress the relevance of remote information eventually becomes the single affecting factor on Q-Tables.
+
+.. _Paper: https://doi.org/10.1109/TSP.2013.2241057
+.. __: Paper_
 
 **Reinforcement Mappings**
 
 We define a few mappings which are used in a reinforcement learning jargon:
 
-- ``states`` - VPS offers
+- ``states`` and ``actions`` - VPS offers
 
-- ``environment`` – transition matrix between states. This determines what reinforcement we will get by choosing a certain transition. Initially all 0s.
+- ``environment`` – transition matrix between states and actions. This determines what reinforcement we will get by choosing a certain transition. Initially all 0s.
 
 - ``current_state`` – current VPS option
 
 **Initial values**
 
-Initial values for Q-Table are calculated according to the formula below:
-
-.. image:: http://latex.codecogs.com/gif.latex?%5Cfrac%7B1%7D%7Bprice%5E3%7D*%20bandwidth
+Initial values for Q-Table are, just as for the environment, set all to 0.
 
 
 **How does it work in Dollynator?**
 
-In Dollynator we use our own variation of Q-Learning. As we are not fully aware of the environment and our reinforcements for each state, we try to learn them on the go.
+In Dollynator, we use our own variation of QD-Learning. As we are not fully aware of the environment and our reinforcements for each state, we learn them on the go.
+
+The main difference with the QD-Learning proposed in literature is the avoidance of reaching a forced convergence. This means that over time the releveance of a node's individual experience on the update fucntion does not get annihilated and overwhelmed by the remote information's weight: instead, alpha has a low-bar set at 0.2 (or 20% weight on the update formula) and beta is capped at a maximum of 0.8 (or 80% weight).
 
 Environment is getting updated by each try of replication:
 
-- when a node manages to buy a new option and replicate, environment is updated positively (all transitions leading to ``current_state``)
+- when a node manages to buy a new option and replicate, environment is updated positively (all the column corresponding to the successfully bought state)
 
-- when nodes fails to buy an option, environment is updated negatively (the transition between ``current_state`` and the chosen failed state)
+- when nodes fails to buy an option, environment is updated negatively (all the column corresponding to the chosen failed state)
+
+- regardless of the outcome of the buying attempt, the column corresponding to the agent's ``current state`` is entirely updated based on how efficient it has proven to be. The *efficiency value* is based on how many MB tokens a given node has earned over period of time and money invested in the VPS where it resides (all of which is normalized according to heuristics on previous reports and current direct experience).
 
 After updating the environment values, Q-Table is recalculated one more time to find the action maximizing our possible gains for each state.
 
 **What is passed to the child?**
 
-- its state (provider name + option name)
+- ``state`` (provider name + option name), corresponding to the newly bought VPS service
 
-- name (a unique id)
+- ``name`` (a unique id)
 
-- tree of replications (a path to the root node)
+- ``tree of replications`` (a path to the root node)
 
-- providers_offers (all VPS offers for all providers)
+- ``providers_offers`` (all VPS offers for all providers)
 
-- current Q-Table
+- ``current Q-Table``
 
 **Final remarks about reinforcement learning**
 
