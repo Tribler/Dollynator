@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 """
 This file is used to setup and maintain a connection with an IRC server.
@@ -103,7 +103,7 @@ class Create(object):
 
     def keep_running(self, buffer):
         try:
-            buffer += self.irc.recv(2048)
+            buffer += self.irc.recv(2048).decode()
             lines = str.split(buffer, "\r\n")
             buffer = lines.pop()
 
@@ -180,7 +180,8 @@ class Create(object):
     """
     def send(self, msg):
         logger.log("Sending  IRC message: %s" % msg)
-        self.irc.send("%s\r\n" % msg)
+        msg2 = "%s\r\n" % msg
+        self.irc.send(msg2.encode())
 
     def send_msg(self, msg):
         self.send("PRIVMSG %s :%s" % (self.channel,  msg))
@@ -197,7 +198,7 @@ class Create(object):
         self.send_msg("Let me create an error ...")
         raise Exception('This is an error for testing purposes')
 
- 
+
     def msg_init(self):         self.send_msg("My init date is: %s" % plebnet_settings.get_instance().vps_life())
 
     def msg_joke(self):         self.send_msg("Q: Why did the hipster burn his tongue? A: He ate the pizza before it was cool.")
@@ -235,6 +236,7 @@ class Create(object):
             'exitnode': plebnet_settings.get_instance().tribler_exitnode()
         }
         self.send_msg("general: %s" % data)
+
 
 if __name__ == '__main__':
     Create()
