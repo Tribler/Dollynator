@@ -25,6 +25,7 @@ def install_available_servers(config, qtable):
     :return: None
     :rtype: None
     """
+    config.load()
     bought = config.get('bought')
     logger.log("install: %s" % bought, "install_available_servers")
 

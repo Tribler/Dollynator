@@ -13,8 +13,8 @@ class TestAddressBook(unittest.TestCase):
 
     port_range_min = 8000
     receiver_notify_interval = 0.05
-    inactive_node_ping_interval = 0.33
-    contact_restore_timeout = inactive_node_ping_interval * 2 + 0.01
+    inactive_nodes_ping_interval = 0.33
+    contact_restore_timeout = inactive_nodes_ping_interval * 2 + 0.01
     replication_interval = 0.1
 
     def new_node(self, port: int, parent_ab: AddressBook = None) -> AddressBook:
@@ -37,7 +37,7 @@ class TestAddressBook(unittest.TestCase):
             contacts=contacts,
             receiver_notify_interval=self.receiver_notify_interval,
             contact_restore_timeout=self.contact_restore_timeout,
-            inactive_nodes_ping_interval=self.inactive_node_ping_interval,
+            inactive_nodes_ping_interval=self.inactive_nodes_ping_interval,
         )
 
         if parent_ab is not None:
@@ -147,7 +147,7 @@ class TestAddressBook(unittest.TestCase):
                 inactive_nodes_ping_interval=nodes[1]._inactive_nodes_ping_interval
             )
 
-            time.sleep(self.inactive_node_ping_interval * 1.5)
+            time.sleep(self.inactive_nodes_ping_interval * 1.5)
 
             assert nodes[0].contacts[0].is_active()
 

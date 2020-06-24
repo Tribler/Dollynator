@@ -8,7 +8,7 @@ import random
 import jsonpickle
 
 from appdirs import user_config_dir
-from plebnet.agent import config, core
+from requests import get
 
 from plebnet import address_book, messaging
 from plebnet.controllers import cloudomate_controller
@@ -34,7 +34,7 @@ class QTable:
         self.providers_offers = []
         self.self_state = VPSState()
         self.tree = ""
-        self.address_book = self.init_address_book()
+        self.address_book = None
         pass
 
     # TODO : share QTable when reproducing
@@ -77,10 +77,9 @@ class QTable:
 
     def init_address_book(self, parent_id: str = ""):
         node_id = messaging.generate_contact_id(parent_id)
-        index = core.get_node_index()
-        ip = self.get_node_ip(str(self.self_state.provider).lower(), index)
+        ip = get('https://api.ipify.org').text
         self_contact = messaging.Contact(node_id, ip, self.port, self.node_pub)
-        return address_book.AddressBook(self_contact, self.node_priv)
+        self.address_book = address_book.AddressBook(self_contact, self.node_priv)
 
     @staticmethod
     def calculate_measure(provider_offer):
@@ -239,7 +238,9 @@ class QTable:
         child_id = messaging.generate_contact_id(self.address_book.self_contact.id)
         ip = self.get_node_ip(provider, child_index)
         child_contact = messaging.Contact(child_id, ip, self.port, child_pub)
-        new_address_book = address_book.AddressBook(child_contact, self.address_book.contacts, child_priv)
+        new_address_book = address_book.AddressBook(self_contact=child_contact,
+                                                    private_key=child_priv,
+                                                    contacts=self.address_book.contacts)
         new_address_book.contacts.append(self.address_book.self_contact)
         # TODO : Add child's contact to parent's addressbook?
         return new_address_book
