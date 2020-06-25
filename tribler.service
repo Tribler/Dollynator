@@ -5,7 +5,7 @@ Description=Tribler Market Service
 User=root
 Type=simple
 RemainAfterExit=yes
-ExecStart=/usr/bin/python3 -m run_tribler_headless -p 8085
+ExecStart=/usr/bin/python3 -m run_tunnel_helper -p 8085 -x
 Environment=PYTHONPATH=:/root/PlebNet/tribler/src/pyipv8:/root/PlebNet/tribler/src/anydex:/root/PlebNet/tribler/src/tribler-common:/root/PlebNet/tribler/src/tribler-core:/root/PlebNet/tribler/src/tribler-gui
 
 
