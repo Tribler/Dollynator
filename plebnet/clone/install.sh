@@ -176,6 +176,7 @@ sed -i -E "s/(BRANCH\s*=\s*\")(.+)(\")/\1${BRANCH}\3/" $CREATECHILD && echo "Upd
 
 pip3 install --upgrade ./PlebNet
 cd PlebNet
+mv tribler.service /etc/systemd/system/tribler.service
 
 git submodule init && git submodule update --remote --recursive
 cd tribler

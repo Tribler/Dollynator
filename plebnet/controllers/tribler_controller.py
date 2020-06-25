@@ -7,6 +7,7 @@ If Tribler alters its call methods, this should be the only file which needs to 
 
 import os
 import subprocess
+
 import requests
 
 from requests.exceptions import ConnectionError
@@ -20,20 +21,13 @@ setup = plebnet_settings.get_instance()
 def running():
     """
     Checks if Tribler is running.
-    :return: True if twistd.pid exists in /root/tribler and a process with the same pid is running.
+    :return: True if tribler.service is active.
     """
-    path = os.path.join(setup.plebnet_home(), 'plebnet', setup.tribler_pid())
 
-    if not os.path.isfile(path):
-        return False
+    output = subprocess.run(['systemctl', 'is-active', 'tribler.service'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+    process_running = (output == 'active\n')
 
-    pid = open(path, "r").read()
-    exitcode = os.system("ps -p " + pid + " > /dev/null")
-    process_running = (exitcode == 0)
-
-    # If the process is not running, remove the twistd.pid file
-    if not process_running:
-        os.remove(path)
+    print("process_running was: " + str(process_running))
 
     return process_running
 
@@ -44,25 +38,27 @@ def start():
     :return: boolean representing the success of starting Tribler
     """
     env = os.environ.copy()
-    env['PYTHONPATH'] = os.path.join(setup.plebnet_home(), 'plebnet') + ":"
-    #env['PYTHONPATH'] += os.path.join(setup.plebnet_home(), 'plebnet/twisted/plugins') + ":"
-    env['PYTHONPATH'] += os.path.join(setup.plebnet_home(), 'tribler/src/pyipv8') + ":"
-    env['PYTHONPATH'] += os.path.join(setup.plebnet_home(), 'tribler/src/anydex') + ":"
-    env['PYTHONPATH'] += os.path.join(setup.plebnet_home(), 'tribler/src/tribler-common') + ":"
-    env['PYTHONPATH'] += os.path.join(setup.plebnet_home(), 'tribler/src/tribler-core')
+    # env['PYTHONPATH'] = os.path.join(setup.plebnet_home(), 'plebnet') + ":"
+    # #env['PYTHONPATH'] += os.path.join(setup.plebnet_home(), 'plebnet/twisted/plugins') + ":"
+    # env['PYTHONPATH'] += os.path.join(setup.plebnet_home(), 'tribler/src/pyipv8') + ":"
+    # env['PYTHONPATH'] += os.path.join(setup.plebnet_home(), 'tribler/src/anydex') + ":"
+    # env['PYTHONPATH'] += os.path.join(setup.plebnet_home(), 'tribler/src/tribler-common') + ":"
+    # env['PYTHONPATH'] += os.path.join(setup.plebnet_home(), 'tribler/src/tribler-core')
     
     #print(env['PYTHONPATH'])
 
-    command = ['twistd', '--pidfile='+setup.tribler_pid(), 'plebnet', '-p', '8085']
+    command = ['systemctl', 'start', 'tribler.service']
 
-    if setup.wallets_testnet():
-        command.append('--testnet')
-
-    if setup.tribler_exitnode():
-        command.append('--exitnode')
+    # if setup.wallets_testnet():
+    #     command.append('--testnet')
+    #
+    # if setup.tribler_exitnode():
+    #     command.append('--exitnode')
 
     try:
         exitcode = subprocess.call(command, cwd=os.path.join(setup.plebnet_home(), 'plebnet'), env=env)
+
+        print("Exitcode was: " + str(exitcode))
 
         if exitcode != 0:
             logger.error('Failed to start Tribler', "tribler_controller")
