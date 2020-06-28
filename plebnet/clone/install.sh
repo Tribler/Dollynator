@@ -166,7 +166,7 @@ then
     echo "default-keyring=keyrings.alt.file.PlaintextKeyring" >> $KRCFG
 fi
 
-[ ! -d "PlebNet" ] && git clone -b $BRANCH https://github.com/GioAc96/Dollynator
+[ ! -d "PlebNet" ] && git clone -b $BRANCH https://github.com/Tribler/Dollynator
 
 mv Dollynator PlebNet
 
