@@ -52,8 +52,10 @@ def start():
     # if setup.wallets_testnet():
     #     command.append('--testnet')
     #
-    # if setup.tribler_exitnode():
-    #     command.append('--exitnode')
+    if setup.tribler_exitnode():
+        command.append('tribler@1.service')
+    else:
+        command.append('tribler@0.service')
 
     try:
         exitcode = subprocess.call(command, cwd=os.path.join(setup.plebnet_home(), 'plebnet'), env=env)
