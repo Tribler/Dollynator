@@ -31,22 +31,47 @@ DEBIAN_FRONTEND=noninteractive
 echo force-confold >> /etc/dpkg/dpkg.cfg
 echo force-confdef >> /etc/dpkg/dpkg.cfg
 
-# Upgrade system
-apt-get update
-# Do not upgrade for now as in some VPS it will cause for example grub to update
-# Requiring manual configuration after installation
-# && apt-get -y upgrade
+# Install apt-utils and software-properties-common
+apt-get -f -y install
+apt install -y software-properties-common
 
-apt-get install -y python
+# Add bionic repo
+add-apt-repository 'deb http://it.archive.ubuntu.com/ubuntu/ bionic main universe restricted multiverse'
+apt update
 
-# Reinstall pip
-apt-get remove --purge -y python-pip
-wget https://bootstrap.pypa.io/get-pip.py
-python get-pip.py
+# Install libtorrent
+apt install python3-libtorrent=1.1.5-1build1 -y
 
-pip install -U wheel setuptools
+# Restoring apt
+wget -O /tmp/apt_1.6.12ubuntu0.1_amd64.deb http://security.ubuntu.com/ubuntu/pool/main/a/apt/apt_1.6.12ubuntu0.1_amd64.deb
+wget -O /tmp/libapt-pkg5.0_1.6.12ubuntu0.1_amd64.deb http://security.ubuntu.com/ubuntu/pool/main/a/apt/libapt-pkg5.0_1.6.12ubuntu0.1_amd64.deb
 
-#(echo "alias pip='python -m pip'" | tee -a ~/.bashrc) && source ~/.bashrc
+dpkg -i /tmp/{apt,libapt-pkg5.0}_*.deb
+
+apt update
+apt-get -f -y install
+
+# Linking python3 to 3.6
+rm /usr/local/bin/python3
+ln -s /usr/bin/python3.6 /usr/local/bin/python3
+
+# Install Python 3.6 dev files
+apt install -y python3-dev
+
+# Remove previous pip
+apt-get remove --purge -y python-pip python3-pip
+
+# Installing pip
+apt install python3-distutils -y
+wget -O /tmp/get-pip.py https://bootstrap.pypa.io/get-pip.py
+python3 /tmp/get-pip.py
+
+# Clearing temp folder
+rm /tmp/*
+
+pip3 install -U wheel setuptools
+
+#(echo "alias pip3='python3 -m pip'" | tee -a ~/.bashrc) && source ~/.bashrc
 
 # Fix paths
 echo "fixing paths"
@@ -61,55 +86,64 @@ ln -s "$(which openvpn)" /usr/bin/openvpn
 
 # Install dependencies
 apt-get install -y \
-    python-crypto \
-    python-pyasn1 \
-    python-twisted \
-    python-meliae \
-    python-libtorrent \
-    python-apsw \
-    python-chardet \
-    python-cherrypy3 \
-    python-m2crypto \
-    python-configobj \
-    python-netifaces \
-    python-leveldb \
-    python-decorator \
-    python-feedparser \
-    python-keyring \
-    python-ecdsa \
-    python-pbkdf2 \
-    python-requests \
-    python-protobuf \
-    python-dnspython \
-    python-jsonrpclib \
-    python-networkx \
-    python-scipy \
-    python-wxtools \
     git \
-    python-lxml
+    build-essential \
+    libssl-dev \
+    swig
 
-pip install pyaes psutil
-pip install -U pyopenssl
+pip3 install -U crypto \
+    pyasn1 \
+    twisted \
+    apsw \
+    chardet \
+    configobj \
+    netifaces \
+    leveldb \
+    decorator \
+    feedparser \
+    keyring \
+    ecdsa \
+    pbkdf2 \
+    requests \
+    dnspython \
+    networkx \
+    scipy \
+    lxml
+
+pip3 install -U six
+
+pip3 install -U protobuf \
+    meliae \
+    cherrypy \
+    M2Crypto \
+    jsonrpclib-pelix
+
+pip install -U \
+    -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-16.04 \
+    wxPython
+pip3 install -U pyaes psutil
+pip3 install -U pyopenssl
 
 echo "Install Crypto, pynacl, libsodium"
-apt-get install -y python-cryptography \
-python-nacl \
-python-libnacl \
-keyrings.alt
+apt-get install -y python3-cryptography \
+    python3-nacl \
+    python3-libnacl \
+    python3-keyrings.alt
 
 # python-socks needed? It's going to be installed by pip later
 
-apt-get install -y build-essential libssl-dev libffi-dev python-dev software-properties-common
-pip install cryptography
-pip install pynacl
-pip install pysocks
-pip install keyrings.alt
-pip install libnacl
-add-apt-repository -y ppa:chris-lea/libsodium;
-echo "deb http://ppa.launchpad.net/chris-lea/libsodium/ubuntu trusty main" >> /etc/apt/sources.list;
-echo "deb-src http://ppa.launchpad.net/chris-lea/libsodium/ubuntu trusty main" >> /etc/apt/sources.list;
-apt-get update
-apt-get install -y libsodium-dev;
+apt-get install -y libffi-dev software-properties-common
+pip3 install -U cryptography \
+    pynacl \
+    pysocks \
+    keyrings.alt \
+    libnacl
+
+# add-apt-repository -y ppa:chris-lea/libsodium;
+# echo "deb http://ppa.launchpad.net/chris-lea/libsodium/ubuntu trusty main" >> /etc/apt/sources.list;
+# echo "deb-src http://ppa.launchpad.net/chris-lea/libsodium/ubuntu trusty main" >> /etc/apt/sources.list;
+# apt-get update
+apt-get install -y libsodium-dev
 
 # Update pip to avoid locale errors in certain configurations
 #echo "upgrading pip"
@@ -132,33 +166,53 @@ then
     echo "default-keyring=keyrings.alt.file.PlaintextKeyring" >> $KRCFG
 fi
 
-[ ! -d "PlebNet" ] && git clone -b $BRANCH --recurse-submodules https://github.com/Tribler/PlebNet
+[ ! -d "PlebNet" ] && git clone -b $BRANCH https://github.com/Tribler/Dollynator
+
+mv Dollynator PlebNet
 
 # when branch is given, this create-child.sh's default branch value will be updated
 #   this is because the child's cloned repo also needs these values updated
 sed -i -E "s/(BRANCH\s*=\s*\")(.+)(\")/\1${BRANCH}\3/" $CREATECHILD && echo "Updated branch to $BRANCH in file ($CREATECHILD)";
 
-python -m pip install --upgrade ./PlebNet
+pip3 install --upgrade ./PlebNet
 cd PlebNet
+mv tribler.service /etc/systemd/system/tribler.service
 
-pip install ./cloudomate
+git submodule init && git submodule update --remote --recursive
+cd tribler
+git submodule init && git submodule update --remote --recursive
+cd ..
+
+# Add paths to internal modules
+(echo "export PYTHONPATH=$PYTHONPATH:$HOME/PlebNet/tribler/src/pyipv8:$HOME/PlebNet/tribler/src/anydex:$HOME/PlebNet/tribler/src/tribler-common:$HOME/PlebNet/tribler/src/tribler-core:$HOME/PlebNet/tribler/src/tribler-gui" | tee -a ~/.bashrc) && source ~/.bashrc
+
+# Install Firefox for cloudomate
+apt-get install -y firefox
+
+pip3 install ./cloudomate
 
 # Install tribler
-pip install pony
-pip install ./tribler
+pip3 install pony
+pip3 install -r ./tribler/src/requirements.txt
 cd ..
+pip3 install lz4
+pip3 install aiohttp_apispec
 
 # Install bitcoinlib
 # pip install bitcoinlib==0.4.4
+apt-get install -y libgmp-dev
 git clone https://github.com/1200wd/bitcoinlib.git
-pip install ./bitcoinlib
+pip3 install ./bitcoinlib
 
 # Install electrum as it is required by cloudomate and not included in tribler anymore
-git clone -b 2.9.x https://github.com/spesmilo/electrum.git
-cd electrum
-python setup.py install
-sudo apt-get -y install protobuf-compiler
-protoc --proto_path=lib/ --python_out=lib/ lib/paymentrequest.proto
+# git clone -b 2.9.x https://github.com/spesmilo/electrum.git
+# cd electrum
+# python3 setup.py install
+# sudo apt-get -y install protobuf-compiler
+# protoc --proto_path=lib/ --python_out=lib/ lib/paymentrequest.proto
+apt-get install -y python3-pyqt5
+wget https://download.electrum.org/3.3.8/Electrum-3.3.8.tar.gz
+pip3 install Electrum-3.3.8.tar.gz[fast]
 
 cd /root
 

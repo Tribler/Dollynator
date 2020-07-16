@@ -1,7 +1,7 @@
 from plebnet.controllers import wallet_controller
 from plebnet.utilities import logger
 from plebnet.utilities.btc import satoshi_to_btc
-from strategy import Strategy
+from plebnet.agent.strategies.strategy import Strategy
 
 from plebnet.settings import plebnet_settings
 

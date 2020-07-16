@@ -25,7 +25,7 @@ class PlebNetConfig(object):
                        "last_offer_date": 0,
                        "last_offer": {"MB": 0,
                                       "BTC:": 0.0},
-                       "excluded_providers": ["linevast"],
+                       "excluded_providers": [],
                        "chosen_provider": None,
                        "bought": [],
                        "installing": [],

@@ -8,7 +8,7 @@ import plebnet.controllers.wallet_controller as walletcontroller
 import plebnet.controllers.market_controller as marketcontroller
 import plebnet.settings.plebnet_settings as plebnet_settings
 
-from mock.mock import MagicMock
+from unittest.mock import MagicMock
 from plebnet.utilities import logger
 
 
@@ -111,7 +111,7 @@ class TestWalletController(unittest.TestCase):
         o.__init__(True)
         assert o.coin == 'TBTC'
 
-    def test_get_balance(self):
+    def test_get_balance2(self):
         self.market = marketcontroller.get_balance
         marketcontroller.get_balance = MagicMock(return_value=5)
 
@@ -170,11 +170,50 @@ class TestWalletController(unittest.TestCase):
 
         responses.add(responses.POST, 'http://localhost:8085/wallets/' + r.coin + '/transfer', json={'txid': None})
         responses.add(responses.GET, 'http://localhost:8085/wallets/tbtc/transactions', json={"transactions": [{
-                        "id": "testID",
-                        "to": 'address'}]})
+            "id": "testID",
+            "to": 'address'}]})
 
         self.assertEquals(r.pay('address', 0.000003), 'testID')
         walletcontroller.TriblerWallet.get_balance = self.true_balance
+
+    @responses.activate
+    def test_get_balance_pending(self):
+        pending = 2.4
+        responses.add(responses.GET, 'http://localhost:8085/wallets/MB/balance',
+                      json={'balance': {'available': 0.02, 'pending': pending, 'currency': 'MB'}})
+        self.assertEqual(pending, walletcontroller.get_MB_balance_pending())
+
+    def test_get_balance_pending_no_connection(self):
+        self.requests = requests.get
+        requests.get = MagicMock(side_effect=requests.ConnectionError)
+        self.assertEquals(walletcontroller.get_MB_balance_pending(), "No %s wallet found" % 'MB')
+
+        requests.get = self.requests
+
+    @responses.activate
+    def test_get_transactions(self):
+        transactions = [{
+            "currency": "BTC",
+            "to": "17AVS7n3zgBjPq1JT4uVmEXdcX3vgB2wAh",
+            "outgoing": False,
+            "from": "",
+            "description": "",
+            "timestamp": "1489673696",
+            "fee_amount": 0.0,
+            "amount": 0.00395598,
+            "id": "6f6c40d034d69c5113ad8cb3710c172955f84787b9313ede1c39cac85eeaaffe"
+        }]
+        responses.add(responses.GET, 'http://localhost:8085/wallets/MB/transactions',
+                      json={"transactions": transactions})
+        self.assertEqual(transactions, walletcontroller.get_MB_transactions())
+
+    def test_get_transactions_no_connection(self):
+        self.requests = requests.get
+        requests.get = MagicMock(side_effect=requests.ConnectionError)
+        self.assertEquals(walletcontroller.get_MB_transactions(), "No %s wallet found" % 'MB')
+
+        requests.get = self.requests
+
 
 if __name__ == '__main__':
     unittest.main()

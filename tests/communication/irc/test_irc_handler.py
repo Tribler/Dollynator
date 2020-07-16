@@ -1,7 +1,7 @@
 import unittest
 import subprocess
 
-from mock.mock import MagicMock
+from unittest.mock import MagicMock
 from plebnet.communication.irc import irc_handler
 from plebnet.settings import plebnet_settings
 

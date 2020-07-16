@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# coding: utf-8
 """
 This twistd plugin enables to start Tribler headless using the twistd command.
 """
@@ -9,13 +11,13 @@ from twisted.internet import reactor
 from twisted.plugin import IPlugin
 from twisted.python import usage
 from twisted.python.log import msg
-from zope.interface import implements
+from zope.interface import implements, implementer
 
-from Tribler.Core.Config.tribler_config import TriblerConfig
-from Tribler.Core.Modules.process_checker import ProcessChecker
-from Tribler.Core.Session import Session
+from tribler_core.config.tribler_config import TriblerConfig
+from tribler_core.modules.process_checker import ProcessChecker
+from tribler_core.session import Session
 # Register yappi profiler
-from Tribler.community.market.community import MarketCommunity
+from anydex.core.community import MarketCommunity
 
 
 class Options(usage.Options):
@@ -31,9 +33,9 @@ class Options(usage.Options):
         ["dummy", "f", "Use dummy wallets"],
     ]
 
-
+@implementer(IServiceMaker, IPlugin)
 class MarketServiceMaker(object):
-    implements(IServiceMaker, IPlugin)
+    # implementer(IServiceMaker, IPlugin)
     tapname = "plebnet"
     description = "headless tribler for plebnet agent"
     options = Options

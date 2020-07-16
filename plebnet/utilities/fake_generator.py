@@ -8,7 +8,7 @@ The only method to call is the generate_child_account(), which returns a random 
 """
 
 # Total imports
-import ConfigParser
+import configparser
 import codecs
 import random
 import unicodedata
@@ -31,12 +31,11 @@ def generate_child_account():
     filename = _child_file()
     locale = random.choice(['cs_CZ', 'de_DE', 'dk_DK', 'es_ES', 'et_EE', 'hr_HR', 'it_IT'])
     fake = Factory().create(locale)
-    cp = ConfigParser.ConfigParser()
+    cp = configparser.RawConfigParser(allow_no_value=True)
     _generate_address(cp, fake)
     _generate_server(cp, fake)
     _generate_user(cp, fake)
     _add_anticaptcha(cp)
-    _remove_unicode(cp)
     with codecs.open(filename, 'w', 'utf8') as config_file:
         cp.write(config_file)
     return cp
@@ -50,7 +49,7 @@ def _remove_unicode(cp):
     for section in cp.sections():
         for option in cp.options(section):
             item = cp.get(section, option)
-            if isinstance(item, unicode):
+            if isinstance(item, str):
                 cp.set(section, option, unicodedata.normalize('NFKD', item).encode('ascii', 'ignore'))
 
 

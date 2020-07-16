@@ -1,6 +1,5 @@
 import unittest
-import mock
-from mock.mock import MagicMock
+
 from appdirs import user_config_dir
 import os
 import sys

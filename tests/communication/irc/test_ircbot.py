@@ -2,7 +2,7 @@ import unittest
 
 from plebnet.communication.irc import ircbot
 from plebnet.settings import plebnet_settings
-from mock.mock import MagicMock
+from unittest.mock import MagicMock
 
 
 line_join = "376 " + plebnet_settings.get_instance().irc_nick()

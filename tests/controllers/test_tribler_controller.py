@@ -3,7 +3,7 @@ import subprocess
 import responses
 import requests
 import plebnet.controllers.tribler_controller as Tribler
-from mock.mock import MagicMock
+from unittest.mock import MagicMock
 from plebnet.utilities import logger
 import plebnet.settings.plebnet_settings as Settings
 

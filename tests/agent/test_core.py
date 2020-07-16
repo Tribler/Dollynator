@@ -1,7 +1,7 @@
 import copy
 import unittest
 from unittest import skip
-import mock
+import unittest.mock as mock
 
 from CaseInsensitiveDict import CaseInsensitiveDict
 from cloudomate.hoster.vps.vps_hoster import VpsOption
@@ -13,13 +13,11 @@ from plebnet.clone import server_installer
 from plebnet.controllers import tribler_controller, cloudomate_controller, market_controller, wallet_controller
 from plebnet.communication.irc import irc_handler
 from plebnet.settings import plebnet_settings
-from mock.mock import MagicMock
+from unittest.mock import MagicMock
 from plebnet.utilities import logger, fake_generator
 import plebnet.agent.core as Core
 import subprocess
 import os
-import re
-from appdirs import user_config_dir
 import cloudomate.hoster.vps.blueangelhost as blueAngel
 
 
@@ -195,7 +193,8 @@ class TestCore(unittest.TestCase):
                                                                                              price=10.0,
                                                                                              purchase_url="mock"
                                                                                              )])
-    def test_attempt_purchase(self, mock1, mock2):
+    @mock.patch('plebnet.agent.core.get_amount_mb_tokens_earned', return_value=88878356)
+    def test_attempt_purchase(self, mock1, mock2, mock3):
         self.log = logger.log
         self.testnet = plebnet_settings.Init.wallets_testnet
         self.get = PlebNetConfig.get
@@ -212,6 +211,7 @@ class TestCore(unittest.TestCase):
         self.providers = cloudomate_controller.get_vps_providers()
         providers = cloudomate_controller.get_vps_providers()
         self.qtable.init_qtable_and_environment(providers)
+        self.qtable.init_alpha_and_beta()
         self.qtable.set_self_state(VPSState("blueangelhost", "Basic Plan"))
 
         logger.log = MagicMock()
@@ -231,6 +231,21 @@ class TestCore(unittest.TestCase):
 
         Core.config = PlebNetConfig
         qtable_copy = copy.deepcopy(Core.qtable.qtable)
+
+        cur_option = VpsOption(
+            name="Basic",
+            storage=100,
+            cores=2,
+            memory=10,
+            bandwidth=10000,
+            connection=1,
+            price=10,
+            purchase_url="https://panel.linevast.de"
+        )
+        cloudomate_controller.get_vps_option = MagicMock(return_value=cur_option)
+        PlebNetConfig.time_to_expiration = MagicMock(return_value=1592000)
+        Core.get_q_tables_through_gossipping= MagicMock(return_value=[])
+
 
         Core.attempt_purchase()
 
@@ -383,6 +398,95 @@ class TestCore(unittest.TestCase):
         plebnet_settings.Init.vpn_child_prefix = self.cpr
         os.path.expanduser = self.usr
         Core.vpn_is_running = self.vpn_running
+
+    def test_get_amount_mb_tokens_earned(self):
+        self.mb_transactions = wallet_controller.get_MB_transactions
+        self.mb_pending = wallet_controller.get_MB_balance_pending
+        self.mb_balance = wallet_controller.get_MB_balance
+        amount1 = 0.00395598
+        amount3 = 0.28483758
+        balance_pending = 0.2
+        balance_available = 0.4
+        transactions = [
+            {
+                "currency": "MB",
+                "to": "17AVS7n3zgBjPq1JT4uVmEXdcX3vgB2wAh",
+                "outgoing": True,
+                "from": "",
+                "description": "",
+                "timestamp": "1489673696",
+                "fee_amount": 0.0,
+                "amount": amount1,
+                "id": "6f6c40d034d69c5113ad8cb3710c172955f84787b9313ede1c39cac85eeaaffe"
+            },
+            {
+                "currency": "MB",
+                "to": "17AVS7n3zgBjPq1JT4uVmEXdcX3vgB2wAh",
+                "outgoing": False,
+                "from": "",
+                "description": "",
+                "timestamp": "1489673696",
+                "fee_amount": 0.0,
+                "amount": 0.48304839,
+                "id": "6f6c40d034d69c5113ad8cb3710c172955f84787b9313ede1c39cac85eeaaffe"
+            },
+            {
+                "currency": "MB",
+                "to": "17AVS7n3zgBjPq1JT4uVmEXdcX3vgB2wAh",
+                "outgoing": True,
+                "from": "",
+                "description": "",
+                "timestamp": "1489673696",
+                "fee_amount": 0.0,
+                "amount": amount3,
+                "id": "6f6c40d034d69c5113ad8cb3710c172955f84787b9313ede1c39cac85eeaaffe"
+            }
+        ]
+        wallet_controller.get_MB_transactions = MagicMock(return_value=transactions)
+        wallet_controller.get_MB_balance_pending = MagicMock(return_value=balance_pending)
+        wallet_controller.get_MB_balance = MagicMock(return_value=balance_available)
+
+        mb_tokens_amount = amount1 + amount3 + balance_pending + balance_available
+        self.assertEqual(mb_tokens_amount, Core.get_amount_mb_tokens_earned())
+
+        wallet_controller.get_MB_transactions = self.mb_transactions
+        wallet_controller.get_MB_balance_pending = self.mb_pending
+        wallet_controller.get_MB_balance = self.mb_balance
+
+    def test_get_reward_qlearning(self):
+        self.vps_options = cloudomate_controller.get_vps_option
+        self.get_mb_earned = Core.get_amount_mb_tokens_earned
+        self.config_expiration = PlebNetConfig.time_to_expiration
+        self.core_config = Core.config
+        self.core_qtable = Core.qtable
+
+        price = 10
+        mb_tokens_earned = 88878356
+        cur_option = VpsOption(
+                name="Basic",
+                storage=100,
+                cores=2,
+                memory=10,
+                bandwidth=10000,
+                connection=1,
+                price=10,
+                purchase_url="https://panel.linevast.de"
+            )
+
+        Core.config = PlebNetConfig()
+        Core.qtable = MagicMock()
+        cloudomate_controller.get_vps_option = MagicMock(return_value=cur_option)
+        Core.get_amount_mb_tokens_earned = MagicMock(return_value=mb_tokens_earned)
+        PlebNetConfig.time_to_expiration = MagicMock(return_value=1592000)
+
+        reward = mb_tokens_earned / (price * (1000000 / plebnet_settings.TIME_IN_DAY) * 10000 * 2)
+        self.assertEqual(reward, Core.get_reward_qlearning())
+
+        cloudomate_controller.get_vps_option = self.vps_options
+        Core.get_amount_mb_tokens_earned = self.get_mb_earned
+        PlebNetConfig.time_to_expiration = self.config_expiration
+        Core.config = self.core_config
+        Core.qtable = self.core_qtable
 
 
 if __name__ == '__main__':

@@ -6,7 +6,7 @@ this code. If Tribler alters its web API, this should be the only file which nee
 in PlebNet.
 """
 
-import market_controller as marketcontroller
+import plebnet.controllers.market_controller as marketcontroller
 import plebnet.settings.plebnet_settings as plebnet_settings
 import requests
 from requests.exceptions import ConnectionError
@@ -150,3 +150,33 @@ def get_BTC_balance(): return get_balance('BTC')
 def get_MB_balance(): return get_balance('MB')
 
 
+def get_transactions(type):
+    try:
+        return requests.get('http://localhost:8085/wallets/' + type + '/transactions').json()['transactions']
+    except:
+        return "No %s wallet found" % type
+
+
+def get_TBTC_transactions(): return get_transactions('TBTC')
+
+
+def get_BTC_transactions(): return get_transactions('BTC')
+
+
+def get_MB_transactions(): return get_transactions('MB')
+
+
+def get_balance_pending(type):
+    try:
+        return requests.get('http://localhost:8085/wallets/' + type + '/balance').json()['balance']['pending']
+    except:
+        return "No %s wallet found" % type
+
+
+def get_TBTC_balance_pending(): return get_balance_pending('TBTC')
+
+
+def get_BTC_balance_pending(): return get_balance_pending('BTC')
+
+
+def get_MB_balance_pending(): return get_balance_pending('MB')

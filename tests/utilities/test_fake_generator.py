@@ -1,8 +1,8 @@
 import unittest
-import mock
+import unittest.mock as mock
 from appdirs import user_config_dir
 import os
-from cloudomate.util.settings import Settings
+import cloudomate.util.settings as settings
 from plebnet.utilities import fake_generator
 
 
@@ -27,7 +27,7 @@ class TestFakeGenerator(unittest.TestCase):
     @mock.patch('plebnet.utilities.fake_generator._child_file', return_value=test_file)
     def test_generate_child_has_content(self, mock):
         fake_generator.generate_child_account()
-        account = Settings()
+        account = settings.Settings()
         account.read_settings(test_file)
 
         self.assertIsNotNone(account.get('user', 'email'))
